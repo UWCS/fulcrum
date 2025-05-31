@@ -1,15 +1,19 @@
-import sass
-import os
+from pathlib import Path
 
-scss_path = "app/static/scss/main.scss"
-css_path = "app/static/css/main.css"
+import sass
+
+scss_path = "static/sass/main.scss"
+css_path = "static/css/main.css"
 
 print("compiling scss")
-css = sass.compile(filename=scss_path, include_paths=["app/static/scss"], output_style="compressed")
+css = sass.compile(
+    filename=scss_path, include_paths=["static/sass"], output_style="compressed"
+)
 
 print("writing css")
-os.makedirs(os.path.dirname(css_path), exist_ok=True)
-with open(css_path, "w") as css_file:
-    css_file.write(css)
+path = Path(css_path)
+path.parent.mkdir(parents=True, exist_ok=True)
+with path.open("w", encoding="utf-8") as f:
+    f.write(css)
 
 print("done :)")
