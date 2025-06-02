@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %}</title>
 
-    <!--load theme switcher script-->
+    <!--load theme switcher script -->
     <script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
 
     <!--load bootstrap css and js-->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 
-    <!--load icons-->
+    <!--load icons -->
     <link rel="stylesheet" href="{{ url_for('static', filename='icons/bootstrap-icons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='icons/phosphor-bold.css')}}">
 
-    <!--load font css-->
+    <!--load font css -->
     <style>
         @font-face {
             font-display: swap;
@@ -42,7 +42,6 @@
             src: url("{{ url_for('static', filename='fonts/montserrat-v26-latin-600.woff2') }}") format("woff2");
         }
 
-        /* mulish-regular - latin */
         @font-face {
             font-display: swap;
             font-family: 'Mulish';
@@ -95,7 +94,7 @@
 </head>
 <body>
     <!-- navbar -->
-    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary main-nav" {% if is_exec %}style="border-color: var(--bs-yellow);"{% endif %}>
         <div class="container-fluid">
             <!-- uwcs logo -->
             <a class="navbar-brand" href="https://uwcs.co.uk" aria-label="University of Warwick Computer Society">
@@ -117,20 +116,38 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
 
-            <!-- nav content-->
+            <!-- nav content -->
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <!-- base links -->
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('index') }}">Current Events</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="https://example.com">Past Events</a>
                     </li>
+                    <!-- exec only links -->
+                    {% if is_exec %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="https://example.com">Create Event</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="https://example.com">Generate Email</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="https://example.com">Create Publicity Post</a>
+                        </li>
+                    {% endif %}
                 </ul>
 
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0 d-flex align-items-center">
+                    <!-- login/logout -->
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                        {% if is_logged_in %}
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                        {% else %}
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                        {% endif %}
                     </li>
                     <!-- dark-mode-toggle -->
                     <li class="nav-item">
