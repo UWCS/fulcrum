@@ -1,2 +1,4 @@
 # ignore auto-generated css files (compile using sass pls)
 static/css/main.css
+# ignore env
+.env

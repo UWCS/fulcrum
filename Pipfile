@@ -7,6 +7,9 @@ name = "pypi"
 flask = "*"
 gunicorn = "*"
 libsass = "*"
+flask-oauthlib = "*"
+authlib = "*"
+dotenv = "*"
 
 [dev-packages]
 
