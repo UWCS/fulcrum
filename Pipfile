@@ -10,6 +10,7 @@ libsass = "*"
 flask-oauthlib = "*"
 authlib = "*"
 dotenv = "*"
+flask-sqlalchemy = "*"
 
 [dev-packages]
 
