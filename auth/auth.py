@@ -24,7 +24,7 @@ def configure_oauth(app: Flask) -> None:
     )
 
 
-def is_exec_wrapper(f: Callable[..., Response]) -> Callable[..., Response]:
+def is_exec_wrapper(f: Callable) -> Callable:
     """decorate to check if the user is authed and in exec or sysadmin group"""
 
     @wraps(f)

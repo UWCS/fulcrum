@@ -1,5 +1,6 @@
 import datetime
 
+import pytz
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_, func
@@ -80,8 +81,38 @@ class Event(db.Model):
         self.location_url = location_url
         self.icon = icon
         self.colour = colour
-        self.start_time = start_time
-        self.end_time = end_time
+        # ensure times are london-time
+        self.start_time = start_time.astimezone(pytz.timezone("Europe/London"))
+        self.end_time = (
+            end_time.astimezone(pytz.timezone("Europe/London")) if end_time else None
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"<Event {self.name} (ID: {self.id}) "
+            f"at {self.location} on {self.start_time}>"
+        )
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "slug": self.slug,
+            "description": self.description,
+            "draft": self.draft,
+            "location": self.location,
+            "location_url": self.location_url,
+            "icon": self.icon,
+            "colour": self.colour,
+            "start_time": self.start_time.isoformat(),
+            "end_time": self.end_time.isoformat() if self.end_time else None,
+            "date": {
+                "year": self.date.academic_year,
+                "term": self.date.term,
+                "week": self.date.week,
+            },
+            "tags": [tag.name for tag in self.tags.all()],
+        }
 
 
 class Week(db.Model):
