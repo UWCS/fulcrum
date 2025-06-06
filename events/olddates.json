@@ -1,0 +1,932 @@
+[
+    {
+        "academicYear": 2001,
+        "term": 1,
+        "week": 0,
+        "date": "2001-09-24"
+    },
+    {
+        "academicYear": 2001,
+        "term": 1,
+        "week": 1,
+        "date": "2001-10-01"
+    },
+    {
+        "academicYear": 2001,
+        "term": 1,
+        "week": 2,
+        "date": "2001-10-08"
+    },
+    {
+        "academicYear": 2001,
+        "term": 1,
+        "week": 3,
+        "date": "2001-10-15"
+    },
+    {
+        "academicYear": 2001,
+        "term": 1,
+        "week": 4,
+        "date": "2001-10-22"
+    },
+    {
+        "academicYear": 2001,
+        "term": 1,
+        "week": 5,
+        "date": "2001-10-29"
+    },
+    {
+        "academicYear": 2001,
+        "term": 1,
+        "week": 6,
+        "date": "2001-11-05"
+    },
+    {
+        "academicYear": 2001,
+        "term": 1,
+        "week": 7,
+        "date": "2001-11-12"
+    },
+    {
+        "academicYear": 2001,
+        "term": 1,
+        "week": 8,
+        "date": "2001-11-19"
+    },
+    {
+        "academicYear": 2001,
+        "term": 1,
+        "week": 9,
+        "date": "2001-11-26"
+    },
+    {
+        "academicYear": 2001,
+        "term": 1,
+        "week": 10,
+        "date": "2001-12-03"
+    },
+    {
+        "academicYear": 2001,
+        "term": 2,
+        "week": 1,
+        "date": "2002-01-07"
+    },
+    {
+        "academicYear": 2001,
+        "term": 2,
+        "week": 2,
+        "date": "2002-01-14"
+    },
+    {
+        "academicYear": 2001,
+        "term": 2,
+        "week": 3,
+        "date": "2002-01-21"
+    },
+    {
+        "academicYear": 2001,
+        "term": 2,
+        "week": 4,
+        "date": "2002-01-28"
+    },
+    {
+        "academicYear": 2001,
+        "term": 2,
+        "week": 5,
+        "date": "2002-02-04"
+    },
+    {
+        "academicYear": 2001,
+        "term": 2,
+        "week": 6,
+        "date": "2002-02-11"
+    },
+    {
+        "academicYear": 2001,
+        "term": 2,
+        "week": 7,
+        "date": "2002-02-18"
+    },
+    {
+        "academicYear": 2001,
+        "term": 2,
+        "week": 8,
+        "date": "2002-02-25"
+    },
+    {
+        "academicYear": 2001,
+        "term": 2,
+        "week": 9,
+        "date": "2002-03-04"
+    },
+    {
+        "academicYear": 2001,
+        "term": 2,
+        "week": 10,
+        "date": "2002-03-11"
+    },
+    {
+        "academicYear": 2001,
+        "term": 3,
+        "week": 1,
+        "date": "2002-04-22"
+    },
+    {
+        "academicYear": 2001,
+        "term": 3,
+        "week": 2,
+        "date": "2002-04-29"
+    },
+    {
+        "academicYear": 2001,
+        "term": 3,
+        "week": 3,
+        "date": "2002-05-06"
+    },
+    {
+        "academicYear": 2001,
+        "term": 3,
+        "week": 4,
+        "date": "2002-05-13"
+    },
+    {
+        "academicYear": 2001,
+        "term": 3,
+        "week": 5,
+        "date": "2002-05-20"
+    },
+    {
+        "academicYear": 2001,
+        "term": 3,
+        "week": 6,
+        "date": "2002-05-27"
+    },
+    {
+        "academicYear": 2001,
+        "term": 3,
+        "week": 7,
+        "date": "2002-06-03"
+    },
+    {
+        "academicYear": 2001,
+        "term": 3,
+        "week": 8,
+        "date": "2002-06-10"
+    },
+    {
+        "academicYear": 2001,
+        "term": 3,
+        "week": 9,
+        "date": "2002-06-17"
+    },
+    {
+        "academicYear": 2001,
+        "term": 3,
+        "week": 10,
+        "date": "2002-06-24"
+    },
+    {
+        "academicYear": 2002,
+        "term": 1,
+        "week": 0,
+        "date": "2002-09-23"
+    },
+    {
+        "academicYear": 2002,
+        "term": 1,
+        "week": 1,
+        "date": "2002-09-30"
+    },
+    {
+        "academicYear": 2002,
+        "term": 1,
+        "week": 2,
+        "date": "2002-10-07"
+    },
+    {
+        "academicYear": 2002,
+        "term": 1,
+        "week": 3,
+        "date": "2002-10-14"
+    },
+    {
+        "academicYear": 2002,
+        "term": 1,
+        "week": 4,
+        "date": "2002-10-21"
+    },
+    {
+        "academicYear": 2002,
+        "term": 1,
+        "week": 5,
+        "date": "2002-10-28"
+    },
+    {
+        "academicYear": 2002,
+        "term": 1,
+        "week": 6,
+        "date": "2002-11-04"
+    },
+    {
+        "academicYear": 2002,
+        "term": 1,
+        "week": 7,
+        "date": "2002-11-11"
+    },
+    {
+        "academicYear": 2002,
+        "term": 1,
+        "week": 8,
+        "date": "2002-11-18"
+    },
+    {
+        "academicYear": 2002,
+        "term": 1,
+        "week": 9,
+        "date": "2002-11-25"
+    },
+    {
+        "academicYear": 2002,
+        "term": 1,
+        "week": 10,
+        "date": "2002-12-02"
+    },
+    {
+        "academicYear": 2002,
+        "term": 2,
+        "week": 1,
+        "date": "2003-01-06"
+    },
+    {
+        "academicYear": 2002,
+        "term": 2,
+        "week": 2,
+        "date": "2003-01-13"
+    },
+    {
+        "academicYear": 2002,
+        "term": 2,
+        "week": 3,
+        "date": "2003-01-20"
+    },
+    {
+        "academicYear": 2002,
+        "term": 2,
+        "week": 4,
+        "date": "2003-01-27"
+    },
+    {
+        "academicYear": 2002,
+        "term": 2,
+        "week": 5,
+        "date": "2003-02-03"
+    },
+    {
+        "academicYear": 2002,
+        "term": 2,
+        "week": 6,
+        "date": "2003-02-10"
+    },
+    {
+        "academicYear": 2002,
+        "term": 2,
+        "week": 7,
+        "date": "2003-02-17"
+    },
+    {
+        "academicYear": 2002,
+        "term": 2,
+        "week": 8,
+        "date": "2003-02-24"
+    },
+    {
+        "academicYear": 2002,
+        "term": 2,
+        "week": 9,
+        "date": "2003-03-03"
+    },
+    {
+        "academicYear": 2002,
+        "term": 2,
+        "week": 10,
+        "date": "2003-03-10"
+    },
+    {
+        "academicYear": 2002,
+        "term": 3,
+        "week": 1,
+        "date": "2003-04-21"
+    },
+    {
+        "academicYear": 2002,
+        "term": 3,
+        "week": 2,
+        "date": "2003-04-28"
+    },
+    {
+        "academicYear": 2002,
+        "term": 3,
+        "week": 3,
+        "date": "2003-05-05"
+    },
+    {
+        "academicYear": 2002,
+        "term": 3,
+        "week": 4,
+        "date": "2003-05-12"
+    },
+    {
+        "academicYear": 2002,
+        "term": 3,
+        "week": 5,
+        "date": "2003-05-19"
+    },
+    {
+        "academicYear": 2002,
+        "term": 3,
+        "week": 6,
+        "date": "2003-05-26"
+    },
+    {
+        "academicYear": 2002,
+        "term": 3,
+        "week": 7,
+        "date": "2003-06-02"
+    },
+    {
+        "academicYear": 2002,
+        "term": 3,
+        "week": 8,
+        "date": "2003-06-09"
+    },
+    {
+        "academicYear": 2002,
+        "term": 3,
+        "week": 9,
+        "date": "2003-06-16"
+    },
+    {
+        "academicYear": 2002,
+        "term": 3,
+        "week": 10,
+        "date": "2003-06-23"
+    },
+    {
+        "academicYear": 2003,
+        "term": 1,
+        "week": 0,
+        "date": "2003-09-22"
+    },
+    {
+        "academicYear": 2003,
+        "term": 1,
+        "week": 1,
+        "date": "2003-09-29"
+    },
+    {
+        "academicYear": 2003,
+        "term": 1,
+        "week": 2,
+        "date": "2003-10-06"
+    },
+    {
+        "academicYear": 2003,
+        "term": 1,
+        "week": 3,
+        "date": "2003-10-13"
+    },
+    {
+        "academicYear": 2003,
+        "term": 1,
+        "week": 4,
+        "date": "2003-10-20"
+    },
+    {
+        "academicYear": 2003,
+        "term": 1,
+        "week": 5,
+        "date": "2003-10-27"
+    },
+    {
+        "academicYear": 2003,
+        "term": 1,
+        "week": 6,
+        "date": "2003-11-03"
+    },
+    {
+        "academicYear": 2003,
+        "term": 1,
+        "week": 7,
+        "date": "2003-11-10"
+    },
+    {
+        "academicYear": 2003,
+        "term": 1,
+        "week": 8,
+        "date": "2003-11-17"
+    },
+    {
+        "academicYear": 2003,
+        "term": 1,
+        "week": 9,
+        "date": "2003-11-24"
+    },
+    {
+        "academicYear": 2003,
+        "term": 1,
+        "week": 10,
+        "date": "2003-12-01"
+    },
+    {
+        "academicYear": 2003,
+        "term": 2,
+        "week": 1,
+        "date": "2004-01-05"
+    },
+    {
+        "academicYear": 2003,
+        "term": 2,
+        "week": 2,
+        "date": "2004-01-12"
+    },
+    {
+        "academicYear": 2003,
+        "term": 2,
+        "week": 3,
+        "date": "2004-01-19"
+    },
+    {
+        "academicYear": 2003,
+        "term": 2,
+        "week": 4,
+        "date": "2004-01-26"
+    },
+    {
+        "academicYear": 2003,
+        "term": 2,
+        "week": 5,
+        "date": "2004-02-02"
+    },
+    {
+        "academicYear": 2003,
+        "term": 2,
+        "week": 6,
+        "date": "2004-02-09"
+    },
+    {
+        "academicYear": 2003,
+        "term": 2,
+        "week": 7,
+        "date": "2004-02-16"
+    },
+    {
+        "academicYear": 2003,
+        "term": 2,
+        "week": 8,
+        "date": "2004-02-23"
+    },
+    {
+        "academicYear": 2003,
+        "term": 2,
+        "week": 9,
+        "date": "2004-03-01"
+    },
+    {
+        "academicYear": 2003,
+        "term": 2,
+        "week": 10,
+        "date": "2004-03-08"
+    },
+    {
+        "academicYear": 2003,
+        "term": 3,
+        "week": 1,
+        "date": "2004-04-19"
+    },
+    {
+        "academicYear": 2003,
+        "term": 3,
+        "week": 2,
+        "date": "2004-04-26"
+    },
+    {
+        "academicYear": 2003,
+        "term": 3,
+        "week": 3,
+        "date": "2004-05-03"
+    },
+    {
+        "academicYear": 2003,
+        "term": 3,
+        "week": 4,
+        "date": "2004-05-10"
+    },
+    {
+        "academicYear": 2003,
+        "term": 3,
+        "week": 5,
+        "date": "2004-05-17"
+    },
+    {
+        "academicYear": 2003,
+        "term": 3,
+        "week": 6,
+        "date": "2004-05-24"
+    },
+    {
+        "academicYear": 2003,
+        "term": 3,
+        "week": 7,
+        "date": "2004-05-31"
+    },
+    {
+        "academicYear": 2003,
+        "term": 3,
+        "week": 8,
+        "date": "2004-06-07"
+    },
+    {
+        "academicYear": 2003,
+        "term": 3,
+        "week": 9,
+        "date": "2004-06-14"
+    },
+    {
+        "academicYear": 2003,
+        "term": 3,
+        "week": 10,
+        "date": "2004-06-21"
+    },
+    {
+        "academicYear": 2004,
+        "term": 1,
+        "week": 0,
+        "date": "2004-09-20"
+    },
+    {
+        "academicYear": 2004,
+        "term": 1,
+        "week": 1,
+        "date": "2004-09-27"
+    },
+    {
+        "academicYear": 2004,
+        "term": 1,
+        "week": 2,
+        "date": "2004-10-04"
+    },
+    {
+        "academicYear": 2004,
+        "term": 1,
+        "week": 3,
+        "date": "2004-10-11"
+    },
+    {
+        "academicYear": 2004,
+        "term": 1,
+        "week": 4,
+        "date": "2004-10-18"
+    },
+    {
+        "academicYear": 2004,
+        "term": 1,
+        "week": 5,
+        "date": "2004-10-25"
+    },
+    {
+        "academicYear": 2004,
+        "term": 1,
+        "week": 6,
+        "date": "2004-11-01"
+    },
+    {
+        "academicYear": 2004,
+        "term": 1,
+        "week": 7,
+        "date": "2004-11-08"
+    },
+    {
+        "academicYear": 2004,
+        "term": 1,
+        "week": 8,
+        "date": "2004-11-15"
+    },
+    {
+        "academicYear": 2004,
+        "term": 1,
+        "week": 9,
+        "date": "2004-11-22"
+    },
+    {
+        "academicYear": 2004,
+        "term": 1,
+        "week": 10,
+        "date": "2004-11-29"
+    },
+    {
+        "academicYear": 2004,
+        "term": 2,
+        "week": 1,
+        "date": "2005-01-03"
+    },
+    {
+        "academicYear": 2004,
+        "term": 2,
+        "week": 2,
+        "date": "2005-01-10"
+    },
+    {
+        "academicYear": 2004,
+        "term": 2,
+        "week": 3,
+        "date": "2005-01-17"
+    },
+    {
+        "academicYear": 2004,
+        "term": 2,
+        "week": 4,
+        "date": "2005-01-24"
+    },
+    {
+        "academicYear": 2004,
+        "term": 2,
+        "week": 5,
+        "date": "2005-01-31"
+    },
+    {
+        "academicYear": 2004,
+        "term": 2,
+        "week": 6,
+        "date": "2005-02-07"
+    },
+    {
+        "academicYear": 2004,
+        "term": 2,
+        "week": 7,
+        "date": "2005-02-14"
+    },
+    {
+        "academicYear": 2004,
+        "term": 2,
+        "week": 8,
+        "date": "2005-02-21"
+    },
+    {
+        "academicYear": 2004,
+        "term": 2,
+        "week": 9,
+        "date": "2005-02-28"
+    },
+    {
+        "academicYear": 2004,
+        "term": 2,
+        "week": 10,
+        "date": "2005-03-07"
+    },
+    {
+        "academicYear": 2004,
+        "term": 3,
+        "week": 1,
+        "date": "2005-04-18"
+    },
+    {
+        "academicYear": 2004,
+        "term": 3,
+        "week": 2,
+        "date": "2005-04-25"
+    },
+    {
+        "academicYear": 2004,
+        "term": 3,
+        "week": 3,
+        "date": "2005-05-02"
+    },
+    {
+        "academicYear": 2004,
+        "term": 3,
+        "week": 4,
+        "date": "2005-05-09"
+    },
+    {
+        "academicYear": 2004,
+        "term": 3,
+        "week": 5,
+        "date": "2005-05-16"
+    },
+    {
+        "academicYear": 2004,
+        "term": 3,
+        "week": 6,
+        "date": "2005-05-23"
+    },
+    {
+        "academicYear": 2004,
+        "term": 3,
+        "week": 7,
+        "date": "2005-05-30"
+    },
+    {
+        "academicYear": 2004,
+        "term": 3,
+        "week": 8,
+        "date": "2005-06-06"
+    },
+    {
+        "academicYear": 2004,
+        "term": 3,
+        "week": 9,
+        "date": "2005-06-13"
+    },
+    {
+        "academicYear": 2004,
+        "term": 3,
+        "week": 10,
+        "date": "2005-06-20"
+    },
+    {
+        "academicYear": 2005,
+        "term": 1,
+        "week": 0,
+        "date": "2005-09-19"
+    },
+    {
+        "academicYear": 2005,
+        "term": 1,
+        "week": 1,
+        "date": "2005-09-26"
+    },
+    {
+        "academicYear": 2005,
+        "term": 1,
+        "week": 2,
+        "date": "2005-10-03"
+    },
+    {
+        "academicYear": 2005,
+        "term": 1,
+        "week": 3,
+        "date": "2005-10-10"
+    },
+    {
+        "academicYear": 2005,
+        "term": 1,
+        "week": 4,
+        "date": "2005-10-17"
+    },
+    {
+        "academicYear": 2005,
+        "term": 1,
+        "week": 5,
+        "date": "2005-10-24"
+    },
+    {
+        "academicYear": 2005,
+        "term": 1,
+        "week": 6,
+        "date": "2005-10-31"
+    },
+    {
+        "academicYear": 2005,
+        "term": 1,
+        "week": 7,
+        "date": "2005-11-07"
+    },
+    {
+        "academicYear": 2005,
+        "term": 1,
+        "week": 8,
+        "date": "2005-11-14"
+    },
+    {
+        "academicYear": 2005,
+        "term": 1,
+        "week": 9,
+        "date": "2005-11-21"
+    },
+    {
+        "academicYear": 2005,
+        "term": 1,
+        "week": 10,
+        "date": "2005-11-28"
+    },
+    {
+        "academicYear": 2005,
+        "term": 2,
+        "week": 1,
+        "date": "2006-01-02"
+    },
+    {
+        "academicYear": 2005,
+        "term": 2,
+        "week": 2,
+        "date": "2006-01-09"
+    },
+    {
+        "academicYear": 2005,
+        "term": 2,
+        "week": 3,
+        "date": "2006-01-16"
+    },
+    {
+        "academicYear": 2005,
+        "term": 2,
+        "week": 4,
+        "date": "2006-01-23"
+    },
+    {
+        "academicYear": 2005,
+        "term": 2,
+        "week": 5,
+        "date": "2006-01-30"
+    },
+    {
+        "academicYear": 2005,
+        "term": 2,
+        "week": 6,
+        "date": "2006-02-06"
+    },
+    {
+        "academicYear": 2005,
+        "term": 2,
+        "week": 7,
+        "date": "2006-02-13"
+    },
+    {
+        "academicYear": 2005,
+        "term": 2,
+        "week": 8,
+        "date": "2006-02-20"
+    },
+    {
+        "academicYear": 2005,
+        "term": 2,
+        "week": 9,
+        "date": "2006-02-27"
+    },
+    {
+        "academicYear": 2005,
+        "term": 2,
+        "week": 10,
+        "date": "2006-03-06"
+    },
+    {
+        "academicYear": 2005,
+        "term": 3,
+        "week": 1,
+        "date": "2006-04-17"
+    },
+    {
+        "academicYear": 2005,
+        "term": 3,
+        "week": 2,
+        "date": "2006-04-24"
+    },
+    {
+        "academicYear": 2005,
+        "term": 3,
+        "week": 3,
+        "date": "2006-05-01"
+    },
+    {
+        "academicYear": 2005,
+        "term": 3,
+        "week": 4,
+        "date": "2006-05-08"
+    },
+    {
+        "academicYear": 2005,
+        "term": 3,
+        "week": 5,
+        "date": "2006-05-15"
+    },
+    {
+        "academicYear": 2005,
+        "term": 3,
+        "week": 6,
+        "date": "2006-05-22"
+    },
+    {
+        "academicYear": 2005,
+        "term": 3,
+        "week": 7,
+        "date": "2006-05-29"
+    },
+    {
+        "academicYear": 2005,
+        "term": 3,
+        "week": 8,
+        "date": "2006-06-05"
+    },
+    {
+        "academicYear": 2005,
+        "term": 3,
+        "week": 9,
+        "date": "2006-06-12"
+    },
+    {
+        "academicYear": 2005,
+        "term": 3,
+        "week": 10,
+        "date": "2006-06-19"
+    }
+]

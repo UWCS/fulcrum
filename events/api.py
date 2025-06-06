@@ -1,4 +1,6 @@
 from datetime import datetime
+from json import load
+from pathlib import Path
 
 import pytz
 import requests
@@ -7,6 +9,7 @@ from schema import Event, Tag, Week, db
 
 from auth.auth import is_exec_wrapper
 
+# bind endpoints to /api/events/...
 events_bp = Blueprint("events", __name__, url_prefix="/api/events")
 
 
@@ -183,29 +186,125 @@ def get_week_from_date(date: datetime) -> Week | None:
                     break
 
         else:
-            # TODO: handle the case where the year is before the API year
-            # use json
-            week = None
+            with Path("olddates.json").open("r") as f:
+                old_dates = load(f)
+            for w in old_dates:
+                if (
+                    datetime.strptime(w["start_date"], "%Y-%m-%d").date()
+                    <= date.date()
+                    <= datetime.strptime(w["end_date"], "%Y-%m-%d").date()
+                ):
+                    week = Week(
+                        academic_year=year,
+                        term=w["term"],
+                        week=w["week"],
+                        start_date=datetime.strptime(w["start_date"], "%Y-%m-%d"),
+                    )
+                    db.session.add(week)
+                    db.session.commit()
+                    break
 
     return week
 
 
 @events_bp.route("/create_repeat", methods=["POST"])
 @is_exec_wrapper
-def create_repeat_event() -> str:
+def create_repeat_event() -> tuple[Response, int]:
     """Create a bunch of events at once"""
     pass
 
 
 @events_bp.route("/<int:event_id>", methods=["PATCH"])
 @is_exec_wrapper
-def edit_event(event_id: int) -> str:
+def edit_event(event_id: int) -> tuple[Response, int]:
     """Edit an existing event"""
-    pass
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({"error": "Event not found"}), 404
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    try:
+        event.name = data.get("name", event.name)
+        event.slug = event.name.lower().replace(" ", "-")
+        event.description = data.get("description", event.description)
+        event.draft = data.get("draft", event.draft)
+        event.location = data.get("location", event.location)
+        event.location_url = data.get("location_url", event.location_url)
+        event.icon = data.get("icon", event.icon)
+        event.colour = data.get("colour", event.colour)
+        event.start_time = pytz.timezone("Europe/London").localize(
+            datetime.fromisoformat(data.get("start_time", event.start_time.isoformat()))
+        )
+        event.end_time = (
+            pytz.timezone("Europe/London").localize(
+                datetime.fromisoformat(data.get("end_time", event.end_time.isoformat()))
+            )
+            if "end_time" in data
+            else None
+        )
+
+        # update week if start_time has changed
+        if "start_time" in data:
+            week = get_week_from_date(event.start_time)
+            if week is None:
+                return jsonify({"error": "Unable to determine week for the event"}), 400
+            event.date = week  # type: ignore
+
+        # update tags
+        tags = data.get("tags", [])
+        event.tags.clear()  # clear existing tags
+        for tag in tags:
+            tag_obj = Tag.query.filter_by(name=tag).first()
+            if not tag_obj:
+                tag_obj = Tag(name=tag)
+                db.session.add(tag_obj)
+            event.tags.append(tag_obj)
+
+        # commit changes
+        db.session.commit()
+
+        # clean up weeks and tags
+        clean_weeks()
+        clean_tags()
+
+        return jsonify(event.to_dict()), 200
+    except (KeyError, ValueError) as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @events_bp.route("/<int:event_id>", methods=["DELETE"])
 @is_exec_wrapper
-def delete_event(event_id: int) -> str:
+def delete_event(event_id: int) -> tuple[Response, int]:
     """Delete an existing event"""
-    pass
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({"error": "Event not found"}), 404
+
+    # commit the deletion
+    db.session.delete(event)
+    db.session.commit()
+
+    # clean up weeks and tags
+    clean_weeks()
+    clean_tags()
+
+    return jsonify({"message": "Event deleted successfully"}), 200
+
+
+def clean_weeks() -> None:
+    """Clean weeks that are not associated with any events"""
+    weeks = Week.query.all()
+    for week in weeks:
+        if not week.events:  # type: ignore
+            db.session.delete(week)
+    db.session.commit()
+
+
+def clean_tags() -> None:
+    """Clean tags that are not associated with any events"""
+    tags = Tag.query.all()
+    for tag in tags:
+        if not tag.events:  # type: ignore
+            db.session.delete(tag)
+    db.session.commit()
