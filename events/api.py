@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from json import load
 from pathlib import Path
 
@@ -10,10 +10,10 @@ from schema import Event, Tag, Week, db
 from auth.auth import is_exec_wrapper
 
 # bind endpoints to /api/events/...
-events_bp = Blueprint("events", __name__, url_prefix="/api/events")
+events_api_bp = Blueprint("events", __name__, url_prefix="/api/events")
 
 
-@events_bp.route("/<int:year>/<int:term>/<int:week>/<str:slug>", methods=["GET"])
+@events_api_bp.route("/<int:year>/<int:term>/<int:week>/<str:slug>", methods=["GET"])
 def get_event(year: int, term: int, week: int, slug: str) -> tuple[Response, int]:
     """Get a specific event by year, term, week, and slug."""
     event = Event.query.filter(
@@ -29,7 +29,7 @@ def get_event(year: int, term: int, week: int, slug: str) -> tuple[Response, int
     return jsonify(event.to_dict()), 200
 
 
-@events_bp.route("/<int:event_id>", methods=["GET"])
+@events_api_bp.route("/<int:event_id>", methods=["GET"])
 def get_event_by_id(event_id: int) -> tuple[Response, int]:
     """Get a specific event by its ID."""
     event = Event.query.get(event_id)
@@ -40,7 +40,7 @@ def get_event_by_id(event_id: int) -> tuple[Response, int]:
     return jsonify(event.to_dict()), 200
 
 
-@events_bp.route("/<int:year>/<int:term>/<int:week>", methods=["GET"])
+@events_api_bp.route("/<int:year>/<int:term>/<int:week>", methods=["GET"])
 def get_events_year_term_week(year: int, term: int, week: int) -> tuple[Response, int]:
     """Get all events for a specific year, term, and week."""
     events = Event.query.filter(
@@ -54,7 +54,7 @@ def get_events_year_term_week(year: int, term: int, week: int) -> tuple[Response
     return jsonify([event.to_dict() for event in events]), 200
 
 
-@events_bp.route("/<int:year>/<int:term>/", methods=["GET"])
+@events_api_bp.route("/<int:year>/<int:term>/", methods=["GET"])
 def get_events_year_term(year: int, term: int) -> tuple[Response, int]:
     """Get all events for a specific year and term."""
     events = Event.query.filter(
@@ -66,7 +66,7 @@ def get_events_year_term(year: int, term: int) -> tuple[Response, int]:
     return jsonify([event.to_dict() for event in events]), 200
 
 
-@events_bp.route("/<int:year>/", methods=["GET"])
+@events_api_bp.route("/<int:year>/", methods=["GET"])
 def get_events_year(year: int) -> tuple[Response, int]:
     """Get all events for a specific year."""
     events = Event.query.filter(Event.date.has(Week.academic_year == year)).all()
@@ -76,49 +76,97 @@ def get_events_year(year: int) -> tuple[Response, int]:
     return jsonify([event.to_dict() for event in events]), 200
 
 
-@events_bp.route("/create", methods=["POST"])
+@events_api_bp.route("/create", methods=["POST"])
 @is_exec_wrapper
-def create_event() -> tuple[Response, int]:
+def create_event_api() -> tuple[Response, int]:
     """Create a new event"""
     data = request.get_json()
-
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
-    try:
-        # convert start_time and end_time to London timezone
-        start_time = pytz.timezone("Europe/London").localize(
-            datetime.fromisoformat(data["start_time"])
-        )
-        end_time = (
-            pytz.timezone("Europe/London").localize(
-                datetime.fromisoformat(data["end_time"])
+    required_fields = [
+        "name",
+        "description",
+        "location",
+        "start_time",
+    ]
+
+    for field in required_fields:
+        if field not in data:
+            return jsonify({"error": f"Missing required field: {field}"}), 400
+
+    start_time = pytz.timezone("Europe/London").localize(
+        datetime.fromisoformat(data["start_time"])
+    )
+    if "duration" in data:
+        try:
+            days, hours, minutes = map(int, data["duration"].split(":"))
+            duration = timedelta(days=days, hours=hours, minutes=minutes)
+        except ValueError:
+            return (
+                jsonify(
+                    {"error": "Invalid duration format, expected 'days:hours:minutes'"}
+                ),
+                400,
             )
-            if "end_time" in data
-            else None
+    else:
+        duration = None
+
+    try:
+        event = create_event(
+            data["name"],
+            data["description"],
+            data.get("draft", False),
+            data["location"],
+            data.get("location_url"),
+            data.get("icon"),
+            data.get("colour"),
+            start_time,
+            duration,
+            data.get("tags", []),
         )
+        if isinstance(event, str):
+            return jsonify({"error": event}), 400
+        return jsonify(event.to_dict()), 201
+    except (KeyError, ValueError) as e:
+        return jsonify({"error": str(e)}), 400
+
+
+def create_event(  # noqa: PLR0913
+    name: str,
+    description: str,
+    draft: bool,
+    location: str,
+    location_url: str | None,
+    icon: str | None,
+    colour: str | None,
+    start_time: datetime,
+    duration: timedelta | None,
+    tags: list[str],
+) -> Event | str:
+    """Create an event"""
+    try:
+        # convert start_time and calculate end_time
+        start_time = pytz.timezone("Europe/London").localize(start_time)
+        end_time = start_time + duration if duration else None
 
         # create the event object
         event = Event(
-            name=data["name"],
-            description=data["description"],
-            draft=data.get("draft", False),
-            location=data["location"],
-            location_url=data.get("location_url"),
-            icon=data.get("icon"),
-            colour=data.get("colour"),
+            name=name,
+            description=description,
+            draft=draft,
+            location=location,
+            location_url=location_url,
+            icon=icon,
+            colour=colour,
             start_time=start_time,
             end_time=end_time,
         )
 
         # attach week to the event
-        week = get_week_from_date(start_time)
-        if week is None:
-            return jsonify({"error": "Unable to determine week for the event"}), 400
-        event.date = week  # type: ignore
+        event.date = get_week_from_date(start_time)  # type: ignore
 
         # attach tags to the event
-        tags = data.get("tags", [])
         # check all tags exist, create if not
         for tag in tags:
             tag_obj = Tag.query.filter_by(name=tag).first()
@@ -131,10 +179,9 @@ def create_event() -> tuple[Response, int]:
         db.session.add(event)
         db.session.commit()
 
-        return jsonify(event.to_dict()), 201
-
+        return event
     except (KeyError, ValueError) as e:
-        return jsonify({"error": str(e)}), 400
+        return str(e)
 
 
 def get_week_from_date(date: datetime) -> Week | None:
@@ -207,14 +254,70 @@ def get_week_from_date(date: datetime) -> Week | None:
     return week
 
 
-@events_bp.route("/create_repeat", methods=["POST"])
+@events_api_bp.route("/create_repeat", methods=["POST"])
 @is_exec_wrapper
 def create_repeat_event() -> tuple[Response, int]:
     """Create a bunch of events at once"""
-    pass
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    required_fields = [
+        "name",
+        "description",
+        "location",
+        "start_times",
+    ]
+
+    for field in required_fields:
+        if field not in data:
+            return jsonify({"error": f"Missing required field: {field}"}), 400
+
+    ids = []
+    try:
+        # loop through start_times and create events
+        for start_time in data["start_times"]:
+            formatted_start_time = pytz.timezone("Europe/London").localize(
+                datetime.fromisoformat(start_time)
+            )
+            duration = timedelta(
+                days=data.get("duration_days", 0),
+                hours=data.get("duration_hours", 0),
+                minutes=data.get("duration_minutes", 0),
+            )
+            event = create_event(
+                data["name"],
+                data["description"],
+                data.get("draft", False),
+                data["location"],
+                data.get("location_url"),
+                data.get("icon"),
+                data.get("colour"),
+                formatted_start_time,
+                duration,
+                data.get("tags", []),
+            )
+            if isinstance(event, str):
+                # rollback any created events
+                for id in ids:
+                    db.session.delete(Event.query.get(id))
+                db.session.commit()
+                clean_weeks()
+                clean_tags()
+                return jsonify({"error": event}), 400
+            ids.append(event.id)
+        return jsonify({"message": "Events created successfully", "ids": ids}), 201
+    except (KeyError, ValueError) as e:
+        # rollback any created events
+        for id in ids:
+            db.session.delete(Event.query.get(id))
+        db.session.commit()
+        clean_weeks()
+        clean_tags()
+        return jsonify({"error": str(e)}), 400
 
 
-@events_bp.route("/<int:event_id>", methods=["PATCH"])
+@events_api_bp.route("/<int:event_id>", methods=["PATCH"])
 @is_exec_wrapper
 def edit_event(event_id: int) -> tuple[Response, int]:
     """Edit an existing event"""
@@ -273,7 +376,7 @@ def edit_event(event_id: int) -> tuple[Response, int]:
         return jsonify({"error": str(e)}), 400
 
 
-@events_bp.route("/<int:event_id>", methods=["DELETE"])
+@events_api_bp.route("/<int:event_id>", methods=["DELETE"])
 @is_exec_wrapper
 def delete_event(event_id: int) -> tuple[Response, int]:
     """Delete an existing event"""
@@ -308,3 +411,12 @@ def clean_tags() -> None:
         if not tag.events:  # type: ignore
             db.session.delete(tag)
     db.session.commit()
+
+
+@events_api_bp.route("/tags", methods=["GET"])
+def get_tags() -> tuple[Response, int]:
+    """Get all tags"""
+    tags = Tag.query.all()
+    if not tags:
+        return jsonify({"error": "No tags found"}), 404
+    return jsonify([tag.to_dict() for tag in tags]), 200

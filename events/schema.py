@@ -67,11 +67,11 @@ class Event(db.Model):
         description: str,
         draft: bool,
         location: str,
+        location_url: str | None,
+        icon: str | None,
+        colour: str | None,
         start_time: datetime.datetime,
-        location_url: str | None = None,
-        icon: str | None = None,
-        colour: str | None = None,
-        end_time: datetime.datetime | None = None,
+        end_time: datetime.datetime | None,
     ) -> None:
         self.name = name
         self.slug = name.lower().replace(" ", "-")
