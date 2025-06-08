@@ -20,6 +20,8 @@ pipenv run python build_scss.py
 pipenv run flask --app fulcrum run
 ```
 
+Note some computers may require `python -m pipvenv ...` instead of pipenv
+
 For production, use a gunicorn server:
 
 ```bash
