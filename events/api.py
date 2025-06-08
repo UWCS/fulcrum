@@ -43,11 +43,15 @@ def get_event_by_id(event_id: int) -> tuple[Response, int]:
 @events_api_bp.route("/<int:year>/<int:term>/<int:week>", methods=["GET"])
 def get_events_year_term_week(year: int, term: int, week: int) -> tuple[Response, int]:
     """Get all events for a specific year, term, and week."""
-    events = Event.query.filter(
-        Event.date.has(
-            (Week.academic_year == year) & (Week.term == term) & (Week.week == week)
+    events = (
+        Event.query.filter(
+            Event.date.has(
+                (Week.academic_year == year) & (Week.term == term) & (Week.week == week)
+            )
         )
-    ).all()
+        .order_by(Event.start_time, Event.end_time)  # type: ignore
+        .all()
+    )
 
     if not events:
         return jsonify({"error": "No events found"}), 404
@@ -57,9 +61,13 @@ def get_events_year_term_week(year: int, term: int, week: int) -> tuple[Response
 @events_api_bp.route("/<int:year>/<int:term>/", methods=["GET"])
 def get_events_year_term(year: int, term: int) -> tuple[Response, int]:
     """Get all events for a specific year and term."""
-    events = Event.query.filter(
-        Event.date.has((Week.academic_year == year) & (Week.term == term))
-    ).all()
+    events = (
+        Event.query.filter(
+            Event.date.has((Week.academic_year == year) & (Week.term == term))
+        )
+        .order_by(Event.start_time, Event.end_time)  # type: ignore
+        .all()
+    )
 
     if not events:
         return jsonify({"error": "No events found"}), 404
@@ -69,7 +77,11 @@ def get_events_year_term(year: int, term: int) -> tuple[Response, int]:
 @events_api_bp.route("/<int:year>/", methods=["GET"])
 def get_events_year(year: int) -> tuple[Response, int]:
     """Get all events for a specific year."""
-    events = Event.query.filter(Event.date.has(Week.academic_year == year)).all()
+    events = (
+        Event.query.filter(Event.date.has(Week.academic_year == year))
+        .order_by(Event.start_time, Event.end_time)  # type: ignore
+        .all()
+    )
 
     if not events:
         return jsonify({"error": "No events found"}), 404
@@ -236,16 +248,12 @@ def get_week_from_date(date: datetime) -> Week | None:
             with Path("olddates.json").open("r") as f:
                 old_dates = load(f)
             for w in old_dates:
-                if (
-                    datetime.strptime(w["start_date"], "%Y-%m-%d").date()
-                    <= date.date()
-                    <= datetime.strptime(w["end_date"], "%Y-%m-%d").date()
-                ):
+                if datetime.strptime(w["date"], "%Y-%m-%d").date() <= date.date():
                     week = Week(
                         academic_year=year,
                         term=w["term"],
                         week=w["week"],
-                        start_date=datetime.strptime(w["start_date"], "%Y-%m-%d"),
+                        start_date=datetime.strptime(w["date"], "%Y-%m-%d"),
                     )
                     db.session.add(week)
                     db.session.commit()
@@ -315,6 +323,24 @@ def create_repeat_event() -> tuple[Response, int]:
         clean_weeks()
         clean_tags()
         return jsonify({"error": str(e)}), 400
+
+
+@events_api_bp.route("/week/<str:date_str>", methods=["GET"])
+def get_week_by_date(date_str: str) -> tuple[Response, int]:
+    """Get the week for a specific date"""
+    try:
+        date = datetime.fromisoformat(date_str)
+    except ValueError:
+        return jsonify({"error": "Invalid date format"}), 400
+
+    week = Week.query.filter(
+        (date >= Week.start_date) & (date <= Week.end_date)  # type: ignore
+    ).first()
+
+    if not week:
+        return jsonify({"error": "Week not found"}), 404
+
+    return jsonify(week.to_dict()), 200
 
 
 @events_api_bp.route("/<int:event_id>", methods=["PATCH"])
@@ -416,7 +442,21 @@ def clean_tags() -> None:
 @events_api_bp.route("/tags", methods=["GET"])
 def get_tags() -> tuple[Response, int]:
     """Get all tags"""
-    tags = Tag.query.all()
+    tags = Tag.query.order_by(Tag.name).all()
     if not tags:
         return jsonify({"error": "No tags found"}), 404
     return jsonify([tag.to_dict() for tag in tags]), 200
+
+
+@events_api_bp.route("/tags/<str:tag_name>", methods=["GET"])
+def get_tag(tag_name: str) -> tuple[Response, int]:
+    """Get all events for a specific tag"""
+    tag = Tag.query.filter_by(name=tag_name).first()
+    if not tag:
+        return jsonify({"error": "Tag not found"}), 404
+
+    # get events associated with the tag
+    events = tag.events.order_by(Event.start_time, Event.end_time).all()
+    if not events:
+        return jsonify({"error": "No events found for this tag"}), 404
+    return jsonify([event.to_dict() for event in events]), 200
