@@ -157,43 +157,40 @@ def create_event(  # noqa: PLR0913
     tags: list[str],
 ) -> Event | str:
     """Create an event"""
-    try:
-        # convert start_time and calculate end_time
-        start_time = pytz.timezone("Europe/London").localize(start_time)
-        end_time = start_time + duration if duration else None
+    # convert start_time and calculate end_time
+    start_time = pytz.timezone("Europe/London").localize(start_time)
+    end_time = start_time + duration if duration else None
 
-        # create the event object
-        event = Event(
-            name=name,
-            description=description,
-            draft=draft,
-            location=location,
-            location_url=location_url,
-            icon=icon,
-            colour=colour,
-            start_time=start_time,
-            end_time=end_time,
-        )
+    # create the event object
+    event = Event(
+        name=name,
+        description=description,
+        draft=draft,
+        location=location,
+        location_url=location_url,
+        icon=icon,
+        colour=colour,
+        start_time=start_time,
+        end_time=end_time,
+    )
 
-        # attach week to the event
-        event.date = get_week_from_date(start_time)  # type: ignore
+    # attach week to the event
+    event.date = get_week_from_date(start_time)  # type: ignore
 
-        # attach tags to the event
-        # check all tags exist, create if not
-        for tag in tags:
-            tag_obj = Tag.query.filter_by(name=tag).first()
-            if not tag_obj:
-                tag_obj = Tag(name=tag)
-                db.session.add(tag_obj)
-            event.tags.append(tag_obj)
+    # attach tags to the event
+    # check all tags exist, create if not
+    for tag in tags:
+        tag_obj = Tag.query.filter_by(name=tag).first()
+        if not tag_obj:
+            tag_obj = Tag(name=tag)
+            db.session.add(tag_obj)
+        event.tags.append(tag_obj)
 
-        # add the event to the session and commit
-        db.session.add(event)
-        db.session.commit()
+    # add the event to the session and commit
+    db.session.add(event)
+    db.session.commit()
 
-        return event
-    except (KeyError, ValueError) as e:
-        return str(e)
+    return event
 
 
 def get_week_from_date(date: datetime) -> Week | None:
@@ -264,7 +261,7 @@ def get_week_from_date(date: datetime) -> Week | None:
 
 @events_api_bp.route("/create_repeat", methods=["POST"])
 @is_exec_wrapper
-def create_repeat_event() -> tuple[Response, int]:
+def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
     """Create a bunch of events at once"""
     data = request.get_json()
     if not data:
@@ -281,48 +278,91 @@ def create_repeat_event() -> tuple[Response, int]:
         if field not in data:
             return jsonify({"error": f"Missing required field: {field}"}), 400
 
-    ids = []
+    if "duration" in data:
+        try:
+            days, hours, minutes = map(int, data["duration"].split(":"))
+            duration = timedelta(days=days, hours=hours, minutes=minutes)
+        except ValueError:
+            return (
+                jsonify(
+                    {"error": "Invalid duration format, expected 'days:hours:minutes'"}
+                ),
+                400,
+            )
+
+    start_times = []
+    for start_time_str in data["start_times"]:
+        try:
+            start_time = pytz.timezone("Europe/London").localize(
+                datetime.fromisoformat(start_time_str)
+            )
+        except ValueError:
+            return (
+                jsonify({"error": f"Invalid start time format: {start_time_str}"}),
+                400,
+            )
+        start_times.append(start_time)
+
     try:
-        # loop through start_times and create events
-        for start_time in data["start_times"]:
-            formatted_start_time = pytz.timezone("Europe/London").localize(
-                datetime.fromisoformat(start_time)
-            )
-            duration = timedelta(
-                days=data.get("duration_days", 0),
-                hours=data.get("duration_hours", 0),
-                minutes=data.get("duration_minutes", 0),
-            )
-            event = create_event(
-                data["name"],
-                data["description"],
-                data.get("draft", False),
-                data["location"],
-                data.get("location_url"),
-                data.get("icon"),
-                data.get("colour"),
-                formatted_start_time,
-                duration,
-                data.get("tags", []),
-            )
-            if isinstance(event, str):
-                # rollback any created events
-                for id in ids:
-                    db.session.delete(Event.query.get(id))
-                db.session.commit()
-                clean_weeks()
-                clean_tags()
-                return jsonify({"error": event}), 400
-            ids.append(event.id)
-        return jsonify({"message": "Events created successfully", "ids": ids}), 201
+        events = create_repeat_event(
+            data["name"],
+            data["description"],
+            data.get("draft", False),
+            data["location"],
+            data.get("location_url"),
+            data.get("icon"),
+            data.get("colour"),
+            start_times,
+            duration,  # type: ignore
+            data.get("tags", []),
+        )
+        if isinstance(events, str):
+            return jsonify({"error": events}), 400
+        return jsonify([event.to_dict() for event in events]), 201
     except (KeyError, ValueError) as e:
-        # rollback any created events
-        for id in ids:
-            db.session.delete(Event.query.get(id))
-        db.session.commit()
-        clean_weeks()
-        clean_tags()
         return jsonify({"error": str(e)}), 400
+
+
+def create_repeat_event(  # noqa: PLR0913
+    name: str,
+    description: str,
+    draft: bool,
+    location: str,
+    location_url: str | None,
+    icon: str | None,
+    colour: str | None,
+    start_times: list[datetime],
+    duration: timedelta | None,
+    tags: list[str],
+) -> list[Event] | str:
+    """Create multiple events at once"""
+    events = []  # the created events
+    for start_time in start_times:
+        # iterate through start_times and create events
+        event = create_event(
+            name,
+            description,
+            draft,
+            location,
+            location_url,
+            icon,
+            colour,
+            start_time,
+            duration,
+            tags,
+        )
+
+        if isinstance(event, str):
+            # rollback any created events if an error occurs
+            for event in events:
+                db.session.delete(event)
+            db.session.commit()
+            clean_weeks()
+            clean_tags()
+            return event
+
+        events.append(event)
+    return events
 
 
 @events_api_bp.route("/week/<str:date_str>", methods=["GET"])
@@ -365,13 +405,19 @@ def edit_event(event_id: int) -> tuple[Response, int]:
         event.start_time = pytz.timezone("Europe/London").localize(
             datetime.fromisoformat(data.get("start_time", event.start_time.isoformat()))
         )
-        event.end_time = (
-            pytz.timezone("Europe/London").localize(
-                datetime.fromisoformat(data.get("end_time", event.end_time.isoformat()))
-            )
-            if "end_time" in data
-            else None
-        )
+        if "duration" in data:
+            try:
+                days, hours, minutes = map(int, data["duration"].split(":"))
+                event.duration = timedelta(days=days, hours=hours, minutes=minutes)
+            except ValueError:
+                return (
+                    jsonify(
+                        {
+                            "error": "Invalid duration format, expected 'days:hours:minutes'"
+                        }
+                    ),
+                    400,
+                )
 
         # update week if start_time has changed
         if "start_time" in data:
