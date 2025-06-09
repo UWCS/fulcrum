@@ -88,6 +88,15 @@ def get_events_year(year: int) -> tuple[Response, int]:
     return jsonify([event.to_dict() for event in events]), 200
 
 
+def get_duration_from_string(duration_str: str) -> timedelta | str:
+    """Convert a duration string in the format 'days:hours:minutes' to a timedelta."""
+    try:
+        days, hours, minutes = map(int, duration_str.split(":"))
+        return timedelta(days=days, hours=hours, minutes=minutes)
+    except ValueError:
+        return "Invalid duration format, expected 'days:hours:minutes'"
+
+
 @events_api_bp.route("/create", methods=["POST"])
 @is_exec_wrapper
 def create_event_api() -> tuple[Response, int]:
@@ -111,16 +120,9 @@ def create_event_api() -> tuple[Response, int]:
         datetime.fromisoformat(data["start_time"])
     )
     if "duration" in data:
-        try:
-            days, hours, minutes = map(int, data["duration"].split(":"))
-            duration = timedelta(days=days, hours=hours, minutes=minutes)
-        except ValueError:
-            return (
-                jsonify(
-                    {"error": "Invalid duration format, expected 'days:hours:minutes'"}
-                ),
-                400,
-            )
+        duration = get_duration_from_string(data["duration"])
+        if isinstance(duration, str):
+            return jsonify({"error": duration}), 400
     else:
         duration = None
 
@@ -212,15 +214,18 @@ def get_week_from_date(date: datetime) -> Week | None:
             # fetch the term dates from the Warwick API
 
             warwick_week = requests.get(
-                f"https://tabula.warwick.ac.uk/api/v1/termdates/{year}/weeks?numberingSystem=term"
+                f"https://tabula.warwick.ac.uk/api/v1/termdates/{year}/weeks?numberingSystem=term",
+                timeout=5,
             ).json()
 
             for w in warwick_week["weeks"]:
-                if (
-                    datetime.strptime(w["startDate"], "%Y-%m-%d").date()
-                    <= date.date()
-                    <= datetime.strptime(w["endDate"], "%Y-%m-%d").date()
-                ):
+                start_date = datetime.strptime(w["startDate"], "%Y-%m-%d").replace(
+                    tzinfo=pytz.timezone("Europe/London")
+                )
+                end_date = datetime.strptime(w["endDate"], "%Y-%m-%d").replace(
+                    tzinfo=pytz.timezone("Europe/London")
+                )
+                if start_date.date() <= date.date() <= end_date.date():
                     name = w["name"]
                     if "Term" in name:
                         parts = name.split(",")
@@ -234,7 +239,7 @@ def get_week_from_date(date: datetime) -> Week | None:
                         academic_year=year,
                         term=term_num,
                         week=week_num,
-                        start_date=datetime.strptime(w["startDate"], "%Y-%m-%d"),
+                        start_date=start_date,
                     )
 
                     db.session.add(week)
@@ -245,12 +250,15 @@ def get_week_from_date(date: datetime) -> Week | None:
             with Path("olddates.json").open("r") as f:
                 old_dates = load(f)
             for w in old_dates:
-                if datetime.strptime(w["date"], "%Y-%m-%d").date() <= date.date():
+                start_date = datetime.strptime(w["start_date"], "%Y-%m-%d").replace(
+                    tzinfo=pytz.timezone("Europe/London")
+                )
+                if start_date.date() <= date.date():
                     week = Week(
                         academic_year=year,
                         term=w["term"],
                         week=w["week"],
-                        start_date=datetime.strptime(w["date"], "%Y-%m-%d"),
+                        start_date=start_date,
                     )
                     db.session.add(week)
                     db.session.commit()
@@ -279,16 +287,11 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
             return jsonify({"error": f"Missing required field: {field}"}), 400
 
     if "duration" in data:
-        try:
-            days, hours, minutes = map(int, data["duration"].split(":"))
-            duration = timedelta(days=days, hours=hours, minutes=minutes)
-        except ValueError:
-            return (
-                jsonify(
-                    {"error": "Invalid duration format, expected 'days:hours:minutes'"}
-                ),
-                400,
-            )
+        duration = get_duration_from_string(data["duration"])
+        if isinstance(duration, str):
+            return jsonify({"error": duration}), 400
+    else:
+        duration = None
 
     start_times = []
     for start_time_str in data["start_times"]:
@@ -406,18 +409,10 @@ def edit_event(event_id: int) -> tuple[Response, int]:
             datetime.fromisoformat(data.get("start_time", event.start_time.isoformat()))
         )
         if "duration" in data:
-            try:
-                days, hours, minutes = map(int, data["duration"].split(":"))
-                event.duration = timedelta(days=days, hours=hours, minutes=minutes)
-            except ValueError:
-                return (
-                    jsonify(
-                        {
-                            "error": "Invalid duration format, expected 'days:hours:minutes'"
-                        }
-                    ),
-                    400,
-                )
+            duration = get_duration_from_string(data["duration"])
+            if isinstance(duration, str):
+                return jsonify({"error": duration}), 400
+            event.end_time = event.start_time + duration
 
         # update week if start_time has changed
         if "start_time" in data:
