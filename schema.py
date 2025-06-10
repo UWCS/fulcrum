@@ -16,6 +16,10 @@ def initialise_db(app: Flask) -> None:
 
     db.init_app(app)
 
+    # create the database tables if they don't exist
+    with app.app_context():
+        db.create_all()
+
 
 class Event(db.Model):
     """Model for an event"""
@@ -173,3 +177,38 @@ event_tags = db.Table(
     db.Column("event_id", db.Integer, db.ForeignKey("events.id"), primary_key=True),
     db.Column("tag_id", db.Integer, db.ForeignKey("tags.id"), primary_key=True),
 )
+
+
+class APIKey(db.Model):
+    """Model for an API key"""
+
+    __tablename__ = "api_keys"
+
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String, unique=True, nullable=False)
+    owner = db.Column(db.String, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
+    active = db.Column(db.Boolean, default=True)
+
+    def __init__(self, key: str, owner: str) -> None:
+        self.key = key
+        self.owner = owner
+        self.created_at = datetime.datetime.now(pytz.timezone("Europe/London"))
+        self.active = True
+
+    def __repr__(self) -> str:
+        return f"<APIKey {self.key} (ID: {self.id}) owned by {self.owner}>"
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "key": self.key,
+            "owner": self.owner,
+            "created_at": self.created_at.isoformat(),
+            "active": self.active,
+        }
+
+    def deactivate(self) -> None:
+        """Deactivate the API key"""
+        self.active = False
+        db.session.commit()

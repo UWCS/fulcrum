@@ -5,9 +5,9 @@ from pathlib import Path
 import pytz
 import requests
 from flask import Blueprint, Response, jsonify, request
-from schema import Event, Tag, Week, db
 
-from auth.auth import is_exec_wrapper
+from auth.auth import valid_api_auth
+from schema import Event, Tag, Week, db
 
 # bind endpoints to /api/events/...
 events_api_bp = Blueprint("events", __name__, url_prefix="/api/events")
@@ -108,7 +108,7 @@ def get_datetime_from_string(date_str: str) -> datetime | str:
 
 
 @events_api_bp.route("/create", methods=["POST"])
-@is_exec_wrapper
+@valid_api_auth
 def create_event_api() -> tuple[Response, int]:  # noqa: PLR0911
     """Create a new event"""
     data = request.get_json()
@@ -295,7 +295,7 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
 
 
 @events_api_bp.route("/create_repeat", methods=["POST"])
-@is_exec_wrapper
+@valid_api_auth
 def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
     """Create a bunch of events at once"""
     data = request.get_json()
@@ -420,7 +420,7 @@ def get_week_by_date(date_str: str) -> tuple[Response, int]:
 
 
 @events_api_bp.route("/<int:event_id>", methods=["PATCH"])
-@is_exec_wrapper
+@valid_api_auth
 def edit_event(event_id: int) -> tuple[Response, int]:  # noqa: PLR0911, PLR0912
     """Edit an existing event"""
     event = Event.query.get(event_id)
@@ -488,7 +488,7 @@ def edit_event(event_id: int) -> tuple[Response, int]:  # noqa: PLR0911, PLR0912
 
 
 @events_api_bp.route("/<int:event_id>", methods=["DELETE"])
-@is_exec_wrapper
+@valid_api_auth
 def delete_event(event_id: int) -> tuple[Response, int]:
     """Delete an existing event"""
     event = Event.query.get(event_id)

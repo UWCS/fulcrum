@@ -6,6 +6,7 @@ from flask import Flask, render_template
 
 from auth.auth import auth_bp, configure_oauth, is_exec, is_logged_in
 from events.api import events_api_bp
+from schema import initialise_db
 
 # if .env file exists, load it
 if Path(".env").exists():
@@ -14,6 +15,9 @@ if Path(".env").exists():
 # initialise flask app
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
+
+# initialise database
+initialise_db(app)
 
 # setup oauth and add routes
 configure_oauth(app)
