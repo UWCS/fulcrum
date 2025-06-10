@@ -97,9 +97,19 @@ def get_duration_from_string(duration_str: str) -> timedelta | str:
         return "Invalid duration format, expected 'days:hours:minutes'"
 
 
+def get_datetime_from_string(date_str: str) -> datetime | str:
+    """Convert a date string in the format 'YYYY-MM-DD' to a datetime object."""
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").replace(
+            tzinfo=pytz.timezone("Europe/London")
+        )
+    except ValueError:
+        return "Invalid date format, expected 'YYYY-MM-DD'"
+
+
 @events_api_bp.route("/create", methods=["POST"])
 @is_exec_wrapper
-def create_event_api() -> tuple[Response, int]:
+def create_event_api() -> tuple[Response, int]:  # noqa: PLR0911
     """Create a new event"""
     data = request.get_json()
     if not data:
@@ -116,9 +126,16 @@ def create_event_api() -> tuple[Response, int]:
         if field not in data:
             return jsonify({"error": f"Missing required field: {field}"}), 400
 
-    start_time = pytz.timezone("Europe/London").localize(
-        datetime.fromisoformat(data["start_time"])
+    start_time = get_datetime_from_string(data["start_time"])
+    if isinstance(start_time, str):
+        return jsonify({"error": start_time}), 400
+
+    end_time = (
+        get_datetime_from_string(data.get("end_time")) if data.get("end_time") else None
     )
+    if isinstance(end_time, str):
+        return jsonify({"error": end_time}), 400
+
     if "duration" in data:
         duration = get_duration_from_string(data["duration"])
         if isinstance(duration, str):
@@ -137,6 +154,7 @@ def create_event_api() -> tuple[Response, int]:
             data.get("colour"),
             start_time,
             duration,
+            end_time,
             data.get("tags", []),
         )
         if isinstance(event, str):
@@ -156,12 +174,21 @@ def create_event(  # noqa: PLR0913
     colour: str | None,
     start_time: datetime,
     duration: timedelta | None,
+    end_time: datetime | None,
     tags: list[str],
 ) -> Event | str:
     """Create an event"""
-    # convert start_time and calculate end_time
+    # convert start_time and normalise end_time
     start_time = pytz.timezone("Europe/London").localize(start_time)
-    end_time = start_time + duration if duration else None
+
+    if end_time is None:
+        end_time = start_time + duration if duration else None
+    else:
+        end_time = pytz.timezone("Europe/London").localize(end_time)
+        if duration is not None and end_time != start_time + duration:
+            return "End time does not match the duration"
+    if end_time and end_time < start_time:
+        return "End time cannot be before start time"
 
     # create the event object
     event = Event(
@@ -195,7 +222,7 @@ def create_event(  # noqa: PLR0913
     return event
 
 
-def get_week_from_date(date: datetime) -> Week | None:
+def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
     """Get the week from a given date"""
 
     week = Week.query.filter(
@@ -219,12 +246,12 @@ def get_week_from_date(date: datetime) -> Week | None:
             ).json()
 
             for w in warwick_week["weeks"]:
-                start_date = datetime.strptime(w["startDate"], "%Y-%m-%d").replace(
-                    tzinfo=pytz.timezone("Europe/London")
-                )
-                end_date = datetime.strptime(w["endDate"], "%Y-%m-%d").replace(
-                    tzinfo=pytz.timezone("Europe/London")
-                )
+                start_date = get_datetime_from_string(w["startDate"])
+                if isinstance(start_date, str):
+                    return None
+                end_date = get_datetime_from_string(w["endDate"])
+                if isinstance(end_date, str):
+                    return None
                 if start_date.date() <= date.date() <= end_date.date():
                     name = w["name"]
                     if "Term" in name:
@@ -250,9 +277,9 @@ def get_week_from_date(date: datetime) -> Week | None:
             with Path("olddates.json").open("r") as f:
                 old_dates = load(f)
             for w in old_dates:
-                start_date = datetime.strptime(w["start_date"], "%Y-%m-%d").replace(
-                    tzinfo=pytz.timezone("Europe/London")
-                )
+                start_date = get_datetime_from_string(w["startDate"])
+                if isinstance(start_date, str):
+                    return None
                 if start_date.date() <= date.date():
                     week = Week(
                         academic_year=year,
@@ -295,16 +322,17 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
 
     start_times = []
     for start_time_str in data["start_times"]:
-        try:
-            start_time = pytz.timezone("Europe/London").localize(
-                datetime.fromisoformat(start_time_str)
-            )
-        except ValueError:
-            return (
-                jsonify({"error": f"Invalid start time format: {start_time_str}"}),
-                400,
-            )
+        start_time = get_datetime_from_string(start_time_str)
+        if isinstance(start_time, str):
+            return jsonify({"error": start_time}), 400
         start_times.append(start_time)
+
+    end_times = []
+    for end_time_str in data.get("end_times", []):
+        end_time = get_datetime_from_string(end_time_str)
+        if isinstance(end_time, str):
+            return jsonify({"error": end_time}), 400
+        end_times.append(end_time)
 
     try:
         events = create_repeat_event(
@@ -317,6 +345,7 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
             data.get("colour"),
             start_times,
             duration,  # type: ignore
+            end_times,
             data.get("tags", []),
         )
         if isinstance(events, str):
@@ -336,11 +365,14 @@ def create_repeat_event(  # noqa: PLR0913
     colour: str | None,
     start_times: list[datetime],
     duration: timedelta | None,
+    end_times: list[datetime] | None,
     tags: list[str],
 ) -> list[Event] | str:
     """Create multiple events at once"""
     events = []  # the created events
-    for start_time in start_times:
+    for start_time, end_time in zip(
+        start_times, end_times or [None] * len(start_times)
+    ):
         # iterate through start_times and create events
         event = create_event(
             name,
@@ -352,6 +384,7 @@ def create_repeat_event(  # noqa: PLR0913
             colour,
             start_time,
             duration,
+            end_time,
             tags,
         )
 
@@ -388,7 +421,7 @@ def get_week_by_date(date_str: str) -> tuple[Response, int]:
 
 @events_api_bp.route("/<int:event_id>", methods=["PATCH"])
 @is_exec_wrapper
-def edit_event(event_id: int) -> tuple[Response, int]:
+def edit_event(event_id: int) -> tuple[Response, int]:  # noqa: PLR0911, PLR0912
     """Edit an existing event"""
     event = Event.query.get(event_id)
     if not event:
@@ -408,11 +441,22 @@ def edit_event(event_id: int) -> tuple[Response, int]:
         event.start_time = pytz.timezone("Europe/London").localize(
             datetime.fromisoformat(data.get("start_time", event.start_time.isoformat()))
         )
+
+        # update end_time (with duration logic)
+        if "end_time" in data:
+            end_time = get_datetime_from_string(data["end_time"])
+            if isinstance(end_time, str):
+                return jsonify({"error": end_time}), 400
+            event.end_time = end_time
+
         if "duration" in data:
             duration = get_duration_from_string(data["duration"])
             if isinstance(duration, str):
                 return jsonify({"error": duration}), 400
-            event.end_time = event.start_time + duration
+            if event.end_time is None:
+                event.end_time = event.start_time + duration
+            elif event.end_time != event.start_time + duration:
+                return jsonify({"error": "End time does not match the duration"}), 400
 
         # update week if start_time has changed
         if "start_time" in data:
