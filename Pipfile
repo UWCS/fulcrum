@@ -12,6 +12,7 @@ authlib = "*"
 dotenv = "*"
 flask-sqlalchemy = "*"
 pytz = "*"
+flasgger = "*"
 
 [dev-packages]
 

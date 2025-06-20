@@ -1,0 +1,156 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Fulcrum API",
+        "description": "This API exists to allow for external application to create and manage events\n\nWhilst the majority of the API is public, some endpoints require authentication.\n\nAuthentication is done via a key, please contact a member of tech-team to obtain one.",
+        "version": "1.0.0"
+    },
+    "securityDefinitions": {
+        "ApiKey": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "Authorization",
+            "description": "API Key for authentication"
+        }
+    },
+    "security": [
+        {
+            "ApiKey": []
+        }
+    ],
+    "basePath": "/api",
+    "definitions": {
+        "Week": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "description": "Unique identifier for the week"
+                },
+                "academic_year": {
+                    "type": "integer",
+                    "description": "The start year of the academic year (2024 for 2024-2025)"
+                },
+                "term": {
+                    "type": "integer",
+                    "description": "The term in the academic year (1, 2, or 3)"
+                },
+                "week": {
+                    "type": "integer",
+                    "description": "The week number in the term (note welcome week is week 0 of term 1)"
+                },
+                "start_date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Start date of the week"
+                },
+                "end_date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "End date of the week"
+                }
+            }
+        },
+        "Tag": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "description": "Unique identifier for the tag"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name of the tag"
+                }
+            }
+        },
+        "Event": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "description": "Unique identifier for the event"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name of the event"
+                },
+                "slug": {
+                    "type": "string",
+                    "description": "URL-friendly identifier for the event"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description of the event"
+                },
+                "draft": {
+                    "type": "boolean",
+                    "description": "Whether the event is a draft"
+                },
+                "location": {
+                    "type": "string",
+                    "description": "Location of the event"
+                },
+                "location_url": {
+                    "type": "string",
+                    "description": "URL for the event location"
+                },
+                "icon": {
+                    "type": "string",
+                    "description": "Icon for the event"
+                },
+                "colour": {
+                    "type": "string",
+                    "description": "Colour associated with the event"
+                },
+                "start_time": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Start time of the event"
+                },
+                "end_time": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "End time of the event"
+                },
+                "date": {
+                    "$ref": "#/definitions/Week",
+                    "description": "The week in which the event occurs"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Tag"
+                    },
+                    "description": "List of tags associated with the event"
+                }
+            }
+        },
+        "ApiKey": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "description": "Unique identifier for the API key"
+                },
+                "key": {
+                    "type": "string",
+                    "description": "The hashed API key value"
+                },
+                "owner": {
+                    "type": "string",
+                    "description": "Owner of the API key"
+                },
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Creation date and time of the API key"
+                },
+                "active": {
+                    "type": "boolean",
+                    "description": "Whether the API key is active"
+                }
+            }
+        }
+    }
+}

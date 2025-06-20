@@ -1,10 +1,13 @@
 import os
+from json import load
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, render_template
+from flasgger import Swagger
+from flask import Flask, redirect, render_template
+from werkzeug.wrappers import Response
 
-from auth.auth import auth_bp, configure_oauth, is_exec, is_logged_in
+from auth.auth import auth_api_bp, auth_bp, configure_oauth, is_exec, is_logged_in
 from events.api import events_api_bp
 from schema import initialise_db
 
@@ -25,6 +28,18 @@ app.register_blueprint(auth_bp)
 
 # add api routes
 app.register_blueprint(events_api_bp, url_prefix="/api/events")
+app.register_blueprint(auth_api_bp, url_prefix="/api/auth")
+
+# setup Swagger
+with Path("swagger.json").open("r") as f:
+    swagger = Swagger(app, template=load(f))
+
+
+@app.route("/api/")
+@app.route("/docs/")
+def redirect_to_docs() -> Response:
+    """Redirect to the Swagger documentation"""
+    return redirect("/apidocs/")
 
 
 @app.route("/")

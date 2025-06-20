@@ -9,9 +9,9 @@ db = SQLAlchemy()
 
 
 def initialise_db(app: Flask) -> None:
-    """Initialises the database for events"""
+    """Initialises the database"""
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///volume/events.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///../volume/fulcrum.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
@@ -19,6 +19,54 @@ def initialise_db(app: Flask) -> None:
     # create the database tables if they don't exist
     with app.app_context():
         db.create_all()
+
+
+class Week(db.Model):
+    """Model for a week in the academic calendar"""
+
+    __tablename__ = "weeks"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # the start year of the academic year, for example 2022 for 2022-2023
+    academic_year = db.Column(db.Integer, nullable=False)
+    term = db.Column(db.Integer, nullable=False)
+    week = db.Column(db.Integer, nullable=False)
+
+    # store end dates as well, as they are useful for querying
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+
+    # enforce no duplicate weeks
+    __table_args__ = (
+        db.UniqueConstraint("academic_year", "term", "week", name="unique_week"),
+    )
+
+    def __init__(
+        self, academic_year: int, term: int, week: int, start_date: datetime.date
+    ) -> None:
+        self.academic_year = academic_year
+        self.term = term
+        self.week = week
+        self.start_date = start_date
+        # end date is 6 days after the start date (counter-intuitive i know)
+        self.end_date = start_date + datetime.timedelta(days=6)
+
+    def __repr__(self) -> str:
+        return (
+            f"<Week {self.academic_year}-{self.term}-{self.week} "
+            f"({self.start_date} to {self.end_date})>"
+        )
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "academic_year": self.academic_year,
+            "term": self.term,
+            "week": self.week,
+            "start_date": self.start_date,
+            "end_date": self.end_date,
+        }
 
 
 class Event(db.Model):
@@ -52,8 +100,8 @@ class Event(db.Model):
     date = db.relationship(
         "Week",
         primaryjoin=and_(
-            func.date(start_time) >= func.date(Week.start_date),  # type: ignore  # noqa: F821
-            func.date(start_time) <= func.date(Week.end_date),  # type: ignore  # noqa: F821
+            func.date(start_time) >= func.date(Week.start_date),
+            func.date(start_time) <= func.date(Week.end_date),
         ),
         viewonly=True,
         uselist=False,
@@ -108,53 +156,13 @@ class Event(db.Model):
             "location_url": self.location_url,
             "icon": self.icon,
             "colour": self.colour,
-            "start_time": self.start_time.isoformat(),
-            "end_time": self.end_time.isoformat() if self.end_time else None,
-            "date": {
-                "year": self.date.academic_year,
-                "term": self.date.term,
-                "week": self.date.week,
-            },
-            "tags": [tag.name for tag in self.tags.all()],
+            "start_time": self.start_time.isoformat("T", "minutes"),
+            "end_time": (
+                self.end_time.isoformat("T", "minutes") if self.end_time else None
+            ),
+            "date": self.date.to_dict() if self.date else None,
+            "tags": [tag.to_dict() for tag in self.tags.all()],
         }
-
-
-class Week(db.Model):
-    """Model for a week in the academic calendar"""
-
-    __tablename__ = "weeks"
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    # the start year of the academic year, for example 2022 for 2022-2023
-    academic_year = db.Column(db.Integer, nullable=False)
-    term = db.Column(db.Integer, nullable=False)
-    week = db.Column(db.Integer, nullable=False)
-
-    # store end dates as well, as they are useful for querying
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
-
-    # enforce no duplicate weeks
-    __table_args__ = (
-        db.UniqueConstraint("academic_year", "term", "week", name="unique_week"),
-    )
-
-    def __init__(
-        self, academic_year: int, term: int, week: int, start_date: datetime.date
-    ) -> None:
-        self.academic_year = academic_year
-        self.term = term
-        self.week = week
-        self.start_date = start_date
-        # end date is 6 days after the start date (counter-intuitive i know)
-        self.end_date = start_date + datetime.timedelta(days=6)
-
-    def __repr__(self) -> str:
-        return (
-            f"<Week {self.academic_year}-{self.term}-{self.week} "
-            f"({self.start_date} to {self.end_date})>"
-        )
 
 
 class Tag(db.Model):
@@ -170,6 +178,12 @@ class Tag(db.Model):
 
     def __repr__(self) -> str:
         return f"<Tag {self.name} (ID: {self.id})>"
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+        }
 
 
 event_tags = db.Table(
@@ -204,7 +218,7 @@ class APIKey(db.Model):
             "id": self.id,
             "key": self.key,
             "owner": self.owner,
-            "created_at": self.created_at.isoformat(),
+            "created_at": self.created_at.isoformat("T", "minutes"),
             "active": self.active,
         }
 
