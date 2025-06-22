@@ -37,6 +37,7 @@ with Path("swagger.json").open("r") as f:
 
 @app.route("/api/")
 @app.route("/docs/")
+@app.route("/api/docs/")
 def redirect_to_docs() -> Response:
     """Redirect to the Swagger documentation"""
     return redirect("/apidocs/")
