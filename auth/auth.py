@@ -80,12 +80,12 @@ def auth() -> Response:
 def logout() -> Response:
     if "id_token" in session:
         # save token id for logout
-        token_id = session["id_token"]
+        id_token = session["id_token"]
         session.clear()
         return redirect(
             "https://auth.uwcs.co.uk/realms/uwcs/protocol/openid-connect/logout"
             + f"?post_logout_redirect_uri{url_for('index', _external=True)}"
-            + f"&id_token_hint={token_id}"
+            + f"&id_token_hint={id_token}"
         )
     # if no id token, just clear session and redirect to index
     session.clear()
@@ -150,7 +150,10 @@ def valid_api_auth(f: Callable) -> Callable:
         # american spelling for convention
         api_key = request.headers.get("Authorization")
         if not api_key or not is_valid_api_key(api_key):
-            return abort(403, "Invalid API key or not authorised.")
+            return abort(
+                403,
+                "Invalid API key or not authorised. If you think this is a mistake, please contact a tech officer.",  # noqa: E501
+            )
         return f(*args, **kwargs)
 
     return decorated_function
@@ -162,7 +165,24 @@ auth_api_bp = Blueprint("auth_api", __name__, url_prefix="/api/auth")
 @auth_api_bp.route("/create", methods=["POST"])
 @is_exec_wrapper
 def create_api_key_api() -> tuple[Response, int]:
-    """Create a new API key"""
+    """Create a new API key
+    ---
+    parameters:
+      - name: owner
+        in: body
+        type: string
+        description: Owner of the API key
+        required: true
+    responses:
+        201:
+            description: API key created successfully
+            schema:
+                $ref: '#/definitions/APIKey'
+        400:
+            description: Bad request, owner is required
+        403:
+            description: Forbidden.
+    """
     data = request.get_json()
     if not data or "owner" not in data:
         return jsonify({"error": "Owner is required"}), 400
@@ -172,7 +192,24 @@ def create_api_key_api() -> tuple[Response, int]:
 @auth_api_bp.route("/<int:key_id>", methods=["GET"])
 @is_exec_wrapper
 def get_api_key_api(key_id: int) -> tuple[Response, int]:
-    """Get an API key by its ID"""
+    """Get an API key by its ID
+    ---
+    parameters:
+      - in: path
+        name: key_id
+        type: integer
+        required: true
+        description: The ID of the API key to retrieve
+    responses:
+        200:
+            description: API key retrieved successfully
+            schema:
+                $ref: '#/definitions/APIKey'
+        404:
+            description: API key not found
+        403:
+            description: Forbidden.
+    """
     api_key = get_api_key(key_id)
     if not api_key:
         return jsonify({"error": "API key not found"}), 404
@@ -182,7 +219,24 @@ def get_api_key_api(key_id: int) -> tuple[Response, int]:
 @auth_api_bp.route("/disable/<int:key_id>", methods=["POST"])
 @is_exec_wrapper
 def disable_api_key_api(key_id: int) -> tuple[Response, int]:
-    """Disable an API key by its ID"""
+    """Disable an API key by its ID
+    ---
+    parameters:
+      - in: path
+        name: key_id
+        type: integer
+        required: true
+        description: The ID of the API key to disable
+    responses:
+        200:
+            description: API key disabled successfully
+            schema:
+                $ref: '#/definitions/APIKey'
+        404:
+            description: API key not found
+        403:
+            description: Forbidden.
+    """
     api_key = disable_api_key(key_id)
     if not api_key:
         return jsonify({"error": "API key not found"}), 404
@@ -192,5 +246,16 @@ def disable_api_key_api(key_id: int) -> tuple[Response, int]:
 @auth_api_bp.route("/keys", methods=["GET"])
 @is_exec_wrapper
 def get_api_keys_api() -> tuple[Response, int]:
-    """Get all API keys"""
+    """Get all API keys
+    ---
+    responses:
+        200:
+            description: List of all API keys
+            schema:
+                type: array
+                items:
+                    $ref: '#/definitions/APIKey'
+        403:
+            description: Forbidden.
+    """
     return jsonify(get_api_keys()), 200

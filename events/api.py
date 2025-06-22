@@ -13,9 +13,40 @@ from schema import Event, Tag, Week, db
 events_api_bp = Blueprint("events", __name__, url_prefix="/api/events")
 
 
-@events_api_bp.route("/<int:year>/<int:term>/<int:week>/<str:slug>", methods=["GET"])
+@events_api_bp.route("/<int:year>/<int:term>/<int:week>/<string:slug>", methods=["GET"])
 def get_event(year: int, term: int, week: int, slug: str) -> tuple[Response, int]:
-    """Get a specific event by year, term, week, and slug."""
+    """Get a specific event by year, term, week, and slug.
+    ---
+    parameters:
+      - name: year
+        in: path
+        type: integer
+        required: true
+        description: The academic year of the event.
+      - name: term
+        in: path
+        type: integer
+        required: true
+        description: The term of the event.
+      - name: week
+        in: path
+        type: integer
+        required: true
+        description: The week of the event.
+      - name: slug
+        in: path
+        type: string
+        required: true
+        description: The slug of the event.
+    security: []
+    responses:
+        200:
+            description: A JSON object containing the event details.
+            schema:
+                $ref: '#/definitions/Event'
+        404:
+            description: Event not found.
+    """
     event = Event.query.filter(
         Event.date.has(
             (Week.academic_year == year) & (Week.term == term) & (Week.week == week)
@@ -31,7 +62,23 @@ def get_event(year: int, term: int, week: int, slug: str) -> tuple[Response, int
 
 @events_api_bp.route("/<int:event_id>", methods=["GET"])
 def get_event_by_id(event_id: int) -> tuple[Response, int]:
-    """Get a specific event by its ID."""
+    """Get a specific event by its ID.
+    ---
+    parameters:
+      - name: event_id
+        in: path
+        type: integer
+        required: true
+        description: The ID of the event.
+    security: []
+    responses:
+        200:
+            description: A JSON object containing the event details.
+            schema:
+                $ref: '#/definitions/Event'
+        404:
+            description: Event not found.
+    """
     event = Event.query.get(event_id)
 
     if not event:
@@ -41,47 +88,61 @@ def get_event_by_id(event_id: int) -> tuple[Response, int]:
 
 
 @events_api_bp.route("/<int:year>/<int:term>/<int:week>", methods=["GET"])
-def get_events_year_term_week(year: int, term: int, week: int) -> tuple[Response, int]:
-    """Get all events for a specific year, term, and week."""
-    events = (
-        Event.query.filter(
-            Event.date.has(
-                (Week.academic_year == year) & (Week.term == term) & (Week.week == week)
-            )
-        )
-        .order_by(Event.start_time, Event.end_time)  # type: ignore
-        .all()
-    )
+@events_api_bp.route("/<int:year>/<int:term>", methods=["GET"])
+@events_api_bp.route("/<int:year>", methods=["GET"])
+def get_events(
+    year: int, term: int | None = None, week: int | None = None
+) -> tuple[Response, int]:
+    """Get all events for a specific year, term, and week.
+    ---
+    parameters:
+      - name: year
+        in: path
+        type: integer
+        required: true
+        description: The academic year of the events.
+      - name: term
+        in: path
+        type: integer
+        required: false
+        description: The term of the events.
+      - name: week
+        in: path
+        type: integer
+        required: false
+        description: The week of the events.
+      - name: drafts
+        in: query
+        type: boolean
+        required: false
+        default: false
+        description: Whether to include draft events.
+    security: []
+    responses:
+        200:
+            description: A JSON array containing the events.
+            schema:
+                type: array
+                items:
+                    $ref: '#/definitions/Event'
+        404:
+            description: No events found.
+    """
 
-    if not events:
-        return jsonify({"error": "No events found"}), 404
-    return jsonify([event.to_dict() for event in events]), 200
+    include_drafts = request.args.get("drafts", "false").lower() == "true"
 
+    query = Event.query.filter(Event.date.has(Week.academic_year == year))
 
-@events_api_bp.route("/<int:year>/<int:term>/", methods=["GET"])
-def get_events_year_term(year: int, term: int) -> tuple[Response, int]:
-    """Get all events for a specific year and term."""
-    events = (
-        Event.query.filter(
-            Event.date.has((Week.academic_year == year) & (Week.term == term))
-        )
-        .order_by(Event.start_time, Event.end_time)  # type: ignore
-        .all()
-    )
+    if term is not None:
+        query = query.filter(Event.date.has(Week.term == term))
 
-    if not events:
-        return jsonify({"error": "No events found"}), 404
-    return jsonify([event.to_dict() for event in events]), 200
+    if week is not None:
+        query = query.filter(Event.date.has(Week.week == week))
 
+    if not include_drafts:
+        query = query.filter(Event.draft.is_(False))  # type: ignore
 
-@events_api_bp.route("/<int:year>/", methods=["GET"])
-def get_events_year(year: int) -> tuple[Response, int]:
-    """Get all events for a specific year."""
-    events = (
-        Event.query.filter(Event.date.has(Week.academic_year == year))
-        .order_by(Event.start_time, Event.end_time)  # type: ignore
-        .all()
-    )
+    events = query.order_by(Event.start_time, Event.end_time).all()  # type: ignore
 
     if not events:
         return jsonify({"error": "No events found"}), 404
@@ -110,7 +171,80 @@ def get_datetime_from_string(date_str: str) -> datetime | str:
 @events_api_bp.route("/create", methods=["POST"])
 @valid_api_auth
 def create_event_api() -> tuple[Response, int]:  # noqa: PLR0911
-    """Create a new event"""
+    """Create a new event
+    ---
+    parameters:
+      - name: name
+        in: body
+        type: string
+        required: true
+        description: The name of the event.
+      - name: description
+        in: body
+        type: string
+        required: true
+        description: The description of the event.
+      - name: location
+        in: body
+        type: string
+        required: true
+        description: The location of the event.
+      - name: start_time
+        in: body
+        type: string
+        required: true
+        description: The start time of the event in 'YYYY-MM-DD' format.
+      - name: end_time
+        in: body
+        type: string
+        required: false
+        description: The end time of the event in 'YYYY-MM-DD' format (if duration also provided must match the duration).
+      - name: duration
+        in: body
+        type: string
+        required: false
+        description: The duration of the event in 'days:hours:minutes' format (if end_time also provided must match the end_time).
+      - name: draft
+        in: body
+        type: boolean
+        required: false
+        default: false
+        description: Whether the event is a draft.
+      - name: location_url
+        in: body
+        type: string
+        required: false
+        description: The URL for the location of the event.
+      - name: icon
+        in: body
+        type: string
+        required: false
+        description: The icon for the event.
+      - name: colour
+        in: body
+        type: string
+        required: false
+        description: The colour for the event.
+      - name: tags
+        in: body
+        type: array
+        items:
+            type : string
+            example : "tag1"
+            example : "tag2"
+        required: false
+        default: []
+        description: A list of tags associated with the event.
+    responses:
+        201:
+            description: The created event.
+            schema:
+                $ref: '#/definitions/Event'
+        400:
+            description: Bad request, missing or invalid data.
+        403:
+            description: Forbidden.
+    """  # noqa: E501
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
@@ -297,7 +431,90 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
 @events_api_bp.route("/create_repeat", methods=["POST"])
 @valid_api_auth
 def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
-    """Create a bunch of events at once"""
+    """Create a bunch of events at once
+    ---
+    parameters:
+      - name: name
+        in: body
+        type: string
+        required: true
+        description: The name of the event.
+      - name: description
+        in: body
+        type: string
+        required: true
+        description: The description of the event.
+      - name: location
+        in: body
+        type: string
+        required: true
+        description: The location of the event.
+      - name: start_times
+        in: body
+        type: array
+        items:
+          type : string
+          example : "2023-10-01"
+          example : "2023-10-08"
+        required: true
+        description: A list of start times for the events in 'YYYY-MM-DD' format.
+      - name: end_times
+        in: body
+        type: array
+        items:
+          type : string
+          example : "2023-10-01"
+          example : "2023-10-08"
+        required: false
+        description: A list of end times for the events in 'YYYY-MM-DD' format (if duration also provided must match the duration).
+      - name: duration
+        in: body
+        type: string
+        required: false
+        description: The duration of the events in 'days:hours:minutes' format (if end_times also provided must match the end_times).
+      - name: draft
+        in: body
+        type: boolean
+        required: false
+        default: false
+        description: Whether the events are drafts.
+      - name: location_url
+        in: body
+        type: string
+        required: false
+        description: The URL for the location of the events.
+      - name: icon
+        in: body
+        type: string
+        required: false
+        description: The icon for the events.
+      - name: colour
+        in: body
+        type: string
+        required: false
+        description: The colour for the events.
+      - name: tags
+        in: body
+        type: array
+        items:
+          type : string
+          example : "tag1"
+          example : "tag2"
+        required: false
+        default: []
+        description: A list of tags associated with the events.
+    responses:
+        201:
+            description: The created events.
+            schema:
+                type: array
+                items:
+                    $ref: '#/definitions/Event'
+        400:
+            description: Bad request, missing or invalid data.
+        403:
+            description: Forbidden.
+    """  # noqa: E501
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
@@ -401,28 +618,90 @@ def create_repeat_event(  # noqa: PLR0913
     return events
 
 
-@events_api_bp.route("/week/<str:date_str>", methods=["GET"])
-def get_week_by_date(date_str: str) -> tuple[Response, int]:
-    """Get the week for a specific date"""
-    try:
-        date = datetime.fromisoformat(date_str)
-    except ValueError:
-        return jsonify({"error": "Invalid date format"}), 400
-
-    week = Week.query.filter(
-        (date >= Week.start_date) & (date <= Week.end_date)  # type: ignore
-    ).first()
-
-    if not week:
-        return jsonify({"error": "Week not found"}), 404
-
-    return jsonify(week.to_dict()), 200
-
-
 @events_api_bp.route("/<int:event_id>", methods=["PATCH"])
 @valid_api_auth
 def edit_event(event_id: int) -> tuple[Response, int]:  # noqa: PLR0911, PLR0912
-    """Edit an existing event"""
+    """Edit an existing event
+    ---
+    parameters:
+      - name: event_id
+        in: path
+        type: integer
+        required: true
+        description: The ID of the event to edit.
+      - name: name
+        in: body
+        type: string
+        required: false
+        description: The new name of the event.
+      - name: description
+        in: body
+        type: string
+        required: false
+        description: The new description of the event.
+      - name: location
+        in: body
+        type: string
+        required: false
+        description: The new location of the event.
+      - name: start_time
+        in: body
+        type: string
+        required: false
+        description: The new start time of the event in 'YYYY-MM-DD' format.
+      - name: end_time
+        in: body
+        type: string
+        required: false
+        description: The new end time of the event in 'YYYY-MM-DD' format (if duration also provided must match the duration).
+      - name: duration
+        in: body
+        type: string
+        required: false
+        description: The new duration of the event in 'days:hours:minutes' format (if end_time also provided must match the end_time).
+      - name: draft
+        in: body
+        type: boolean
+        required: false
+        default: false
+        description: Whether the event is a draft.
+      - name: location_url
+        in: body
+        type: string
+        required: false
+        description: The new URL for the location of the event.
+      - name: icon
+        in: body
+        type: string
+        required: false
+        description: The new icon for the event.
+      - name: colour
+        in: body
+        type: string
+        required: false
+        description: The new colour for the event.
+      - name: tags
+        in: body
+        type: array
+        items:
+            type : string
+            example : "tag1"
+            example : "tag2"
+        required: false
+        default: []
+        description: A list of new tags associated with the event.
+    responses:
+        200:
+            description: The updated event.
+            schema:
+                $ref: '#/definitions/Event'
+        400:
+            description: Bad request, missing or invalid data.
+        403:
+            description: Forbidden.
+        404:
+            description: Event not found.
+    """  # noqa: E501
     event = Event.query.get(event_id)
     if not event:
         return jsonify({"error": "Event not found"}), 404
@@ -490,7 +769,23 @@ def edit_event(event_id: int) -> tuple[Response, int]:  # noqa: PLR0911, PLR0912
 @events_api_bp.route("/<int:event_id>", methods=["DELETE"])
 @valid_api_auth
 def delete_event(event_id: int) -> tuple[Response, int]:
-    """Delete an existing event"""
+    """
+    Delete an existing event
+    ---
+    parameters:
+      - name: event_id
+        in: path
+        type: integer
+        required: true
+        description: The ID of the event to delete.
+    responses:
+        200:
+            description: Event deleted successfully.
+        403:
+            description: Forbidden.
+        404:
+            description: Event not found.
+    """
     event = Event.query.get(event_id)
     if not event:
         return jsonify({"error": "Event not found"}), 404
@@ -526,16 +821,46 @@ def clean_tags() -> None:
 
 @events_api_bp.route("/tags", methods=["GET"])
 def get_tags() -> tuple[Response, int]:
-    """Get all tags"""
+    """Get all tags
+    ---
+    security: []
+    responses:
+        200:
+            description: A JSON array containing all tags.
+            schema:
+                type: array
+                items:
+                    $ref: '#/definitions/Tag'
+        404:
+            description: No tags found.
+    """
     tags = Tag.query.order_by(Tag.name).all()
     if not tags:
         return jsonify({"error": "No tags found"}), 404
     return jsonify([tag.to_dict() for tag in tags]), 200
 
 
-@events_api_bp.route("/tags/<str:tag_name>", methods=["GET"])
+@events_api_bp.route("/tags/<string:tag_name>", methods=["GET"])
 def get_tag(tag_name: str) -> tuple[Response, int]:
-    """Get all events for a specific tag"""
+    """Get all events for a specific tag
+    ---
+    parameters:
+      - name: tag_name
+        in: path
+        type: string
+        required: true
+        description: The name of the tag.
+    security: []
+    responses:
+        200:
+            description: A JSON array containing the events associated with the tag.
+            schema:
+                type: array
+                items:
+                    $ref: '#/definitions/Event'
+        404:
+            description: Tag not found or no events found for this tag.
+    """
     tag = Tag.query.filter_by(name=tag_name).first()
     if not tag:
         return jsonify({"error": "Tag not found"}), 404
@@ -545,3 +870,39 @@ def get_tag(tag_name: str) -> tuple[Response, int]:
     if not events:
         return jsonify({"error": "No events found for this tag"}), 404
     return jsonify([event.to_dict() for event in events]), 200
+
+
+@events_api_bp.route("/week/<string:date_str>", methods=["GET"])
+def get_week_by_date(date_str: str) -> tuple[Response, int]:
+    """Get the week for a specific date
+    ---
+    parameters:
+      - name: date_str
+        in: path
+        type: string
+        required: true
+        description: The date in 'YYYY-MM-DD' format.
+    security: []
+    responses:
+        200:
+            description: A JSON object containing the week details.
+            schema:
+                $ref: '#/definitions/Week'
+        400:
+            description: Invalid date format.
+        404:
+            description: Week not found for the given date.
+    """
+    try:
+        date = datetime.fromisoformat(date_str)
+    except ValueError:
+        return jsonify({"error": "Invalid date format"}), 400
+
+    week = Week.query.filter(
+        (date >= Week.start_date) & (date <= Week.end_date)  # type: ignore
+    ).first()
+
+    if not week:
+        return jsonify({"error": "Week not found"}), 404
+
+    return jsonify(week.to_dict()), 200

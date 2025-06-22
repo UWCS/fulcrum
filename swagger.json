@@ -6,7 +6,7 @@
         "version": "1.0.0"
     },
     "securityDefinitions": {
-        "ApiKey": {
+        "APIKey": {
             "type": "apiKey",
             "in": "header",
             "name": "Authorization",
@@ -15,7 +15,7 @@
     },
     "security": [
         {
-            "ApiKey": []
+            "APIKey": []
         }
     ],
     "basePath": "/api",
@@ -126,7 +126,7 @@
                 }
             }
         },
-        "ApiKey": {
+        "APIkey": {
             "type": "object",
             "properties": {
                 "id": {
