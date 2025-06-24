@@ -1,4 +1,7 @@
-import datetime
+import re
+from datetime import date, datetime, timedelta
+from json import loads
+from pathlib import Path
 
 import pytz
 from flask import Flask
@@ -43,14 +46,14 @@ class Week(db.Model):
     )
 
     def __init__(
-        self, academic_year: int, term: int, week: int, start_date: datetime.date
+        self, academic_year: int, term: int, week: int, start_date: date
     ) -> None:
         self.academic_year = academic_year
         self.term = term
         self.week = week
         self.start_date = start_date
         # end date is 6 days after the start date (counter-intuitive i know)
-        self.end_date = start_date + datetime.timedelta(days=6)
+        self.end_date = start_date + timedelta(days=6)
 
     def __repr__(self) -> str:
         return (
@@ -122,8 +125,8 @@ class Event(db.Model):
         location_url: str | None,
         icon: str | None,
         colour: str | None,
-        start_time: datetime.datetime,
-        end_time: datetime.datetime | None,
+        start_time: datetime,
+        end_time: datetime | None,
     ) -> None:
         self.name = name
         self.slug = name.lower().replace(" ", "-")
@@ -163,6 +166,25 @@ class Event(db.Model):
             "date": self.date.to_dict() if self.date else None,
             "tags": [tag.to_dict() for tag in self.tags.all()],
         }
+
+    def validate(self) -> str | None:
+        """Validates an event's data"""
+
+        # check date
+        if self.end_time and self.end_time < self.start_time:
+            return "End time cannot be before start time"
+
+        # check if colour is valid
+        colour_regex = re.compile(r"^#[0-9a-fA-F]{6}$")
+        if self.colour:
+            if self.colour.startswith("#") and not colour_regex.match(self.colour):
+                return "Colour must be a valid hex code (e.g. #ffffff)"
+            with Path("colours.json").open("r") as f:
+                colours = loads(f.read())
+            if self.colour not in colours:
+                return "Colour must be one of " + ", ".join(colours.keys())
+
+        return None
 
 
 class Tag(db.Model):
@@ -207,7 +229,7 @@ class APIKey(db.Model):
     def __init__(self, key: str, owner: str) -> None:
         self.key = key
         self.owner = owner
-        self.created_at = datetime.datetime.now(pytz.timezone("Europe/London"))
+        self.created_at = datetime.now(pytz.timezone("Europe/London"))
         self.active = True
 
     def __repr__(self) -> str:
