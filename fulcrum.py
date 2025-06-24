@@ -9,6 +9,7 @@ from werkzeug.wrappers import Response
 
 from auth.auth import auth_api_bp, auth_bp, configure_oauth, is_exec, is_logged_in
 from events.api import events_api_bp
+from events.ui import events_ui_bp
 from schema import initialise_db
 
 # if .env file exists, load it
@@ -35,14 +36,28 @@ with Path("swagger.json").open("r") as f:
     swagger = Swagger(app, template=load(f))
 
 
+# add event ui routes
+app.register_blueprint(events_ui_bp, url_prefix="/events")
+
+
+# context processor to inject global variables into templates
+@app.context_processor
+def inject_globals() -> dict:
+    """Inject global variables into templates"""
+    return {
+        "is_logged_in": is_logged_in(),
+        "is_exec": is_exec(),
+    }
+
+
+@app.route("/")
+def index() -> str:
+    return render_template("index.html")
+
+
 @app.route("/api/")
 @app.route("/docs/")
 @app.route("/api/docs/")
 def redirect_to_docs() -> Response:
     """Redirect to the Swagger documentation"""
     return redirect("/apidocs/")
-
-
-@app.route("/")
-def index() -> str:
-    return render_template("index.html", is_logged_in=is_logged_in(), is_exec=is_exec())

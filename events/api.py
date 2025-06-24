@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from flask import Blueprint, Response, jsonify, request
 
 from auth.auth import valid_api_auth
@@ -165,12 +163,12 @@ def create_event_api() -> tuple[Response, int]:  # noqa: PLR0911
         in: body
         type: string
         required: true
-        description: The start time of the event in 'YYYY-MM-DD' format.
+        description: The start time of the event in 'YYYY-MM-DDTHH:MM' format.
       - name: end_time
         in: body
         type: string
         required: false
-        description: The end time of the event in 'YYYY-MM-DD' format (if duration also provided must match the duration).
+        description: The end time of the event in 'YYYY-MM-DDTHH:MM' format (if duration also provided must match the duration).
       - name: duration
         in: body
         type: string
@@ -296,8 +294,8 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
         type: array
         items:
           type : string
-          example : "2023-10-01"
-          example : "2023-10-08"
+          example : "2025-06-24T22:05"
+          example : "2025-06-25T12:05"
         required: true
         description: A list of start times for the events in 'YYYY-MM-DD' format.
       - name: end_times
@@ -305,8 +303,8 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
         type: array
         items:
           type : string
-          example : "2023-10-01"
-          example : "2023-10-08"
+          example : "2025-06-24T23:05"
+          example : "2025-06-25T13:05"
         required: false
         description: A list of end times for the events in 'YYYY-MM-DD' format (if duration also provided must match the duration).
       - name: duration
@@ -444,12 +442,12 @@ def edit_event_api(event_id: int) -> tuple[Response, int]:
         in: body
         type: string
         required: false
-        description: The new start time of the event in 'YYYY-MM-DD' format.
+        description: The new start time of the event in 'YYYY-MM-DDTHH:MM' format.
       - name: end_time
         in: body
         type: string
         required: false
-        description: The new end time of the event in 'YYYY-MM-DD' format (if duration also provided must match the duration).
+        description: The new end time of the event in 'YYYY-MM-DDTHH:MM' format (if duration also provided must match the duration).
       - name: duration
         in: body
         type: string
@@ -639,7 +637,7 @@ def get_week_by_date(date_str: str) -> tuple[Response, int]:
         in: path
         type: string
         required: true
-        description: The date in 'YYYY-MM-DD' format.
+        description: The date in 'YYYY-MM-DDTHH:MM' format.
     security: []
     responses:
         200:
@@ -651,10 +649,9 @@ def get_week_by_date(date_str: str) -> tuple[Response, int]:
         404:
             description: Week not found for the given date.
     """
-    try:
-        date = datetime.fromisoformat(date_str)
-    except ValueError:
-        return jsonify({"error": "Invalid date format"}), 400
+    date = get_datetime_from_string(date_str)
+    if isinstance(date, str):
+        return jsonify({"error": date}), 400
 
     week = Week.query.filter(
         (date >= Week.start_date) & (date <= Week.end_date)  # type: ignore

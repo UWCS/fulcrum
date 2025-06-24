@@ -1,12 +1,13 @@
 import re
 from datetime import date, datetime, timedelta
-from json import loads
+from json import load
 from pathlib import Path
 
 import pytz
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_, func
+from sqlalchemy.orm import foreign
 
 db = SQLAlchemy()
 
@@ -21,6 +22,9 @@ def initialise_db(app: Flask) -> None:
 
     # create the database tables if they don't exist
     with app.app_context():
+        # delete tables if in debug mode
+        if app.debug:
+            db.drop_all()
         db.create_all()
 
 
@@ -67,8 +71,8 @@ class Week(db.Model):
             "academic_year": self.academic_year,
             "term": self.term,
             "week": self.week,
-            "start_date": self.start_date,
-            "end_date": self.end_date,
+            "start_date": self.start_date.strftime("%Y-%m-%d"),
+            "end_date": self.end_date.strftime("%Y-%m-%d"),
         }
 
 
@@ -103,8 +107,8 @@ class Event(db.Model):
     date = db.relationship(
         "Week",
         primaryjoin=and_(
-            func.date(start_time) >= func.date(Week.start_date),
-            func.date(start_time) <= func.date(Week.end_date),
+            foreign(func.date(start_time)) >= func.date(Week.start_date),
+            foreign(func.date(start_time)) <= func.date(Week.end_date),
         ),
         viewonly=True,
         uselist=False,
@@ -164,7 +168,7 @@ class Event(db.Model):
                 self.end_time.isoformat("T", "minutes") if self.end_time else None
             ),
             "date": self.date.to_dict() if self.date else None,
-            "tags": [tag.to_dict() for tag in self.tags.all()],
+            "tags": [tag.to_dict() for tag in self.tags],  # type: ignore
         }
 
     def validate(self) -> str | None:
@@ -177,12 +181,15 @@ class Event(db.Model):
         # check if colour is valid
         colour_regex = re.compile(r"^#[0-9a-fA-F]{6}$")
         if self.colour:
-            if self.colour.startswith("#") and not colour_regex.match(self.colour):
-                return "Colour must be a valid hex code (e.g. #ffffff)"
+            if colour_regex.match(self.colour):
+                return None
             with Path("colours.json").open("r") as f:
-                colours = loads(f.read())
-            if self.colour not in colours:
-                return "Colour must be one of " + ", ".join(colours.keys())
+                colours = load(f)
+            if self.colour in colours:
+                return None
+            return (
+                f"Colour must be one of {", ".join(colours.keys())} or a valid hex code"
+            )
 
         return None
 

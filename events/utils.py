@@ -18,10 +18,20 @@ def get_timedelta_from_string(duration_str: str) -> timedelta | str:
 
 
 def get_datetime_from_string(date_str: str) -> datetime | str:
+    """Convert a date string in the format 'YYYY-MM-DDTHH:MM' to a datetime object."""
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%dT%H:%M").astimezone(
+            pytz.timezone("Europe/London")
+        )
+    except ValueError:
+        return "Invalid date format, expected 'YYYY-MM-DDTHH:MM'"
+
+
+def get_date_from_string(date_str: str) -> datetime | str:
     """Convert a date string in the format 'YYYY-MM-DD' to a datetime object."""
     try:
-        return datetime.strptime(date_str, "%Y-%m-%d").replace(
-            tzinfo=pytz.timezone("Europe/London")
+        return datetime.strptime(date_str, "%Y-%m-%d").astimezone(
+            pytz.timezone("Europe/London")
         )
     except ValueError:
         return "Invalid date format, expected 'YYYY-MM-DD'"
@@ -41,13 +51,14 @@ def create_event(  # noqa: PLR0913
     tags: list[str],
 ) -> Event | str:
     """Create an event"""
+
     # convert start_time and normalise end_time
-    start_time = pytz.timezone("Europe/London").localize(start_time)
+    start_time = start_time.astimezone(pytz.timezone("Europe/London"))
 
     if end_time is None:
         end_time = start_time + duration if duration else None
     else:
-        end_time = pytz.timezone("Europe/London").localize(end_time)
+        end_time = end_time.astimezone(pytz.timezone("Europe/London"))
         if duration is not None and end_time != start_time + duration:
             return "End time does not match the duration"
     if end_time and end_time < start_time:
@@ -71,10 +82,14 @@ def create_event(  # noqa: PLR0913
 
     # validate the event
     if error := event.validate():
+        db.session.rollback()
         return error
 
-    # attach week to the event
-    event.date = get_week_from_date(start_time)  # type: ignore
+    # create week from the start_time
+    week = get_week_from_date(start_time)
+    if week is None:
+        db.session.rollback()
+        return "Unable to find or create a week for the event date"
 
     # attach tags to the event
     # check all tags exist, create if not
@@ -116,10 +131,10 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
             ).json()
 
             for w in warwick_week["weeks"]:
-                start_date = get_datetime_from_string(w["startDate"])
+                start_date = get_date_from_string(w["start"])
                 if isinstance(start_date, str):
                     return None
-                end_date = get_datetime_from_string(w["endDate"])
+                end_date = get_date_from_string(w["end"])
                 if isinstance(end_date, str):
                     return None
                 if start_date.date() <= date.date() <= end_date.date():
@@ -147,7 +162,7 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
             with Path("olddates.json").open("r") as f:
                 old_dates = load(f)
             for w in old_dates:
-                start_date = get_datetime_from_string(w["startDate"])
+                start_date = get_date_from_string(w["date"])
                 if isinstance(start_date, str):
                     return None
                 if start_date.date() <= date.date():
@@ -295,12 +310,12 @@ def edit_event(  # noqa: PLR0913
     event.icon = icon.lower() if icon else event.icon
     event.colour = colour if colour else event.colour
     event.start_time = (
-        pytz.timezone("Europe/London").localize(start_time)
+        start_time.astimezone(pytz.timezone("Europe/London"))
         if start_time
         else event.start_time
     )
     event.end_time = (
-        pytz.timezone("Europe/London").localize(end_time)
+        end_time.astimezone(pytz.timezone("Europe/London"))
         if end_time
         else event.end_time
     )
@@ -350,3 +365,43 @@ def delete_event(event_id: int) -> bool | str:
     clean_weeks()
     clean_tags()
     return True
+
+
+def validate_colour(text_colour: str | None, hex_colour: str | None) -> str | None:
+    """Validate the colour input"""
+
+    # check if the colours match
+    if text_colour == hex_colour:
+        return None
+
+    # if either colour is None, validation succeeds
+    if text_colour is None or hex_colour is None:
+        return None
+
+    # attemp to convert text_colour to hex
+    text_colour = get_hex_from_name(text_colour)
+    if text_colour is None:
+        return "Invalid colour name"
+
+    # check if the converted text_colour matches the hex_colour
+    if text_colour.lower() != hex_colour.lower():
+        return "Colour name does not match hex code"
+
+    return None
+
+
+def get_hex_from_name(name: str) -> str | None:
+    """Get the hex colour from a name"""
+    with Path("colours.json").open("r") as f:
+        colours = load(f)
+    return colours.get(name.lower(), None)  # type: ignore
+
+
+def get_name_from_hex(hex_colour: str) -> str | None:
+    """Get the name of a colour from its hex code"""
+    with Path("colours.json").open("r") as f:
+        colours = load(f)
+    for name, hex_code in colours.items():
+        if hex_code.lower() == hex_colour.lower():
+            return name
+    return None
