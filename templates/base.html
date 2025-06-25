@@ -13,7 +13,6 @@
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 
     <!--load icons -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='icons/bootstrap-icons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='icons/phosphor-bold.css')}}">
 
     <!--load font css -->
@@ -72,12 +71,6 @@
             font-style: italic;
             font-weight: 700;
             src: url("{{ url_for('static', filename='fonts/mulish-v13-latin-700italic.woff2') }}") format("woff2");
-        }
-
-        @font-face {
-            font-display: block;
-            font-family: bootstrap-icons;
-            src: url("{{ url_for('static', filename='icons/bootstrap-icons.woff2') }}") format("woff2");
         }
 
         @font-face {
