@@ -5,57 +5,115 @@
 {% block content %}
 <h1>Create Event</h1>
 
-<form method="{{ method }}" action="{{ url_for(action) }}">
+<div class="container y-4">
+    <div class="y-4 border rounded p-4">
+        <form method="{{ method }}" action="{{ url_for(action) }}" class="row g-3 align-items-center">
 
-    {% if error %}
-        <div>{{error}}</div>
-    {% endif %}
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                <div class="alert alert-danger">
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endwith %}
 
-    <!-- base info -->
-    <label for="name">Event Name</label>
-    <input type="text" name="name" id="name" required>
+            <!-- base info -->
+            <div class="form-floating col-md-6 offset-md-3">
+                <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" required>
+                <label for="name">Event Name</label>
+            </div>
 
-    <label for="description">Event Description</label>
-    <textarea name="description" id="description" required></textarea>
+            <div class="form-floating col-12">
+                <textarea name="description" id="description" class="form-control" placeholder="Event Description" required></textarea>
+                <label for="description">Event Description (Markdown format)</label>
+            </div>
 
-    <input type="checkbox" name="draft" id="draft">
-    <label for="draft">Draft</label>
+            <!-- location -->
+            <div class="input-group col-12">
+                <div class="input-group-text">
+                    <i class="ph-bold ph-map-pin"></i>
+                </div>
+                <div class="form-floating">
+                    <input type="text" name="location" id="location" class="form-control" placeholder="Event Location" required>
+                    <label for="location">Event Location</label>
+                </div>
+                <div class="form-floating">
+                    <input type="text" name="location_url" id="location_url" class="form-control" placeholder="https://example.com/">
+                    <label for="location_url">Location URL</label>
+                </div>
+            </div>
 
-    <!-- location -->
-    <label for="location">Event Location</label>
-    <input type="text" name="location" id="location" required>
+            <!-- aesthetic info -->
+            <div class="col-md-4">
+                <!-- same height calculation as form-floating to stay same size -->
+                <div class="input-group" style="height: calc(3.5rem + calc(var(--bs-border-width) * 2));">
+                    <div class="input-group-text">
+                        <input type="checkbox" name="draft" id="draft" class="form-check-input">
+                    </div>
+                    <label for="draft" class="form-control d-flex align-items-center">Draft</label>
+                </div>
+            </div>
 
-    <label for="location_url">Location URL</label>
-    <input type="text" name="location_url" id="location_url">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <!-- make this update -->
+                    <div class="input-group-text">
+                        <i class="ph-bold ph-phosphor-logo"></i>
+                    </div>
+                    <div class="form-floating">
+                        <input type="text" name="icon" id="icon" class="form-control" placeholder="ph-calendar">
+                        <label for="icon">Event Phosphor Icon</label>
+                    </div>
+                </div>
+            </div>
 
-    <!-- asthetic info -->
-    <label for="icon">Event Icon</label>
-    <input type="text" name="icon" id="icon">
+            <!-- have text input match color input and vice versa -->
+            <!-- pre-input of # -->
+            <!-- dropdown of pre-made colours -->
+            <div class="col-md-4">
+                <div class="input-group">
+                    <div class="input-group-text">
+                        <input type="color" name="color_colour" id="color_colour" class="form-control form-control-color">
+                    </div>
+                    <div class="form-floating">
+                        <input type="text" name="text_colour" id="text_colour" class="form-control" placeholder="#000000">
+                        <label for="text_colour">Event Color</label>
+                    </div>
+                </div>
+            </div>
 
-    <label for="text_colour">Event Color</label>
-    <!-- have text input match color input and vice versa -->
-    <!-- pre-input of # -->
-    <!-- dropdown of pre-made colours -->
-    <input type="text" name="text_colour" id="text_colour">
-    <input type="color" name="color_colour" id="color_colour">
+            <!-- date and time -->
+            <div class="form-floating col-md-4">
+                <input type="datetime-local" name="start_time" id="start_time" class="form-control" required>
+                <label for="start_time">Start Time</label>
+            </div>
 
-    <!-- date and time -->
-    <label for="start_time">Start Time</label>
-    <input type="datetime-local" name="start_time" id="start_time" required>
+            <div class="form-floating col-md-4">
+                <input type="datetime-local" name="end_time" id="end_time" class="form-control">
+                <label for="end_time">End Time</label>
+            </div>
 
-    <label for="end_time">End Time</label>
-    <input type="datetime-local" name="end_time" id="end_time">
+            <div class="form-floating col-md-4">
+                <!-- duration in DD:HH:MM format-->
+                <input type="text" name="duration" id="duration" class="form-control" pattern="^\d{1,2}:(?:[01]\d|2[0-3]):[0-5]\d$" placeholder="DD:HH:MM" value="00:00:00">
+                <label for="duration">Duration</label>
+            </div>
 
-    <label for="duration">Duration</label>
-    <input type="text" name="duration" id="duration">
+            <!-- tags -->
+            <!-- badge and created tags? -->
+            <div class="form-floating col-md-8 offset-md-2">
+                <input type="text" name="tags" id="tags" class="form-control" placeholder="tag1,tag2,tag3">
+                <label for="tags">Tags</label>
+            </div>
 
-    <!-- tags -->
-    <!-- badge and created tags? -->
-    <label for="tags">Tags</label>
-    <input type="text" name="tags" id="tags">
-
-    <!-- submit -->
-    <input type="submit" value="Create Event">
-</form>
+            <!-- submit -->
+            <div class="col-23 d-flex justify-content-center">
+                <input type="submit" value="Create Event" class="btn btn-primary col-6">
+            </div>
+        </form>
+    </div>
+</div>
 
 {% endblock %}
