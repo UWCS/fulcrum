@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function updateEndTime() {
         if (startTimeInput.value && durationInput.value) {
             // confirm that the duration is in DD:HH:MM format
-            if (/^\d{1,2}:(?:[01]\d|2[0-3]):[0-5]\d$/.test(durationInput.value)) {
+            if (/^\d{2}:(?:[01]\d|2[0-3]):[0-5]\d$/.test(durationInput.value)) {
                 const [days, hours, minutes] = durationInput.value.split(':').map(Number);
                 const startTime = new Date(startTimeInput.value);
 

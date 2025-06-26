@@ -25,19 +25,20 @@
                 {% endif %}
             {% endwith %}
 
-            <!-- base info -->
+            <!-- name -->
             <div class="form-floating col-md-6 offset-md-3">
                 <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" required>
                 <label for="name">Event Name</label>
             </div>
 
+            <!-- description -->
             <div class="form-floating col-12">
                 <textarea name="description" id="description" class="form-control" placeholder="Event Description" style="height: 10rem;" required></textarea>
-                <label for="description">Event Description (Markdown format)</label>
+                <label for="description">Event Description (Markdown)</label>
             </div>
 
             <!-- location -->
-            <!-- TODO: maybe update location url?-->
+            <!-- TODO: maybe update location url automatically?-->
             <div class="input-group col-12">
                 <div class="input-group-text">
                     <i class="ph-bold ph-map-pin"></i>
@@ -52,7 +53,7 @@
                 </div>
             </div>
 
-            <!-- aesthetic info -->
+            <!-- draft -->
             <div class="col-md-4">
                 <!-- same height calculation as form-floating to stay same size -->
                 <div class="input-group" style="height: calc(3.5rem + calc(var(--bs-border-width) * 2));">
@@ -63,6 +64,7 @@
                 </div>
             </div>
 
+            <!-- icon -->
             <!-- TODO: allow for custom icons -->
             <div class="col-md-4">
                 <div class="input-group">
@@ -76,6 +78,7 @@
                 </div>
             </div>
 
+            <!-- colour -->
             <div class="col-md-4">
                 <div class="input-group">
                     <div class="input-group-text">
@@ -89,21 +92,22 @@
                 </div>
             </div>
 
-            <!-- date and time -->
+            <!-- start -->
             <div class="form-floating col-md-4">
                 <input type="datetime-local" name="start_time" id="start_time" class="form-control" required>
                 <label for="start_time">Start Time</label>
             </div>
 
+            <!-- end -->
             <div class="form-floating col-md-4">
                 <input type="datetime-local" name="end_time" id="end_time" class="form-control">
                 <label for="end_time">End Time</label>
             </div>
 
+            <!-- duration -->
             <div class="form-floating col-md-4">
-                <!-- duration in DD:HH:MM format-->
-                <input type="text" name="duration" id="duration" class="form-control" pattern="^\d{1,2}:(?:[01]\d|2[0-3]):[0-5]\d$" placeholder="DD:HH:MM" value="00:00:00">
-                <label for="duration">Duration</label>
+                <input type="text" name="duration" id="duration" class="form-control" pattern="^\d{2}:(?:[01]\d|2[0-3]):[0-5]\d$" placeholder="DD:HH:MM">
+                <label for="duration">Duration (DD:HH:MM)</label>
             </div>
 
             <!-- tags -->
