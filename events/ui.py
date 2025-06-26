@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from werkzeug.wrappers import Response
 
 from auth.auth import is_exec_wrapper
@@ -38,60 +38,34 @@ def create(error: str | None = None) -> str | Response:  # noqa: PLR0911
     color_colour = color_colour.strip().lower() if color_colour else None
 
     if (colour := validate_colour(text_colour, color_colour)) is not None:
-        return redirect(
-            url_for(
-                "events_ui.create",
-                error=error,
-                action="events_ui.create",
-                method="POST",
-                event=None,
-            )
-        )
+        flash(colour, "error")
+        return redirect(url_for("events_ui.create"))
 
     colour = color_colour if color_colour else text_colour
 
     # parse dates and duration
     start_time = get_datetime_from_string(request.form["start_time"])
     if isinstance(start_time, str):
-        return redirect(
-            url_for(
-                "events_ui.create",
-                error=start_time,
-                action="events_ui.create",
-                method="POST",
-                event=None,
-            )
-        )
+        flash(start_time, "error")
+        return redirect(url_for("events_ui.create"))
+
     duration = (
         get_timedelta_from_string(request.form["duration"])
         if request.form["duration"]
         else None
     )
     if isinstance(duration, str):
-        return redirect(
-            url_for(
-                "events_ui.create",
-                error=duration,
-                action="events_ui.create",
-                method="POST",
-                event=None,
-            )
-        )
+        flash(duration, "error")
+        return redirect(url_for("events_ui.create"))
+
     end_time = (
         get_datetime_from_string(request.form["end_time"])
         if request.form["end_time"]
         else None
     )
     if isinstance(end_time, str):
-        return redirect(
-            url_for(
-                "events_ui.create",
-                error=end_time,
-                action="events_ui.create",
-                method="POST",
-                event=None,
-            )
-        )
+        flash(end_time, "error")
+        return redirect(url_for("events_ui.create"))
 
     # parse tags
     tags = (
@@ -117,15 +91,8 @@ def create(error: str | None = None) -> str | Response:  # noqa: PLR0911
 
     # if failed, redirect to the create page with an error
     if isinstance(event, str):
-        return redirect(
-            url_for(
-                "events_ui.create",
-                error=event,
-                action="events_ui.create",
-                method="POST",
-                event=None,
-            )
-        )
+        flash(event, "error")
+        return redirect(url_for("events_ui.create", error=event))
 
     # if successful, redirect to the event page
     return redirect(
