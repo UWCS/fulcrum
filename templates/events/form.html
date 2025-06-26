@@ -3,7 +3,9 @@
 {% block title %}Create Event{% endblock %}
 
 {% block content %}
-<h1>Create Event</h1>
+<div class="container text-center my-4">
+    <h1>Create Event</h1>
+</div>
 
 <div class="container y-4">
     <div class="y-4 border rounded p-4">
@@ -11,7 +13,7 @@
 
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
-                <div class="alert alert-danger">
+                <div class="alert alert-danger col-12">
                     {% for message in messages %}
                         {{ message }}
                     {% endfor %}
@@ -26,7 +28,7 @@
             </div>
 
             <div class="form-floating col-12">
-                <textarea name="description" id="description" class="form-control" placeholder="Event Description" required></textarea>
+                <textarea name="description" id="description" class="form-control" placeholder="Event Description" style="height: 10rem;" required></textarea>
                 <label for="description">Event Description (Markdown format)</label>
             </div>
 
@@ -77,6 +79,7 @@
                     <div class="input-group-text">
                         <input type="color" name="color_colour" id="color_colour" class="form-control form-control-color">
                     </div>
+                    <div class="input-group-text">#</div>
                     <div class="form-floating">
                         <input type="text" name="text_colour" id="text_colour" class="form-control" placeholder="#000000">
                         <label for="text_colour">Event Color</label>
