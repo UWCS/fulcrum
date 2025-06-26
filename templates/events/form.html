@@ -2,6 +2,10 @@
 
 {% block title %}Create Event{% endblock %}
 
+{% block header %}
+<script src="{{ url_for('static', filename='js/event-management.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 <div class="container text-center my-4">
     <h1>Create Event</h1>
@@ -33,6 +37,7 @@
             </div>
 
             <!-- location -->
+            <!-- TODO: maybe update location url?-->
             <div class="input-group col-12">
                 <div class="input-group-text">
                     <i class="ph-bold ph-map-pin"></i>
@@ -58,11 +63,11 @@
                 </div>
             </div>
 
+            <!-- TODO: allow for custom icons -->
             <div class="col-md-4">
                 <div class="input-group">
-                    <!-- make this update -->
                     <div class="input-group-text">
-                        <i class="ph-bold ph-phosphor-logo"></i>
+                        <i class="ph-bold ph-phosphor-logo" id="icon-preview"></i>
                     </div>
                     <div class="form-floating">
                         <input type="text" name="icon" id="icon" class="form-control" placeholder="ph-calendar">
@@ -71,9 +76,6 @@
                 </div>
             </div>
 
-            <!-- have text input match color input and vice versa -->
-            <!-- pre-input of # -->
-            <!-- dropdown of pre-made colours -->
             <div class="col-md-4">
                 <div class="input-group">
                     <div class="input-group-text">
