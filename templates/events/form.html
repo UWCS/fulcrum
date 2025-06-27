@@ -13,7 +13,7 @@
 
 <div class="container y-4">
     <div class="y-4 border rounded p-4">
-        <form method="{{ method }}" action="{{ url_for(action) }}" class="row g-3 align-items-center">
+        <form method="{{ method }}" action="{{ url_for(action) }}" class="row g-3 align-items-center needs-validation" novalidate>
 
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
@@ -29,28 +29,41 @@
             <div class="form-floating col-md-6 offset-md-3">
                 <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" required>
                 <label for="name">Event Name</label>
+                <div class="invalid-feedback">Please provide a name</div>
+                <div class="valid-feedback">Looks good!</div>
             </div>
 
             <!-- description -->
             <div class="form-floating col-12">
                 <textarea name="description" id="description" class="form-control" placeholder="Event Description" style="height: 10rem;" required></textarea>
                 <label for="description">Event Description (Markdown)</label>
+                <div class="invalid-feedback">Please provide a description</div>
+                <div class="valid-feedback">Looks good!</div>
             </div>
 
             <!-- location -->
             <!-- TODO: maybe update location url automatically?-->
+            <!-- known issue with bootstrap (https://github.com/twbs/bootstrap/pull/34527#pullrequestreview-830171528) means form-floating needs to be a div when using input-groups -->
             <div class="input-group col-12">
                 <div class="input-group-text">
                     <i class="ph-bold ph-map-pin"></i>
                 </div>
-                <div class="form-floating">
+
+                <fieldset class="form-floating">
                     <input type="text" name="location" id="location" class="form-control" placeholder="Event Location" required>
                     <label for="location">Event Location</label>
-                </div>
-                <div class="form-floating">
-                    <input type="text" name="location_url" id="location_url" class="form-control" placeholder="https://example.com/">
+                </fieldset>
+                <div class="invalid-feedback" style="position: absolute; top: 70%;">Please provide a location</div>
+                <div class="valid-feedback" style="position: absolute; top: 70%;">Looks good!</div>
+
+                <fieldset class="form-floating">
+                    <input type="text" name="location_url" id="location_url" class="form-control last-border" placeholder="https://example.com/" pattern="^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?$">
                     <label for="location_url">Location URL</label>
-                </div>
+                </fieldset>
+                <div class="invalid-feedback" style="position: absolute; top: 70%; left: 52%;">Must be a URL</div>
+                <div class="valid-feedback" style="position: absolute; top: 70%; left: 52%;">Looks good!</div>
+                <!-- zero-width space to add padding -->
+                <div class="valid-feedback invalid-feedback">​</div>
             </div>
 
             <!-- draft -->
@@ -58,7 +71,7 @@
                 <!-- same height calculation as form-floating to stay same size -->
                 <div class="input-group" style="height: calc(3.5rem + calc(var(--bs-border-width) * 2));">
                     <div class="input-group-text">
-                        <input type="checkbox" name="draft" id="draft" class="form-check-input">
+                        <input type="checkbox" name="draft" id="draft" class="form-check-input no-validate-checkbox">
                     </div>
                     <label for="draft" class="form-control d-flex align-items-center">Draft</label>
                 </div>
@@ -71,10 +84,12 @@
                     <div class="input-group-text">
                         <i class="ph-bold ph-phosphor-logo" id="icon-preview"></i>
                     </div>
-                    <div class="form-floating">
-                        <input type="text" name="icon" id="icon" class="form-control" placeholder="ph-calendar">
+                    <fieldset class="form-floating">
+                        <input type="text" name="icon" id="icon" class="form-control last-border" placeholder="ph-calendar">
                         <label for="icon">Event Phosphor Icon</label>
-                    </div>
+                    </fieldset>
+                    <div class="invalid-feedback">Please provide a valid <a href="https://phosphoricons.com/" target="_blank">Phosphor Icon</a> name or one of: {{ ", ".join(icons) }}</div>
+                    <div class="valid-feedback">Looks good!</div>
                 </div>
             </div>
 
@@ -82,13 +97,15 @@
             <div class="col-md-4">
                 <div class="input-group">
                     <div class="input-group-text">
-                        <input type="color" name="color_colour" id="color_colour" class="form-control form-control-color">
+                        <input type="color" name="color_colour" id="color_colour" class="form-control form-control-color no-validate no-validate-colour">
                     </div>
                     <div class="input-group-text">#</div>
-                    <div class="form-floating">
-                        <input type="text" name="text_colour" id="text_colour" class="form-control" placeholder="#000000">
+                    <fieldset class="form-floating">
+                        <input type="text" name="text_colour" id="text_colour" class="form-control last-border" placeholder="#000000">
                         <label for="text_colour">Event Color</label>
-                    </div>
+                    </fieldset>
+                    <div class="invalid-feedback">Please provide a valid hex color code or one of: {{ ", ".join(colors) }}</div>
+                    <div class="valid-feedback">Looks good!</div>                  
                 </div>
             </div>
 
@@ -96,24 +113,30 @@
             <div class="form-floating col-md-4">
                 <input type="datetime-local" name="start_time" id="start_time" class="form-control" required>
                 <label for="start_time">Start Time</label>
+                <div class="invalid-feedback">Please provide a start time</div>
+                <div class="valid-feedback">Looks good!</div>
             </div>
 
             <!-- end -->
             <div class="form-floating col-md-4">
                 <input type="datetime-local" name="end_time" id="end_time" class="form-control">
                 <label for="end_time">End Time</label>
+                <div class="invalid-feedback">Endtime must be after start time and match the duration</div>
+                <div class="valid-feedback">Looks good!</div>
             </div>
 
             <!-- duration -->
             <div class="form-floating col-md-4">
-                <input type="text" name="duration" id="duration" class="form-control" pattern="^\d{2}:(?:[01]\d|2[0-3]):[0-5]\d$" placeholder="DD:HH:MM">
+                <input type="text" name="duration" id="duration" class="form-control" pattern="\d{2}:(?:[01]\d|2[0-3]):[0-5]\d" placeholder="DD:HH:MM">
                 <label for="duration">Duration (DD:HH:MM)</label>
+                <div class="invalid-feedback">Please provide a duration in the format DD:HH:MM</div>
+                <div class="valid-feedback">Looks good!</div>
             </div>
 
             <!-- tags -->
             <!-- badge and created tags? -->
             <div class="form-floating col-md-8 offset-md-2">
-                <input type="text" name="tags" id="tags" class="form-control" placeholder="tag1,tag2,tag3">
+                <input type="text" name="tags" id="tags" class="form-control no-validate" placeholder="tag1,tag2,tag3">
                 <label for="tags">Tags</label>
             </div>
 

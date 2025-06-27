@@ -23,21 +23,44 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    // icon validation
+    iconInput.addEventListener("input", () => {
+        // invalid if the iconPreview is phosphor logo
+        if (iconInput.value === "" || !iconPreview.className.includes("ph-phosphor-logo")) {
+            iconInput.setCustomValidity("");
+        } else {
+            iconInput.setCustomValidity("Please provide a valid Phosphor Icon name or one of: " + "{{ ', '.join(icons) }}");
+        }
+    });
+
     // update colour preview
     const colourPicker = document.getElementById("color_colour");
     const colourText = document.getElementById("text_colour");
 
     function syncColourInputs(fromText) {
         if (fromText) {
-            colourPicker.value = "#" + colourText.value;
-        }
-        else {
+            if (colourText.value.startsWith("#")) {
+                colourPicker.value = colourText.value; // set the colour picker to the text value
+            } else {
+                colourPicker.value = "#" + colourText.value; // prepend '#' if not present
+            }
+        } else {
             colourText.value = colourPicker.value.substring(1); // remove the '#' character
         }
     }
 
     colourPicker.addEventListener("input", () => syncColourInputs(false));
     colourText.addEventListener("input", () => syncColourInputs(true));
+
+    // colour validation
+    colourText.addEventListener("input", () => {
+        const isHex = /^#?[0-9A-Fa-f]{6}$/;
+        if (colourText.value === "" || colourText.value.match(isHex)) {
+            colourText.setCustomValidity("");
+        } else {
+            colourText.setCustomValidity("Please provide a valid hex color code");
+        }
+    });
 
     // update duration/end time
     const endTimeInput = document.getElementById("end_time");
@@ -104,4 +127,52 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     durationInput.addEventListener("input", () => updateEndTime());
     endTimeInput.addEventListener("input", () => updateDuration());
+
+    // check if end time is after start time
+    endTimeInput.addEventListener("input", () => {
+        if (startTimeInput.value && endTimeInput.value) {
+            const startTime = new Date(startTimeInput.value);
+            const endTime = new Date(endTimeInput.value);
+
+            if (endTime <= startTime) {
+                endTimeInput.setCustomValidity("End time must be after start time");
+            } else {
+                endTimeInput.setCustomValidity("");
+            }
+        }
+    });
+
+    // check if endtime = starttime + duration
+    endTimeInput.addEventListener("input", () => {
+        if (startTimeInput.value && durationInput.value) {
+            const startTime = new Date(startTimeInput.value);
+            const [days, hours, minutes] = durationInput.value.split(':').map(Number);
+            startTime.setDate(startTime.getDate() + days);
+            startTime.setHours(startTime.getHours() + hours);
+            startTime.setMinutes(startTime.getMinutes() + minutes);
+            const endTime = new Date(endTimeInput.value);
+            if (endTime.getTime() !== startTime.getTime()) {
+                endTimeInput.setCustomValidity("End time does not match duration");
+            } else {
+                endTimeInput.setCustomValidity("");
+            }
+        }
+    });
+
+
+    // form validation
+    const form = document.querySelector("form");
+    form.addEventListener("submit", function (event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add("was-validated");
+
+        // prepend "#" to text colour
+        // TODO: custom colour acceptance
+        if (colourText.value && !colourText.value.startsWith("#")) {
+            colourText.value = "#" + colourText.value;
+        }
+    }, false);
 });

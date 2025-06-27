@@ -1,0 +1,32 @@
+// no validation field https://stackoverflow.com/questions/48312772/skip-validation-feedback-on-certain-bootstrap-4-inputs
+
+.no-validate-checkbox:valid {
+    border-color: $input-border-color !important;
+    background-color: $input-bg !important;
+}
+
+.no-validate-checkbox:valid:checked {
+    background-color: $uwcs-blue !important;
+}
+
+.no-validate-checkbox:valid:focus {
+    box-shadow: none !important;
+}
+
+.no-validate-colour:valid {
+    width: 3rem !important;
+    padding: $input-padding-y !important;
+}
+
+.no-validate:valid {
+    border-color: $input-border-color !important;
+    background-color: $uwcs-blue !important;
+    background-image: none !important;
+    background: $input-bg !important;
+    box-shadow: none !important;
+}
+
+.last-border {
+    border-top-right-radius: var(--bs-border-radius) !important;
+    border-bottom-right-radius: var(--bs-border-radius) !important;
+}
