@@ -44,26 +44,34 @@
             <!-- location -->
             <!-- TODO: maybe update location url automatically?-->
             <!-- known issue with bootstrap (https://github.com/twbs/bootstrap/pull/34527#pullrequestreview-830171528) means form-floating needs to be a div when using input-groups -->
-            <div class="input-group col-12">
-                <div class="input-group-text">
-                    <i class="ph-bold ph-map-pin"></i>
+            <div class="col-md-6">
+                <div class="input-group col-md-4">
+                    <div class="input-group-text">
+                        <i class="ph-bold ph-map-pin"></i>
+                    </div>
+
+                    <fieldset class="form-floating">
+                        <input type="text" name="location" id="location" class="form-control last-border" placeholder="Event Location" required>
+                        <label for="location">Event Location</label>
+                    </fieldset>
+                    <div class="invalid-feedback">Please provide a location</div>
+                    <div class="valid-feedback">Looks good!</div>
                 </div>
+            </div>
 
-                <fieldset class="form-floating">
-                    <input type="text" name="location" id="location" class="form-control" placeholder="Event Location" required>
-                    <label for="location">Event Location</label>
-                </fieldset>
-                <div class="invalid-feedback" style="position: absolute; top: 70%;">Please provide a location</div>
-                <div class="valid-feedback" style="position: absolute; top: 70%;">Looks good!</div>
-
-                <fieldset class="form-floating">
-                    <input type="text" name="location_url" id="location_url" class="form-control last-border" placeholder="https://example.com/" pattern="^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?$">
-                    <label for="location_url">Location URL</label>
-                </fieldset>
-                <div class="invalid-feedback" style="position: absolute; top: 70%; left: 52%;">Must be a URL</div>
-                <div class="valid-feedback" style="position: absolute; top: 70%; left: 52%;">Looks good!</div>
-                <!-- zero-width space to add padding -->
-                <div class="valid-feedback invalid-feedback">​</div>
+            <!-- location url -->
+            <div class="col-md-6">
+                <div class="input-group col-md-4">
+                    <div class="input-group-text">
+                        <i class="ph-bold ph-link-simple"></i>
+                    </div>
+                    <fieldset class="form-floating">
+                        <input type="text" name="location_url" id="location_url" class="form-control last-border" placeholder="https://example.com/" pattern="https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)">
+                        <label for="location_url">Location URL</label>
+                    </fieldset>
+                    <div class="invalid-feedback">Must be a URL</div>
+                    <div class="valid-feedback">Looks good!</div>
+                </div>
             </div>
 
             <!-- draft -->
