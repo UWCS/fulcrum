@@ -80,12 +80,14 @@
             <!-- draft -->
             <div class="col-md-4">
                 <!-- same height calculation as form-floating to stay same size -->
-                <div class="input-group" style="height: calc(3.5rem + calc(var(--bs-border-width) * 2));">
+                <div class="input-group has-validation" style="height: calc(3.5rem + var(--bs-border-width) * 2);">
                     <div class="input-group-text">
                         <input type="checkbox" name="draft" id="draft" class="form-check-input no-validate-checkbox">
                     </div>
                     <label for="draft" class="form-control d-flex align-items-center">Draft</label>
                 </div>
+                <!-- dummy spacer for aligning checkbox with every field -->
+                <div class="valid-feedback invalid-feedback validation-spacer">&nbsp;</div>
             </div>
 
             <!-- icon -->

@@ -26,7 +26,15 @@
     box-shadow: none !important;
 }
 
+// fix border radius of fieldsets when last element in a row
+
 .last-border {
     border-top-right-radius: var(--bs-border-radius) !important;
     border-bottom-right-radius: var(--bs-border-radius) !important;
+}
+
+// add a dummy spacer to checkbox to align when validated
+
+.was-validated .validation-spacer {
+    display: block;
 }
