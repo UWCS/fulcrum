@@ -42,8 +42,9 @@
             </div>
 
             <!-- location -->
-            <!-- TODO: maybe update location url automatically?-->
+            <!-- TODO: maybe update location url automatically? -->
             <!-- known issue with bootstrap (https://github.com/twbs/bootstrap/pull/34527#pullrequestreview-830171528) means form-floating needs to be a div when using input-groups -->
+            <!-- github issue for tracking: https://github.com/twbs/bootstrap/issues/41575 -->
             <div class="col-md-6">
                 <div class="input-group col-md-4">
                     <div class="input-group-text">
@@ -60,6 +61,8 @@
             </div>
 
             <!-- location url -->
+            <!-- you'd think it would be better to merge these 2 for ui right? you would be right. the problem is bootstrap validation has a fun little hissy fit when validating input groups -->
+            <!-- github issue for tracking: https://github.com/twbs/bootstrap/issues/41575 -->
             <div class="col-md-6">
                 <div class="input-group col-md-4">
                     <div class="input-group-text">
@@ -150,7 +153,7 @@
 
             <!-- submit -->
             <div class="col-23 d-flex justify-content-center">
-                <input type="submit" value="Create Event" class="btn btn-primary col-6">
+                <input type="submit" value="Create Event" class="btn btn-primary col-6 text-white">
             </div>
         </form>
     </div>
