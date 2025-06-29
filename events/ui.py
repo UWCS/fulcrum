@@ -46,7 +46,8 @@ def create(error: str | None = None) -> str | Response:  # noqa: PLR0911
         flash(colour, "error")
         return redirect(url_for("events_ui.create"))
 
-    colour = color_colour if color_colour else text_colour
+    # prefer text_colour if both are provided (in case these colours change)
+    colour = text_colour if text_colour else color_colour
 
     # parse dates and duration
     start_time = get_datetime_from_string(request.form["start_time"])

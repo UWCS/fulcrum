@@ -181,7 +181,7 @@ class Event(db.Model):
         # check if colour is valid
         colour_regex = re.compile(r"^#[0-9a-fA-F]{6}$")
         if self.colour and (
-            not colour_regex.match(self.colour) or self.colour not in colours
+            not colour_regex.match(self.colour) and self.colour not in colours
         ):
             return "Colour must be a valid hex code or one of: " + ", ".join(colours)
 
