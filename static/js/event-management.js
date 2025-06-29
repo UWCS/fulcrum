@@ -31,9 +31,9 @@ document.addEventListener("DOMContentLoaded", () => {
             customIconPreview.classList.add("d-none");
         } else if (icons.includes(iconInput.value)) {
             // if the icon is one of the predefined icons, show it
-            iconPreview.className += " d-none";
             customIconPreview.classList.remove("d-none");
-            customIconPreview.src = `/static/icons/${iconInput.value}.svg`;
+            customIconPreview.maskImage = `url('/static/icons/${iconInput.value}.svg')`;
+            customIconPreview.style.maskImage = `url('/static/icons/${iconInput.value}.svg')`;
         } else {
             // show phosphor logo if invalid
             iconPreview.className = "ph-bold ph-phosphor-logo";
