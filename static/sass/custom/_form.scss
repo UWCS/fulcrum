@@ -38,3 +38,12 @@
 .was-validated .validation-spacer {
     display: block;
 }
+
+// size form images accordingly
+
+.form-image {
+    width: 1rem;
+    height: 1rem;
+    // convert to white
+    filter: brightness(0) invert(1);
+}

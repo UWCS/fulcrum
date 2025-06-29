@@ -1,12 +1,15 @@
 // This script validates the form inputs before submission and updates fields if necessary
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
+    // load icons from the select element
+    const icons = Array.from(document.querySelectorAll("#icon-list option")).map(option => option.value.trim());
+
     // update icon preview
-    // TODO: add custom uploads for icons
     const iconInput = document.getElementById("icon");
     const iconPreview = document.getElementById("icon-preview");
+    const customIconPreview = document.getElementById("custom-icon-preview");
 
-    iconInput.addEventListener("input", function () {
+    iconInput.addEventListener("input", () => {
         if (iconInput.value.startsWith("ph-")) {
             // remove the "ph-" prefix if it exists
             iconInput.value = iconInput.value.substring(3);
@@ -15,21 +18,28 @@ document.addEventListener("DOMContentLoaded", function () {
         const newClass = "ph-" + iconInput.value.trim();
         iconPreview.className = "ph-bold " + newClass;
 
-        // check if the icon is valid
-        isValid = window.getComputedStyle(iconPreview, "::before").content !== "none";
-        if (!isValid) {
-            // default to generic icon if invalid
-            iconPreview.className = "ph-bold ph-phosphor-logo"
+        if (window.getComputedStyle(iconPreview, "::before").content !== "none") {
+            // if valid phosphor icon, show the icon preview and remove custom icon preview
+            customIconPreview.classList.add("d-none");
+        } else if (icons.includes(iconInput.value)) {
+            // if the icon is one of the predefined icons, show it
+            iconPreview.className += " d-none";
+            customIconPreview.classList.remove("d-none");
+            customIconPreview.src = `/static/icons/${iconInput.value}.svg`;
+        } else {
+            // show phosphor logo if invalid
+            iconPreview.className = "ph-bold ph-phosphor-logo";
+            customIconPreview.classList.add("d-none");
         }
     });
 
     // icon validation
     iconInput.addEventListener("input", () => {
-        // invalid if the iconPreview is phosphor logo
-        if (iconInput.value === "" || !iconPreview.className.includes("ph-phosphor-logo")) {
+        if (iconInput.value === "" || !iconPreview.className.includes("ph-phosphor-logo") || icons.includes(iconInput.value)) {
+            // valid if empty, valid phosphor icon, or one of the predefined icons
             iconInput.setCustomValidity("");
         } else {
-            iconInput.setCustomValidity("Please provide a valid Phosphor Icon name or one of: " + "{{ ', '.join(icons) }}");
+            iconInput.setCustomValidity("Please provide a valid Phosphor Icon name or one of: " + icons.join(", "));
         }
     });
 
@@ -162,7 +172,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // form validation
     const form = document.querySelector("form");
-    form.addEventListener("submit", function (event) {
+    form.addEventListener("submit", (event) => {
         if (!form.checkValidity()) {
             event.preventDefault();
             event.stopPropagation();

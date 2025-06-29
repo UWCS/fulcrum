@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from werkzeug.wrappers import Response
 
@@ -16,6 +18,16 @@ events_ui_bp = Blueprint("events_ui", __name__, url_prefix="/events")
 @events_ui_bp.route("/create", methods=["GET", "POST"])
 @is_exec_wrapper
 def create(error: str | None = None) -> str | Response:  # noqa: PLR0911
+    """Create a new event."""
+
+    # icons are all .svg files in the static/icons directory
+    icons = [
+        f.stem
+        for f in Path("static/icons").iterdir()
+        if f.is_file() and f.suffix == ".svg"
+    ]
+    icons.sort()
+
     # if getting, return the ui for creating an event
     if request.method == "GET":
         return render_template(
@@ -24,6 +36,7 @@ def create(error: str | None = None) -> str | Response:  # noqa: PLR0911
             action="events_ui.create",
             method="POST",
             event=None,
+            icons=icons,
         )
 
     # if posting, create the event
