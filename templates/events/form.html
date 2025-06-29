@@ -119,10 +119,15 @@
                     </div>
                     <div class="input-group-text">#</div>
                     <fieldset class="form-floating">
-                        <input type="text" name="text_colour" id="text_colour" class="form-control last-border" placeholder="#000000">
-                        <label for="text_colour">Event Color</label>
+                        <input type="text" name="text_colour" id="text_colour" class="form-control last-border" placeholder="#000000" list="colour-list">
+                        <label for="text_colour">Event Colour</label>
+                        <datalist id="colour-list">
+                            {% for colour in colours %}
+                                <option value="{{ colour }}">
+                            {% endfor %}
+                        </datalist>
                     </fieldset>
-                    <div class="invalid-feedback">Please provide a valid hex color code or one of: {{ ", ".join(colors) }}</div>
+                    <div class="invalid-feedback">Please provide a valid hex color code or one of: {{ ", ".join(colours) }}</div>
                     <div class="valid-feedback">Looks good!</div>                  
                 </div>
             </div>
@@ -164,6 +169,13 @@
             </div>
         </form>
     </div>
+</div>
+
+<!-- full dict of invisible colours -->
+<div class="d-none" id="invisible-colours">
+    {% for colour in colours %}
+        <span>{{ colour }}:{{ colours[colour] }}</span>
+    {% endfor %}
 </div>
 
 {% endblock %}

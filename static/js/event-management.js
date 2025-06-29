@@ -1,8 +1,16 @@
 // This script validates the form inputs before submission and updates fields if necessary
 
 document.addEventListener("DOMContentLoaded", () => {
-    // load icons from the select element
+    // load icons from the datalist options
     const icons = Array.from(document.querySelectorAll("#icon-list option")).map(option => option.value.trim());
+
+    // load colours from invisible element
+    const colours = {};
+    const invisibleColours = document.querySelectorAll("#invisible-colours span");
+    invisibleColours.forEach(span => {
+        const [name, hex] = span.textContent.trim().split(":");
+        colours[name] = hex;
+    });
 
     // update icon preview
     const iconInput = document.getElementById("icon");
@@ -49,7 +57,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function syncColourInputs(fromText) {
         if (fromText) {
-            if (colourText.value.startsWith("#")) {
+            if (Object.keys(colours).includes(colourText.value)) {
+                colourPicker.value = colours[colourText.value]; // set the colour picker to the named colour
+            } else if (colourText.value.startsWith("#")) {
                 colourPicker.value = colourText.value; // set the colour picker to the text value
             } else {
                 colourPicker.value = "#" + colourText.value; // prepend '#' if not present
@@ -65,10 +75,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // colour validation
     colourText.addEventListener("input", () => {
         const isHex = /^#?[0-9A-Fa-f]{6}$/;
-        if (colourText.value === "" || colourText.value.match(isHex)) {
+        if (colourText.value === "" || colourText.value.match(isHex) || Object.keys(colours).includes(colourText.value)) {
             colourText.setCustomValidity("");
         } else {
-            colourText.setCustomValidity("Please provide a valid hex color code");
+            colourText.setCustomValidity("Please provide a valid hex color code or one of: " + Object.keys(colours).join(", "));
         }
     });
 
@@ -180,8 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
         form.classList.add("was-validated");
 
         // prepend "#" to text colour
-        // TODO: custom colour acceptance
-        if (colourText.value && !colourText.value.startsWith("#")) {
+        if (colourText.value && !colourText.value.startsWith("#") && !Object.keys(colours).includes(colourText.value)) {
             colourText.value = "#" + colourText.value;
         }
     }, false);

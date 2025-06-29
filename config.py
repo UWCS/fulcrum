@@ -1,4 +1,7 @@
-{
+from pathlib import Path
+
+# custom colours
+colours = {
     "blue": "#3A7DFF",
     "yellow": "#FFC700",
     "grey": "#202429",
@@ -18,5 +21,10 @@
     "events": "#1DC9FF",
     "sports": "#B53DFF",
     "compcafe": "#358A4D",
-    "milk": "#4BB3FF"
+    "milk": "#4BB3FF",
 }
+
+# custom icons
+icons = [
+    f.stem for f in Path("static/icons").iterdir() if f.is_file() and f.suffix == ".svg"
+]
