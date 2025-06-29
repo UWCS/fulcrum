@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 # custom colours
@@ -24,7 +25,19 @@ colours = {
     "milk": "#4BB3FF",
 }
 
-# custom icons
-icons = [
+# custom icons from static/icons directory
+custom_icons = [
     f.stem for f in Path("static/icons").iterdir() if f.is_file() and f.suffix == ".svg"
 ]
+
+# phosphor icons from static/icons/phosphor-bold.css
+phosphor_icons = sorted(
+    set(
+        re.findall(
+            r"\.ph-([a-z0-9-]+)::before",
+            Path("static/icons/phosphor-bold.css").read_text(),
+        )
+    )
+)
+
+icons = sorted(custom_icons + phosphor_icons)

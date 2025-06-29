@@ -1,13 +1,13 @@
 import re
 from datetime import date, datetime, timedelta
-from json import load
-from pathlib import Path
 
 import pytz
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_, func
 from sqlalchemy.orm import foreign
+
+from config import colours, custom_icons, icons
 
 db = SQLAlchemy()
 
@@ -180,15 +180,16 @@ class Event(db.Model):
 
         # check if colour is valid
         colour_regex = re.compile(r"^#[0-9a-fA-F]{6}$")
-        if self.colour:
-            if colour_regex.match(self.colour):
-                return None
-            with Path("colours.json").open("r") as f:
-                colours = load(f)
-            if self.colour in colours:
-                return None
+        if self.colour and (
+            not colour_regex.match(self.colour) or self.colour not in colours
+        ):
+            return "Colour must be a valid hex code or one of: " + ", ".join(colours)
+
+        # check if icon is valid
+        if self.icon and self.icon not in icons:
             return (
-                f"Colour must be one of {", ".join(colours.keys())} or a valid hex code"
+                "Icon must be a phosphor icon (https://phosphoricons.com/) or one of: "
+                + ", ".join(custom_icons)
             )
 
         return None

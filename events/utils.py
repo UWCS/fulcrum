@@ -5,6 +5,7 @@ from pathlib import Path
 import pytz
 import requests
 
+from config import colours
 from schema import Event, Tag, Week, db
 
 
@@ -392,15 +393,11 @@ def validate_colour(text_colour: str | None, hex_colour: str | None) -> str | No
 
 def get_hex_from_name(name: str) -> str | None:
     """Get the hex colour from a name"""
-    with Path("colours.json").open("r") as f:
-        colours = load(f)
-    return colours.get(name.lower(), None)  # type: ignore
+    return colours.get(name.lower(), None)
 
 
 def get_name_from_hex(hex_colour: str) -> str | None:
     """Get the name of a colour from its hex code"""
-    with Path("colours.json").open("r") as f:
-        colours = load(f)
     for name, hex_code in colours.items():
         if hex_code.lower() == hex_colour.lower():
             return name

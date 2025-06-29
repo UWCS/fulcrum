@@ -1,6 +1,7 @@
 from flask import Blueprint, Response, jsonify, request
 
 from auth.auth import valid_api_auth
+from config import colours, icons
 from events.utils import (
     create_event,
     create_repeat_event,
@@ -661,3 +662,43 @@ def get_week_by_date(date_str: str) -> tuple[Response, int]:
         return jsonify({"error": "Week not found"}), 404
 
     return jsonify(week.to_dict()), 200
+
+
+@events_api_bp.route("/colours", methods=["GET"])
+def get_colours() -> tuple[Response, int]:
+    """Get all available colours
+    ---
+    security: []
+    responses:
+        200:
+            description: A JSON object containing all available colours.
+            schema:
+                type: object
+                additionalProperties:
+                    type: string
+        404:
+            description: No colours found.
+    """
+    if not colours:
+        return jsonify({"error": "No colours found"}), 404
+    return jsonify(colours), 200
+
+
+@events_api_bp.route("/icons", methods=["GET"])
+def get_icons() -> tuple[Response, int]:
+    """Get all available icons
+    ---
+    security: []
+    responses:
+        200:
+            description: A JSON object containing all available icons.
+            schema:
+                type: object
+                additionalProperties:
+                    type: string
+        404:
+            description: No icons found.
+    """
+    if not icons:
+        return jsonify({"error": "No icons found"}), 404
+    return jsonify(icons), 200

@@ -17,11 +17,11 @@
 
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
-                <div class="alert alert-danger col-12">
-                    {% for message in messages %}
-                        {{ message }}
-                    {% endfor %}
-                </div>
+                    <div class="alert alert-danger col-12">
+                        {% for message in messages %}
+                            {{ message }}
+                        {% endfor %}
+                    </div>
                 {% endif %}
             {% endwith %}
 
@@ -161,6 +161,11 @@
             <div class="form-floating col-md-8 offset-md-2">
                 <input type="text" name="tags" id="tags" class="form-control no-validate" placeholder="tag1,tag2,tag3">
                 <label for="tags">Tags</label>
+                <datalist id="tags-list">
+                    {% for tag in tags %}
+                        <option value="{{ tag }}">
+                    {% endfor %}
+                </datalist>
             </div>
 
             <!-- submit -->
