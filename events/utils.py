@@ -140,6 +140,8 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
                 if start_date <= date:
                     name = w["name"]
                     if "Term" in name:
+                        # term week
+                        # e.g. "Term 1, week 2"
                         parts = name.split(", ")
                         term_num = int(parts[0].split(" ")[-1])
                         week_num = int(parts[1].split(" ")[-1])
@@ -148,15 +150,15 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
                         term_num = 1
                         week_num = 0
                     else:
+                        # increment week number and continue for holiday weeks
                         week_delta += 1
                         continue
 
-                    start_date = start_date + timedelta(weeks=week_delta)
                     week = Week(
                         academic_year=year,
                         term=term_num,
                         week=week_num + week_delta,
-                        start_date=start_date,
+                        start_date=start_date + timedelta(weeks=week_delta),
                     )
 
                     db.session.add(week)
