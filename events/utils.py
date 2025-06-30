@@ -132,51 +132,60 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
                 timeout=5,
             ).json()
 
-            for w in warwick_week["weeks"]:
+            week_delta = 0
+            for w in reversed(warwick_week["weeks"]):
                 start_date = get_date_from_string(w["start"])
                 if isinstance(start_date, str):
                     return None
-                end_date = get_date_from_string(w["end"])
-                if isinstance(end_date, str):
-                    return None
-                if start_date.date() <= date.date() <= end_date.date():
+                if start_date <= date:
                     name = w["name"]
                     if "Term" in name:
-                        parts = name.split(",")
+                        parts = name.split(", ")
                         term_num = int(parts[0].split(" ")[-1])
                         week_num = int(parts[1].split(" ")[-1])
-                    else:
+                    elif w["weekNumber"] == 0:
+                        # welcome week
                         term_num = 1
                         week_num = 0
+                    else:
+                        week_delta += 1
+                        continue
 
+                    start_date = start_date + timedelta(weeks=week_delta)
+                    week = Week(
+                        academic_year=year,
+                        term=term_num,
+                        week=week_num + week_delta,
+                        start_date=start_date,
+                    )
+
+                    db.session.add(week)
+                    db.session.commit()
+                    break
+        else:
+            with Path("olddates.json").open("r") as f:
+                old_dates = load(f)
+            for w in reversed(old_dates["weeks"]):
+                start_date = get_date_from_string(w["date"])
+                if isinstance(start_date, str):
+                    return None
+                if start_date <= date:
+                    term_num = w["term"]
+                    delta = date - start_date
+                    # add 1 to make 1-indexed
+                    # apart from t1 which has welcome week
+                    week_num = delta.days // 7 + 1 if term_num > 1 else delta.days // 7
+                    start_date = start_date + timedelta(
+                        weeks=week_num - (1 if term_num > 1 else 0)
+                    )
                     week = Week(
                         academic_year=year,
                         term=term_num,
                         week=week_num,
                         start_date=start_date,
                     )
-
                     db.session.add(week)
                     db.session.commit()
-                    break
-
-        else:
-            with Path("olddates.json").open("r") as f:
-                old_dates = load(f)
-            for w in old_dates:
-                start_date = get_date_from_string(w["date"])
-                if isinstance(start_date, str):
-                    return None
-                if start_date.date() <= date.date():
-                    week = Week(
-                        academic_year=year,
-                        term=w["term"],
-                        week=w["week"],
-                        start_date=start_date,
-                    )
-                    db.session.add(week)
-                    db.session.commit()
-                    break
 
     return week
 
