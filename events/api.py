@@ -7,10 +7,12 @@ from events.utils import (
     create_repeat_event,
     delete_event,
     edit_event,
+    get_all_tags,
     get_datetime_from_string,
     get_event_by_id,
     get_event_by_slug,
     get_events_by_time,
+    get_tags_by_string,
     get_timedelta_from_string,
 )
 from schema import Event, Tag, Week
@@ -573,13 +575,16 @@ def delete_event_api(event_id: int) -> tuple[Response, int]:
     return jsonify({"message": "Event deleted successfully"}), 200
 
 
-# TODO: might want to refactor getting tags to utils
-
-
 @events_api_bp.route("/tags", methods=["GET"])
 def get_tags() -> tuple[Response, int]:
     """Get all tags
     ---
+    parameters:
+      - name: query
+        in: query
+        type: string
+        required: false
+        description: A query string to filter tags by name.
     security: []
     responses:
         200:
@@ -591,7 +596,10 @@ def get_tags() -> tuple[Response, int]:
         404:
             description: No tags found.
     """
-    tags = Tag.query.order_by(Tag.name).all()
+    query_string = request.args.get("query", "")
+    tags = (
+        get_tags_by_string(query_string, limit=-1) if query_string else get_all_tags()
+    )
     if not tags:
         return jsonify({"error": "No tags found"}), 404
     return jsonify([tag.to_dict() for tag in tags]), 200

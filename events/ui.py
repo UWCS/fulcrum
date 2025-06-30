@@ -5,6 +5,7 @@ from auth.auth import is_exec_wrapper
 from config import colours, icons
 from events.utils import (
     create_event,
+    get_all_tags,
     get_datetime_from_string,
     get_event_by_slug,
     get_timedelta_from_string,
@@ -19,6 +20,8 @@ events_ui_bp = Blueprint("events_ui", __name__, url_prefix="/events")
 def create(error: str | None = None) -> str | Response:  # noqa: PLR0911
     """Create a new event."""
 
+    tags = [tag.name for tag in get_all_tags()]
+
     # if getting, return the ui for creating an event
     if request.method == "GET":
         return render_template(
@@ -29,6 +32,7 @@ def create(error: str | None = None) -> str | Response:  # noqa: PLR0911
             event=None,
             icons=icons,
             colours=colours,
+            tags=tags,
         )
 
     # if posting, create the event
@@ -74,11 +78,8 @@ def create(error: str | None = None) -> str | Response:  # noqa: PLR0911
         return redirect(url_for("events_ui.create"))
 
     # parse tags
-    tags = (
-        [tag.strip() for tag in request.form["tags"].split(",")]
-        if request.form["tags"]
-        else []
-    )
+    tags = request.form.getlist("tags[]")
+    tags = [tag.strip().lower() for tag in tags if tag.strip()] if tags else []
 
     # attempt to create the event
     event = create_event(

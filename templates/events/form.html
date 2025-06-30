@@ -4,6 +4,10 @@
 
 {% block header %}
 <script src="{{ url_for('static', filename='js/event-management.js') }}"></script>
+<script type="module">
+    import Tags from "{{ url_for('static', filename='js/tags.min.js') }}";
+    Tags.init();
+</script>
 {% endblock %}
 
 {% block content %}
@@ -177,15 +181,15 @@
             </div>
 
             <!-- tags -->
-            <!-- badge and created tags? -->
+            <!-- tags from https://github.com/lekoala/bootstrap5-tags -->
             <div class="form-floating col-md-8 offset-md-2">
-                <input type="text" name="tags" id="tags" class="form-control no-validate" placeholder="tag1,tag2,tag3">
-                <label for="tags">Tags</label>
-                <datalist id="tags-list">
+                <select class="form-select" id="tags" name="tags[]" multiple data-allow-new="true" data-allow-clear="true" data-separator=" |,|  ">
+                    <option value="" disabled selected>Select tags</option>
                     {% for tag in tags %}
-                        <option value="{{ tag }}">
+                        <option value="{{ tag }}">{{ tag }}</option>
                     {% endfor %}
-                </datalist>
+                </select> 
+                <label for="tags">Tags</label>
             </div>
 
             <!-- submit -->

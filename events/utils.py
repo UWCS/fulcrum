@@ -92,6 +92,9 @@ def create_event(  # noqa: PLR0913
         db.session.rollback()
         return "Unable to find or create a week for the event date"
 
+    # add the event to db to allow tags
+    db.session.add(event)
+
     # attach tags to the event
     # check all tags exist, create if not
     for tag in tags:
@@ -101,8 +104,6 @@ def create_event(  # noqa: PLR0913
             db.session.add(tag_obj)
         event.tags.append(tag_obj)
 
-    # add the event to the session and commit
-    db.session.add(event)
     db.session.commit()
 
     return event
@@ -402,3 +403,16 @@ def get_name_from_hex(hex_colour: str) -> str | None:
         if hex_code.lower() == hex_colour.lower():
             return name
     return None
+
+
+def get_all_tags() -> list[Tag]:
+    """Get all tags from the database"""
+    return Tag.query.order_by(Tag.name).all()
+
+
+def get_tags_by_string(search: str, limit: int = 10) -> list[Tag]:
+    """get tags by a string query"""
+    search = search.lower()
+    query = Tag.query.filter(Tag.name.ilike(f"%{search}%")).order_by(Tag.name)  # type: ignore
+
+    return query.limit(limit).all() if limit != -1 else query.all()
