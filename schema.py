@@ -27,6 +27,47 @@ def initialise_db(app: Flask) -> None:
             db.drop_all()
         db.create_all()
 
+        # create dummy event
+        if app.debug:
+            start_time = datetime(
+                2025, 9, 25, 12, 0, 0, tzinfo=pytz.timezone("Europe/London")
+            )
+            dummy_event = Event(
+                name="Test Event",
+                description="This is a test description for the test event",
+                draft=False,
+                location="Test Location",
+                location_url="https://example.com",
+                icon="ph-test-tube",
+                colour="social",
+                start_time=start_time,
+                end_time=start_time + timedelta(hours=1),
+            )
+            db.session.add(dummy_event)
+            db.session.commit()
+
+            # create dummy week
+            dummy_week = Week(
+                academic_year=2025,
+                term=1,
+                week=0,
+                start_date=date(2025, 9, 22),
+            )
+            db.session.add(dummy_week)
+            db.session.commit()
+
+            # create dummy tags
+            dummy_tag1 = Tag("test")
+            dummy_tag2 = Tag("tag")
+            db.session.add(dummy_tag1)
+            db.session.add(dummy_tag2)
+            db.session.commit()
+
+            # associate dummy event with dummy tags
+            dummy_event.tags.append(dummy_tag1)
+            dummy_event.tags.append(dummy_tag2)
+            db.session.commit()
+
 
 class Week(db.Model):
     """Model for a week in the academic calendar"""

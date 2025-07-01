@@ -118,7 +118,7 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
     """Get the week from a given date"""
 
     week = Week.query.filter(
-        (date >= Week.start_date) & (date <= Week.end_date)  # type: ignore
+        (date.date >= Week.start_date) & (date.date <= Week.end_date)  # type: ignore
     ).first()
 
     if week is None:
