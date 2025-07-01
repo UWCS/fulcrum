@@ -139,7 +139,7 @@ class Event(db.Model):
         self.location = location
         self.location_url = location_url
         self.icon = icon
-        self.colour = colour
+        self.colour = colour if colour else "blue"
         # ensure times are london-time
         self.start_time = start_time.astimezone(pytz.timezone("Europe/London"))
         self.end_time = (
