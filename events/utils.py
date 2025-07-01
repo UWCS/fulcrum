@@ -92,6 +92,11 @@ def create_event(  # noqa: PLR0913
         db.session.rollback()
         return "Unable to find or create a week for the event date"
 
+    # check if week and slug are unique
+    if get_event_by_slug(week.academic_year, week.term, week.week, event.slug):
+        db.session.rollback()
+        return "An event with this name already exists in this week"
+
     # add the event to db to allow tags
     db.session.add(event)
 
