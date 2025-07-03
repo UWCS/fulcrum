@@ -4,20 +4,20 @@
 
 {% block header %}
 <script src="{{ url_for('static', filename='js/event-management.js') }}"></script>
-<script type="module">
-    import Tags from "{{ url_for('static', filename='js/tags.min.js') }}";
-    Tags.init();
-</script>
 {% endblock %}
 
 {% block content %}
 <div class="container text-center my-4">
-    <h1>Create Event</h1>
+    <h1>{% if event %}Edit{% else %}Create{% endif %} Event</h1>
 </div>
 
 <div class="container y-4">
     <div class="y-4 border rounded p-4">
-        <form method="{{ method }}" action="{{ url_for(action) }}" class="row g-3 align-items-center needs-validation" novalidate>
+        <form 
+            method="{{ method }}"
+            action="{{ url_for(action, year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) if event else url_for(action) }}"
+            class="row g-3 align-items-center needs-validation"
+            novalidate>
 
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
@@ -31,7 +31,7 @@
 
             <!-- name -->
             <div class="form-floating col-md-6 offset-md-3">
-                <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" required>
+                <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" {% if event %}value="{{ event.name }}"{% endif %} required>
                 <label for="name">Event Name</label>
                 <div class="invalid-feedback">Please provide a name</div>
                 <div class="valid-feedback">Looks good!</div>
@@ -39,7 +39,7 @@
 
             <!-- description -->
             <div class="form-floating col-12">
-                <textarea name="description" id="description" class="form-control" placeholder="Event Description" style="height: 10rem;" required></textarea>
+                <textarea name="description" id="description" class="form-control" placeholder="Event Description" style="height: 10rem;" required>{% if event %}{{ event.description }}{% endif %}</textarea>
                 <label for="description">Event Description (Markdown)</label>
                 <div class="invalid-feedback">Please provide a description</div>
                 <div class="valid-feedback">Looks good!</div>
@@ -56,7 +56,7 @@
                     </div>
 
                     <fieldset class="form-floating">
-                        <input type="text" name="location" id="location" class="form-control last-border" placeholder="Event Location" required>
+                        <input type="text" name="location" id="location" class="form-control last-border" placeholder="Event Location" {% if event %}value="{{ event.location }}"{% endif %} required>
                         <label for="location">Event Location</label>
                     </fieldset>
                     <div class="invalid-feedback">Please provide a location</div>
@@ -73,7 +73,7 @@
                         <i class="ph-bold ph-link-simple"></i>
                     </div>
                     <fieldset class="form-floating">
-                        <input type="text" name="location_url" id="location_url" class="form-control last-border" placeholder="https://example.com/" pattern="https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)">
+                        <input type="text" name="location_url" id="location_url" class="form-control last-border" placeholder="https://example.com/" {% if event and event.location_url %}value="{{ event.location_url }}"{% endif %} pattern="https?://.+">
                         <label for="location_url">Location URL</label>
                     </fieldset>
                     <div class="invalid-feedback">Must be a URL</div>
@@ -86,7 +86,7 @@
                 <!-- same height calculation as form-floating to stay same size -->
                 <div class="input-group has-validation" style="height: calc(3.5rem + var(--bs-border-width) * 2);">
                     <div class="input-group-text">
-                        <input type="checkbox" name="draft" id="draft" class="form-check-input no-validate-checkbox">
+                        <input type="checkbox" name="draft" id="draft" class="form-check-input no-validate-checkbox" {% if event and event.draft %}checked{% endif %}>
                     </div>
                     <label for="draft" class="form-control d-flex align-items-center">Draft</label>
                 </div>
@@ -112,6 +112,7 @@
                             data-bs-toggle="tooltip"
                             data-bs-html="true"
                             data-bs-title="Enter a <a href='https://phosphoricons.com/' target='_blank'>Phosphor Icon</a> name or a <a href='https://github.com/UWCS/fulcrum/tree/main/static/icons' target='_blank'>custom icon</a> (upload files here if you want)"
+                            {% if event and event.icon %}value="{{ event.icon }}"{% endif %}
                         >
                         <label for="icon">Event Icon</label>
                         <datalist id="icon-list">
@@ -129,7 +130,12 @@
             <div class="col-md-4">
                 <div class="input-group">
                     <div class="input-group-text">
-                        <input type="color" name="color_colour" id="color_colour" value="#3A7DFF" class="form-control form-control-color no-validate no-validate-colour">
+                        <input 
+                            type="color"
+                            name="color_colour"
+                            id="color_colour"
+                            class="form-control form-control-color no-validate no-validate-colour"
+                            value="{% if event and event.colour %}{{ event.colour }}{% else %}#3A7DFF{% endif %}">
                     </div>
                     <div class="input-group-text">#</div>
                     <fieldset class="form-floating">
@@ -143,6 +149,7 @@
                             data-bs-toggle="tooltip"
                             data-bs-html="true"
                             data-bs-title="Enter a hex colour code or a <a href='https://github.com/UWCS/fulcrum/blob/main/config.py' target='_blank'>predefined colour</a>"
+                            {% if event and event.colour %}value="{{ event.colour }}"{% endif %}
                         >
                         <label for="text_colour">Event Colour</label>
                         <datalist id="colour-list">
@@ -158,7 +165,7 @@
 
             <!-- start -->
             <div class="form-floating col-md-4">
-                <input type="datetime-local" name="start_time" id="start_time" class="form-control" required>
+                <input type="datetime-local" name="start_time" id="start_time" class="form-control" {% if event %}value="{{ event.start_time.strftime('%Y-%m-%dT%H:%M') }}"{% endif %} required>
                 <label for="start_time">Start Time</label>
                 <div class="invalid-feedback">Please provide a start time</div>
                 <div class="valid-feedback">Looks good!</div>
@@ -166,7 +173,7 @@
 
             <!-- end -->
             <div class="form-floating col-md-4">
-                <input type="datetime-local" name="end_time" id="end_time" class="form-control">
+                <input type="datetime-local" name="end_time" id="end_time" class="form-control" {% if event and event.end_time %}value="{{ event.end_time.strftime('%Y-%m-%dT%H:%M') }}"{% endif %}>
                 <label for="end_time">End Time</label>
                 <div class="invalid-feedback">Endtime must be after start time and match the duration</div>
                 <div class="valid-feedback">Looks good!</div>
@@ -183,10 +190,14 @@
             <!-- tags -->
             <!-- tags from https://github.com/lekoala/bootstrap5-tags -->
             <div class="form-floating col-md-8 offset-md-2">
-                <select class="form-select" id="tags" name="tags[]" multiple data-allow-new="true" data-allow-clear="true" data-separator=" |,|  ">
-                    <option value="" disabled selected>Select tags</option>
+                <select class="form-select" id="tags" name="tags[]" multiple data-allow-new="true" data-allow-clear="true" data-separator=" |,|  " >
+                    {% if not (event and event.tags) %}
+                        <option value="" disabled selected>Select tags</option>
+                    {% endif %}
                     {% for tag in tags %}
-                        <option value="{{ tag }}">{{ tag }}</option>
+                        <option value="{{ tag }}" {% if event and (tag in event.tags | selectattr('name') | map(attribute='name') | list) %}selected="selected"{% endif %}>
+                            {{ tag }}
+                        </option>
                     {% endfor %}
                 </select> 
                 <label for="tags">Tags</label>
@@ -194,7 +205,7 @@
 
             <!-- submit -->
             <div class="col-23 d-flex justify-content-center">
-                <input type="submit" value="Create Event" class="btn btn-primary col-6 text-white">
+                <input type="submit" value="{% if event %}Edit{% else %}Create{% endif %} Event" class="btn btn-primary col-6 text-white">
             </div>
         </form>
     </div>
@@ -210,6 +221,11 @@
 <script>
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+</script>
+
+<script type="module">
+    import Tags from "{{ url_for('static', filename='js/tags.min.js') }}";
+    Tags.init();
 </script>
 
 {% endblock %}

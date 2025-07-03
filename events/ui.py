@@ -1,10 +1,12 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.wrappers import Response
 
 from auth.auth import is_exec_wrapper
-from config import colours, icons
+from config import colours, custom_icons
 from events.utils import (
     create_event,
+    edit_event,
     get_all_tags,
     get_datetime_from_string,
     get_event_by_slug,
@@ -15,9 +17,64 @@ from events.utils import (
 events_ui_bp = Blueprint("events_ui", __name__, url_prefix="/events")
 
 
+def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
+    """Parse event from form data"""
+    # parse colour
+    text_colour = form_data.get("text_colour", None)
+    color_colour = form_data.get("color_colour", None)
+
+    text_colour = text_colour.strip().lower() if text_colour else None
+    color_colour = color_colour.strip().lower() if color_colour else None
+
+    if (error := validate_colour(text_colour, color_colour)) is not None:
+        return error
+
+    # prefer text_colour if both are provided (in case these colours change)
+    colour = text_colour if text_colour else color_colour
+
+    # parse dates and duration
+    start_time = get_datetime_from_string(form_data["start_time"])
+    if isinstance(start_time, str):
+        return start_time
+
+    duration = (
+        get_timedelta_from_string(form_data["duration"])
+        if form_data["duration"]
+        else None
+    )
+    if isinstance(duration, str):
+        return duration
+
+    end_time = (
+        get_datetime_from_string(form_data["end_time"])
+        if form_data["end_time"]
+        else None
+    )
+    if isinstance(end_time, str):
+        return end_time
+
+    # parse tags
+    tags = form_data.getlist("tags[]")
+    tags = [tag.strip().lower() for tag in tags if tag.strip()]
+
+    return {
+        "name": form_data["name"],
+        "description": form_data["description"],
+        "draft": "draft" in form_data,
+        "location": form_data["location"],
+        "location_url": form_data.get("location_url", None),
+        "icon": form_data.get("icon", None),
+        "colour": colour,
+        "start_time": start_time,
+        "duration": duration,
+        "end_time": end_time,
+        "tags": tags,
+    }
+
+
 @events_ui_bp.route("/create", methods=["GET", "POST"])
 @is_exec_wrapper
-def create(error: str | None = None) -> str | Response:  # noqa: PLR0911
+def create() -> str | Response:
     """Create a new event."""
 
     tags = [tag.name for tag in get_all_tags()]
@@ -26,11 +83,9 @@ def create(error: str | None = None) -> str | Response:  # noqa: PLR0911
     if request.method == "GET":
         return render_template(
             "events/form.html",
-            error=error,
             action="events_ui.create",
             method="POST",
-            event=None,
-            icons=icons,
+            icons=custom_icons,
             colours=colours,
             tags=tags,
         )
@@ -39,67 +94,19 @@ def create(error: str | None = None) -> str | Response:  # noqa: PLR0911
 
     print("Creating event with data:", request.form)
 
-    # parse colour
-    text_colour = request.form.get("text_colour", None)
-    color_colour = request.form.get("color_colour", None)
-
-    text_colour = text_colour.strip().lower() if text_colour else None
-    color_colour = color_colour.strip().lower() if color_colour else None
-
-    if (colour := validate_colour(text_colour, color_colour)) is not None:
-        flash(colour, "error")
+    # parse form data
+    data = parse_form_data(request.form)
+    if isinstance(data, str):
+        flash(data, "error")
         return redirect(url_for("events_ui.create"))
-
-    # prefer text_colour if both are provided (in case these colours change)
-    colour = text_colour if text_colour else color_colour
-
-    # parse dates and duration
-    start_time = get_datetime_from_string(request.form["start_time"])
-    if isinstance(start_time, str):
-        flash(start_time, "error")
-        return redirect(url_for("events_ui.create"))
-
-    duration = (
-        get_timedelta_from_string(request.form["duration"])
-        if request.form["duration"]
-        else None
-    )
-    if isinstance(duration, str):
-        flash(duration, "error")
-        return redirect(url_for("events_ui.create"))
-
-    end_time = (
-        get_datetime_from_string(request.form["end_time"])
-        if request.form["end_time"]
-        else None
-    )
-    if isinstance(end_time, str):
-        flash(end_time, "error")
-        return redirect(url_for("events_ui.create"))
-
-    # parse tags
-    tags = request.form.getlist("tags[]")
-    tags = [tag.strip().lower() for tag in tags if tag.strip()] if tags else []
 
     # attempt to create the event
-    event = create_event(
-        request.form["name"],
-        request.form["description"],
-        "draft" in request.form,
-        request.form["location"],
-        request.form.get("location_url", None),
-        request.form.get("icon", None),
-        colour,
-        start_time,
-        duration,
-        end_time,
-        tags,
-    )
+    event = create_event(**data)
 
     # if failed, redirect to the create page with an error
     if isinstance(event, str):
         flash(event, "error")
-        return redirect(url_for("events_ui.create", error=event))
+        return redirect(url_for("events_ui.create"))
 
     # if successful, redirect to the event page
     return redirect(
@@ -113,7 +120,77 @@ def create(error: str | None = None) -> str | Response:  # noqa: PLR0911
     )
 
 
-# TODO: other event management UI
+@events_ui_bp.route(
+    "/<int:year>/<int:term>/<int:week>/<string:slug>/edit", methods=["GET", "POST"]
+)
+@is_exec_wrapper
+def edit(
+    year: int, term: int, week: int, slug: str, error: str | None = None
+) -> str | Response:
+    """Edit an existing event by its year, term, week, and slug."""
+
+    event = get_event_by_slug(year, term, week, slug)
+
+    if event is None:
+        return abort(404, description="Event not found")
+
+    tags = [tag.name for tag in get_all_tags()]
+
+    # if getting, return the ui for editing the event
+    if request.method == "GET":
+        return render_template(
+            "events/form.html",
+            error=error,
+            action="events_ui.edit",
+            method="POST",
+            event=event,
+            icons=custom_icons,
+            colours=colours,
+            tags=tags,
+        )
+
+    # if posting, update the event
+
+    # parse form data
+    data = parse_form_data(request.form)
+    if isinstance(data, str):
+        flash(data, "error")
+        return redirect(
+            url_for(
+                "events_ui.edit",
+                year=year,
+                term=term,
+                week=week,
+                slug=slug,
+            )
+        )
+
+    # attempt to edit the event
+    event = edit_event(event.id, **data)
+
+    # if failed, redirect to the edit page with an error
+    if isinstance(event, str):
+        flash(event, "error")
+        return redirect(
+            url_for(
+                "events_ui.edit",
+                year=year,
+                term=term,
+                week=week,
+                slug=slug,
+            )
+        )
+
+    # if successful, redirect to the event page
+    return redirect(
+        url_for(
+            "events_ui.view",
+            year=event.date.academic_year,
+            term=event.date.term,
+            week=event.date.week,
+            slug=event.slug,
+        )
+    )
 
 
 @events_ui_bp.route("/<int:year>/<int:term>/<int:week>/<string:slug>")
@@ -123,6 +200,9 @@ def view(year: int, term: int, week: int, slug: str) -> str:
     event = get_event_by_slug(year, term, week, slug)
 
     if event is None:
-        return "Event not found"
+        return abort(404, description="Event not found")
 
     return str(event.to_dict())
+
+
+# TODO: combos of events

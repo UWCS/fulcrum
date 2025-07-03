@@ -118,7 +118,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 hours.toString().padStart(2, '0'),
                 minutes.toString().padStart(2, '0')
             ].join(':');
-            console.log(`Duration: ${formattedDuration}`);
             durationInput.value = formattedDuration;
         }
     }
@@ -194,4 +193,11 @@ document.addEventListener("DOMContentLoaded", () => {
             colourText.value = "#" + colourText.value;
         }
     }, false);
+
+    // trigger events on load
+    [iconInput, colourText, startTimeInput, endTimeInput].forEach(input => {
+        if (input && input.value) {
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    });
 });

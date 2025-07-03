@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytz
 import requests
+from sqlalchemy import and_, exists
 
 from config import colours
 from schema import Event, Tag, Week, db
@@ -118,7 +119,7 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
     """Get the week from a given date"""
 
     week = Week.query.filter(
-        (date.date >= Week.start_date) & (date.date <= Week.end_date)  # type: ignore
+        (date >= Week.start_date) & (date <= Week.end_date)  # type: ignore
     ).first()
 
     if week is None:
@@ -247,8 +248,18 @@ def clean_weeks() -> None:
     """Clean weeks that are not associated with any events"""
     weeks = Week.query.all()
     for week in weeks:
-        if not week.events:  # type: ignore
+        has_events = db.session.query(
+            exists().where(
+                and_(
+                    Event.start_time >= week.start_date,
+                    Event.start_time <= week.end_date,
+                )
+            )
+        ).scalar()
+
+        if not has_events:  # type: ignore
             db.session.delete(week)
+
     db.session.commit()
 
 

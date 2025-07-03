@@ -30,11 +30,11 @@ custom_icons = [
     f.stem for f in Path("static/icons").iterdir() if f.is_file() and f.suffix == ".svg"
 ]
 
-# phosphor icons from static/icons/phosphor-bold.css
+# load all phosphor icons from CSS file
 phosphor_icons = sorted(
     set(
         re.findall(
-            r"\.ph-([a-z0-9-]+)::before",
+            r"\.ph-bold\.ph-([a-z0-9-]+):before",
             Path("static/icons/phosphor-bold.css").read_text(),
         )
     )
