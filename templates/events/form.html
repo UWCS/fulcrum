@@ -7,6 +7,17 @@
 {% endblock %}
 
 {% block content %}
+
+<script>
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+</script>
+
+<script type="module">
+    import Tags from "{{ url_for('static', filename='js/tags.min.js') }}";
+    Tags.init();
+</script>
+
 <div class="container text-center my-4">
     <h1>{% if event %}Edit{% else %}Create{% endif %} Event</h1>
 </div>
@@ -191,9 +202,7 @@
             <!-- tags from https://github.com/lekoala/bootstrap5-tags -->
             <div class="form-floating col-md-8 offset-md-2">
                 <select class="form-select" id="tags" name="tags[]" multiple data-allow-new="true" data-allow-clear="true" data-separator=" |,|  " >
-                    {% if not (event and event.tags) %}
-                        <option value="" disabled selected>Select tags</option>
-                    {% endif %}
+                    <option value="" disabled selected {% if not (event and event.tags) %}hidden{% endif %}>Select tags...</option>
                     {% for tag in tags %}
                         <option value="{{ tag }}" {% if event and (tag in event.tags | selectattr('name') | map(attribute='name') | list) %}selected="selected"{% endif %}>
                             {{ tag }}
@@ -217,15 +226,5 @@
         <span>{{ colour }}:{{ colours[colour] }}</span>
     {% endfor %}
 </div>
-
-<script>
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-</script>
-
-<script type="module">
-    import Tags from "{{ url_for('static', filename='js/tags.min.js') }}";
-    Tags.init();
-</script>
 
 {% endblock %}
