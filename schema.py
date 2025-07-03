@@ -30,7 +30,7 @@ def initialise_db(app: Flask) -> None:
         # create dummy event
         if app.debug:
             start_time = datetime(
-                2025, 9, 25, 12, 0, 0, tzinfo=pytz.timezone("Europe/London")
+                2025, 9, 30, 12, 0, 0, tzinfo=pytz.timezone("Europe/London")
             )
             dummy_event = Event(
                 name="Test Event",
@@ -46,12 +46,12 @@ def initialise_db(app: Flask) -> None:
             db.session.add(dummy_event)
             db.session.commit()
 
-            # create dummy week
+            # create dummy week (welcome week 2025)
             dummy_week = Week(
                 academic_year=2025,
                 term=1,
                 week=0,
-                start_date=date(2025, 9, 22),
+                start_date=date(2025, 9, 29),
             )
             db.session.add(dummy_week)
             db.session.commit()

@@ -4,3 +4,5 @@ static/css/main.css
 .env
 # ignore database
 volume/
+# ignore auto-generated instance folder
+instance/

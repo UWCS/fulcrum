@@ -126,7 +126,7 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
         # if unable to find week, create the week
         year, month = date.year, date.month
         if month < 9:  # noqa: PLR2004
-            # if september or earlier, use the previous academic year
+            # if earlier than september, use the previous academic year
             year -= 1
 
         api_year = 2006
