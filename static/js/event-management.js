@@ -168,17 +168,22 @@ document.addEventListener("DOMContentLoaded", () => {
         const duration = endTime.getTime() - startTime.getTime();
 
         if (duration < 0) {
+            // invalid duration
             endInput.setCustomValidity("End time must be after start time.");
             return;
         }
 
+        // update the duration input
         endInput.setCustomValidity("");
         eventDuration = duration;
         durationInput.value = formatDuration(eventDuration);
+
+        // sync accross all end times
         syncEndTimes();
     }
 
     function updateFutureStartTimes(changedInput) {
+        // update all future start times based on the changed input
         const allEntries = Array.from(timeFields.querySelectorAll(".time-entry"));
         const currentIndex = allEntries.findIndex(entry => entry.contains(changedInput));
 
@@ -194,6 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         for (let i = currentIndex + 1; i < allEntries.length; i++) {
+            // update the start time of the next entries
             const prevStartInput = allEntries[i - 1].querySelector("input[name='start_time[]']");
             const currStartInput = allEntries[i].querySelector("input[name='start_time[]']");
             const currEndInput = allEntries[i].querySelector("input[name='end_time[]']");
@@ -209,34 +215,42 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     timeFields.addEventListener("input", (event) => {
+        // handle input changes in time fields
         const input = event.target;
 
         if (input.name === "start_time[]") {
+            // if start time changes, update future start times and end times
             updateFutureStartTimes(input);
             const entry = input.closest(".time-entry");
             const endTimeInput = entry.querySelector("input[name='end_time[]']");
             const startTime = new Date(input.value);
+            if (eventDuration <= 0) return; // if no valid duration, do not update end time
             endTimeInput.value = formatDateTimeInput(new Date(startTime.getTime() + eventDuration));
             validateEndTime(endTimeInput);
         } else if (input.name === "end_time[]") {
+            // if end time changes, update duration and validate end time
             updateDuration(input);
             validateEndTime(input);
         }
     });
 
     durationInput.addEventListener("input", () => {
+        // handle duration input changes
         duration = parseDuration(durationInput.value);
         if (duration > 0) {
+            // if valid duration, update the event duration and sync end times
             eventDuration = duration;
             syncEndTimes();
             durationInput.setCustomValidity("");
         } else {
+            // invalid
             durationInput.setCustomValidity("Please provide a valid duration in DD:HH:MM format.");
         }
     });
 
     if (addTimeButton) {
         addTimeButton.addEventListener("click", (event) => {
+            // add a new time entry
             const allEntries = timeFields.querySelectorAll(".time-entry");
 
             const lastEntry = allEntries[allEntries.length - 1];
@@ -245,6 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let delta = 7 * 24 * 60 * 60 * 1000; // default is a week
             if (allEntries.length > 1) {
+                // if multiple entries, set the delta to the duration of the previous entry
                 const penultimateEntry = allEntries[allEntries.length - 2];
                 const penultimateStartInput = penultimateEntry.querySelector("input[name='start_time[]']");
                 delta = new Date(prevStartInput.value).getTime() - new Date(penultimateStartInput.value).getTime();
@@ -253,8 +268,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const newStartTime = new Date(new Date(prevStartInput.value).getTime() + delta);
             const newEndTime = eventDuration > 0 ? new Date(newStartTime.getTime() + eventDuration) : NaN;
 
+            // create a new time entry element and add
             const newEntry = document.createElement("div");
-            newEntry.className = "row g-3 time-entry";
+            newEntry.className = "row g-3 mt-0 time-entry";
             newEntry.innerHTML = `
                 <div class="form-floating col-md-4">
                     <input type="datetime-local" name="start_time[]" id="start_time" class="form-control" value="${formatDateTimeInput(newStartTime)}" required>
@@ -271,7 +287,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
                 <div class="col-md-4 d-flex align-items-center">
-                    <button type="button" class="btn btn-danger remove-time-entry"><i class="ph-bold ph-trash"></i> Remove</button>
+                    <button type="button" class="btn btn-danger d-flex align-items-center gap-1 remove-time-entry">
+                        <i class="ph-bold ph-trash"></i> Remove
+                    </button>
                 </div>
             `;
             timeFields.appendChild(newEntry);
@@ -279,6 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     timeFields.addEventListener("click", (event) => {
+        // handle click events for removing time entries
         if (!event.target.classList.contains("remove-time-entry")) return;
 
         const entry = event.target.closest(".time-entry");
@@ -287,15 +306,19 @@ document.addEventListener("DOMContentLoaded", () => {
         entry.remove();
 
         if (precedingEntry && precedingEntry.classList.contains("time-entry")) {
+            // if there is a preceding entry update all subsequent start times
             const startTimeInput = precedingEntry.querySelector("input[name='start_time[]']");
             if (startTimeInput) updateFutureStartTimes(startTimeInput);
-        } else if (document.quwrySelector(".time-entry")) {
+        } else if (document.querySelector(".time-entry")) {
+            // if no preceding entry, update the first entry's start time
             const firstEntry = document.querySelector(".time-entry").querySelector("input[name='start_time[]']");
             if (firstEntry) updateFutureStartTimes(firstEntry);
         }
     });
 
     function initialiseTimes() {
+        // initialise the time fields with the first entry's values
+
         const firstEntry = timeFields.querySelector(".time-entry");
         if (!firstEntry) return;
 
@@ -303,12 +326,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const endTimeInput = firstEntry.querySelector("input[name='end_time[]']");
 
         if (startTimeInput.value && endTimeInput.value) {
+            // if start and end times are set, calculate the duration
             const initialDuration = new Date(endTimeInput.value).getTime() - new Date(startTimeInput.value).getTime();
             if (initialDuration >= 0) {
                 eventDuration = initialDuration;
                 durationInput.value = formatDuration(eventDuration);
             }
         } else {
+            // otherwise attempt to use the duration input
             const initialDuration = parseDuration(durationInput.value);
             if (initialDuration > 0) {
                 eventDuration = initialDuration;
@@ -319,6 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
+        // validate end times
         document.querySelectorAll("input[name='end_time[]']").forEach(validateEndTime);
     }
 
