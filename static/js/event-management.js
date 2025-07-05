@@ -297,23 +297,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     timeFields.addEventListener("click", (event) => {
-        // handle click events for removing time entries
+        // remove a time entry
         if (!event.target.classList.contains("remove-time-entry")) return;
-
-        const entry = event.target.closest(".time-entry");
-        const precedingEntry = entry.previousElementSibling;
-
-        entry.remove();
-
-        if (precedingEntry && precedingEntry.classList.contains("time-entry")) {
-            // if there is a preceding entry update all subsequent start times
-            const startTimeInput = precedingEntry.querySelector("input[name='start_time[]']");
-            if (startTimeInput) updateFutureStartTimes(startTimeInput);
-        } else if (document.querySelector(".time-entry")) {
-            // if no preceding entry, update the first entry's start time
-            const firstEntry = document.querySelector(".time-entry").querySelector("input[name='start_time[]']");
-            if (firstEntry) updateFutureStartTimes(firstEntry);
-        }
+        const entry = event.target.closest(".time-entry").remove();
     });
 
     function initialiseTimes() {
