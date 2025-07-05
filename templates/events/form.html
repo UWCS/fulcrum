@@ -19,7 +19,7 @@
 </script>
 
 <div class="container text-center my-4">
-    <h1>{% if event %}Edit{% else %}Create{% endif %} Event</h1>
+    <h1>{% if event %}Edit{% else %}Create{% endif %} Event(s)</h1>
 </div>
 
 <div class="container y-4">
@@ -41,11 +41,24 @@
             {% endwith %}
 
             <!-- name -->
-            <div class="form-floating col-md-6 offset-md-3">
+            <div class="form-floating col-md-10">
                 <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" {% if event %}value="{{ event.name }}"{% endif %} required>
                 <label for="name">Event Name</label>
                 <div class="invalid-feedback">Please provide a name</div>
                 <div class="valid-feedback">Looks good!</div>
+            </div>
+
+            <!-- draft -->
+            <div class="col-md-2">
+                <!-- same height calculation as form-floating to stay same size -->
+                <div class="input-group has-validation" style="height: calc(3.5rem + var(--bs-border-width) * 2);">
+                    <div class="input-group-text">
+                        <input type="checkbox" name="draft" id="draft" class="form-check-input no-validate-checkbox" {% if event and event.draft %}checked{% endif %}>
+                    </div>
+                    <label for="draft" class="form-control d-flex align-items-center">Draft</label>
+                </div>
+                <!-- dummy spacer for aligning checkbox with every field -->
+                <div class="valid-feedback invalid-feedback validation-spacer">&nbsp;</div>
             </div>
 
             <!-- description -->
@@ -90,19 +103,6 @@
                     <div class="invalid-feedback">Must be a URL</div>
                     <div class="valid-feedback">Looks good!</div>
                 </div>
-            </div>
-
-            <!-- draft -->
-            <div class="col-md-4">
-                <!-- same height calculation as form-floating to stay same size -->
-                <div class="input-group has-validation" style="height: calc(3.5rem + var(--bs-border-width) * 2);">
-                    <div class="input-group-text">
-                        <input type="checkbox" name="draft" id="draft" class="form-check-input no-validate-checkbox" {% if event and event.draft %}checked{% endif %}>
-                    </div>
-                    <label for="draft" class="form-control d-flex align-items-center">Draft</label>
-                </div>
-                <!-- dummy spacer for aligning checkbox with every field -->
-                <div class="valid-feedback invalid-feedback validation-spacer">&nbsp;</div>
             </div>
 
             <!-- icon -->
@@ -174,33 +174,9 @@
                 </div>
             </div>
 
-            <!-- start -->
-            <div class="form-floating col-md-4">
-                <input type="datetime-local" name="start_time" id="start_time" class="form-control" {% if event %}value="{{ event.start_time.strftime('%Y-%m-%dT%H:%M') }}"{% endif %} required>
-                <label for="start_time">Start Time</label>
-                <div class="invalid-feedback">Please provide a start time</div>
-                <div class="valid-feedback">Looks good!</div>
-            </div>
-
-            <!-- end -->
-            <div class="form-floating col-md-4">
-                <input type="datetime-local" name="end_time" id="end_time" class="form-control" {% if event and event.end_time %}value="{{ event.end_time.strftime('%Y-%m-%dT%H:%M') }}"{% endif %}>
-                <label for="end_time">End Time</label>
-                <div class="invalid-feedback">Endtime must be after start time and match the duration</div>
-                <div class="valid-feedback">Looks good!</div>
-            </div>
-
-            <!-- duration -->
-            <div class="form-floating col-md-4">
-                <input type="text" name="duration" id="duration" class="form-control" pattern="\d{2}:(?:[01]\d|2[0-3]):[0-5]\d" placeholder="DD:HH:MM">
-                <label for="duration">Duration (DD:HH:MM)</label>
-                <div class="invalid-feedback">Please provide a duration in the format DD:HH:MM</div>
-                <div class="valid-feedback">Looks good!</div>
-            </div>
-
             <!-- tags -->
             <!-- tags from https://github.com/lekoala/bootstrap5-tags -->
-            <div class="form-floating col-md-8 offset-md-2">
+            <div class="form-floating col-md-4">
                 <select class="form-select" id="tags" name="tags[]" multiple data-allow-new="true" data-allow-clear="true" data-separator=" |,|  " >
                     <option value="" disabled selected {% if not (event and event.tags) %}hidden{% endif %}>Select tags...</option>
                     {% for tag in tags %}
@@ -210,11 +186,47 @@
                     {% endfor %}
                 </select> 
                 <label for="tags">Tags</label>
+                <div class="valid-feedback invalid-feedback validation-spacer">&nbsp;</div>
             </div>
 
+            <div id="time-fields">
+                <div class="row g-3 time-entry">
+                    <!-- start -->
+                    <div class="form-floating col-md-4">
+                        <input type="datetime-local" name="start_time[]" id="start_time" class="form-control" {% if event %}value="{{ event.start_time.strftime('%Y-%m-%dT%H:%M') }}"{% endif %} required>
+                        <label for="start_time">Start Time</label>
+                        <div class="invalid-feedback">Please provide a start time</div>
+                        <div class="valid-feedback">Looks good!</div>
+                    </div>
+
+                    <!-- end -->
+                    <div class="form-floating col-md-4">
+                        <input type="datetime-local" name="end_time[]" id="end_time" class="form-control" {% if event and event.end_time %}value="{{ event.end_time.strftime('%Y-%m-%dT%H:%M') }}"{% endif %}>
+                        <label for="end_time">End Time</label>
+                        <div class="invalid-feedback">Endtime must be after start time and match the duration</div>
+                        <div class="valid-feedback">Looks good!</div>
+                    </div>
+
+                    <!-- duration -->
+                    <div class="form-floating col-md-4">
+                        <input type="text" name="duration" id="duration" class="form-control" pattern="\d{2}:(?:[01]\d|2[0-3]):[0-5]\d" placeholder="DD:HH:MM">
+                        <label for="duration">Duration (DD:HH:MM)</label>
+                        <div class="invalid-feedback">Please provide a duration in the format DD:HH:MM</div>
+                        <div class="valid-feedback">Looks good!</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if not event %}
+                <!-- add time -->
+                <div class="col-12 d-flex justify-content-center">
+                    <button type="button" class="btn btn-secondary col-4" id="add-time">Add Time</button>
+                </div>
+            {% endif %}
+
             <!-- submit -->
-            <div class="col-23 d-flex justify-content-center">
-                <input type="submit" value="{% if event %}Edit{% else %}Create{% endif %} Event" class="btn btn-primary col-6 text-white">
+            <div class="col-12 d-flex justify-content-center">
+                <input type="submit" value="{% if event %}Edit{% else %}Create{% endif %} Event(s)" class="btn btn-primary col-6 text-white">
             </div>
         </form>
     </div>

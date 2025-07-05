@@ -1,21 +1,16 @@
 // This script validates the form inputs before submission and updates fields if necessary
 
 document.addEventListener("DOMContentLoaded", () => {
-    // load icons from the datalist options
-    const icons = Array.from(document.querySelectorAll("#icon-list option")).map(option => option.value.trim());
 
-    // load colours from invisible element
-    const colours = {};
-    const invisibleColours = document.querySelectorAll("#invisible-colours span");
-    invisibleColours.forEach(span => {
-        const [name, hex] = span.textContent.trim().split(":");
-        colours[name] = hex;
-    });
+    // MARK: icons
 
     // update icon preview
     const iconInput = document.getElementById("icon");
     const iconPreview = document.getElementById("icon-preview");
     const customIconPreview = document.getElementById("custom-icon-preview");
+
+    // load icons from the datalist options
+    const icons = Array.from(document.querySelectorAll("#icon-list option")).map(option => option.value.trim());
 
     iconInput.addEventListener("input", () => {
         if (iconInput.value.startsWith("ph-")) {
@@ -51,9 +46,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // MARK: colours
+
     // update colour preview
     const colourPicker = document.getElementById("color_colour");
     const colourText = document.getElementById("text_colour");
+
+    // load colours from invisible element
+    const colours = {};
+    const invisibleColours = document.querySelectorAll("#invisible-colours span");
+    invisibleColours.forEach(span => {
+        const [name, hex] = span.textContent.trim().split(":");
+        colours[name] = hex;
+    });
 
     function syncColourInputs(fromText) {
         if (fromText) {
@@ -82,13 +87,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // update duration/end time
-    const endTimeInput = document.getElementById("end_time");
+    // MARK: time entry
+
+    const timeFields = document.getElementById("time-fields");
+    const addTimeButton = document.getElementById("add-time");
     const durationInput = document.getElementById("duration");
-    const startTimeInput = document.getElementById("start_time");
+
+    let eventDuration = 0; // duration in ms
 
     function formatDateTimeInput(input) {
         // format the input value to YYYY-MM-DDTHH:MM
+        if (!(input instanceof Date)) return "";
         const pad = (num) => num.toString().padStart(2, "0");
         const year = input.getFullYear();
         const month = pad(input.getMonth() + 1); // months are zero-indexed
@@ -98,86 +107,224 @@ document.addEventListener("DOMContentLoaded", () => {
         return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
-    function updateDuration() {
-        if (startTimeInput.value && endTimeInput.value) {
-            const startTime = new Date(startTimeInput.value);
-            const endTime = new Date(endTimeInput.value);
+    function formatDuration(input) {
+        // convert ms into DD:HH:MM format
+        if (input < 0) input = 0;
+        const days = Math.floor(input / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((input % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((input % (1000 * 60 * 60)) / (1000 * 60));
+        return [
+            days.toString().padStart(2, "0"),
+            hours.toString().padStart(2, "0"),
+            minutes.toString().padStart(2, "0")
+        ].join(":");
+    }
 
-            let duration = endTime - startTime;
-            if (duration < 0) {
-                duration = 0;
-            }
-            // convert duration into DD:HH:MM format
-            const days = Math.floor(duration / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((duration % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+    function parseDuration(input) {
+        // parse DD:HH:MM format into milliseconds
+        if (!/^\d{2}:\d{2}:\d{2}$/.test(input)) return 0;
+        const [days, hours, minutes] = input.split(":").map(Number);
+        return (days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60) * 1000;
+    }
 
-            // prepend 0s if necessary
-            const formattedDuration = [
-                days.toString().padStart(2, '0'),
-                hours.toString().padStart(2, '0'),
-                minutes.toString().padStart(2, '0')
-            ].join(':');
-            durationInput.value = formattedDuration;
+    function validateEndTime(endTimeInput) {
+        // makes sure the end time is after the start time
+        const entry = endTimeInput.closest(".time-entry");
+        const startTimeInput = entry.querySelector("input[name='start_time[]']");
+        if (!startTimeInput || !endTimeInput) return;
+        const startTime = new Date(startTimeInput.value);
+        const endTime = new Date(endTimeInput.value);
+        if (startTime >= endTime) {
+            endTimeInput.setCustomValidity("End time must be after start time.");
+        } else {
+            endTimeInput.setCustomValidity("");
         }
     }
 
-    function updateEndTime() {
-        if (startTimeInput.value && durationInput.value) {
-            // confirm that the duration is in DD:HH:MM format
-            if (/^\d{2}:(?:[01]\d|2[0-3]):[0-5]\d$/.test(durationInput.value)) {
-                const [days, hours, minutes] = durationInput.value.split(':').map(Number);
-                const startTime = new Date(startTimeInput.value);
+    function syncEndTimes() {
+        // sync all end times based on the start time and event duration
+        document.querySelectorAll(".time-entry").forEach(entry => {
+            const startTimeInput = entry.querySelector("input[name='start_time[]']");
+            const endTimeInput = entry.querySelector("input[name='end_time[]']");
+            if (!startTimeInput) return;
+            const startTime = new Date(startTimeInput.value);
+            const endTime = new Date(startTime.getTime() + eventDuration);
+            endTimeInput.value = formatDateTimeInput(endTime);
+            validateEndTime(endTimeInput);
+        });
+    }
 
-                // calculate end time
-                startTime.setDate(startTime.getDate() + days);
-                startTime.setHours(startTime.getHours() + hours);
-                startTime.setMinutes(startTime.getMinutes() + minutes);
+    function updateDuration(endInput) {
+        // update duration 
+        const entry = endInput.closest(".time-entry");
+        if (!entry) return;
 
-                // update end time input
-                endTimeInput.value = formatDateTimeInput(startTime);
+        const startTimeInput = entry.querySelector("input[name='start_time[]']");
+
+        if (!startTimeInput || !startTimeInput.value || !endInput.value) return;
+
+        const startTime = new Date(startTimeInput.value);
+        const endTime = new Date(endInput.value);
+        const duration = endTime.getTime() - startTime.getTime();
+
+        if (duration < 0) {
+            endInput.setCustomValidity("End time must be after start time.");
+            return;
+        }
+
+        endInput.setCustomValidity("");
+        eventDuration = duration;
+        durationInput.value = formatDuration(eventDuration);
+        syncEndTimes();
+    }
+
+    function updateFutureStartTimes(changedInput) {
+        const allEntries = Array.from(timeFields.querySelectorAll(".time-entry"));
+        const currentIndex = allEntries.findIndex(entry => entry.contains(changedInput));
+
+        if (currentIndex < 0 || currentIndex + 1 >= allEntries.length) return;
+
+        let delta = 7 * 24 * 60 * 60 * 1000; // default is a week
+        if (currentIndex > 0) {
+            // if multiple entries, set the delta to the duration of the previous entry
+            const previousEntry = allEntries[currentIndex - 1].querySelector("input[name='start_time[]']");
+            if (previousEntry.value && changedInput.value) {
+                delta = new Date(changedInput.value).getTime() - new Date(previousEntry.value).getTime();
             }
+        }
+
+        for (let i = currentIndex + 1; i < allEntries.length; i++) {
+            const prevStartInput = allEntries[i - 1].querySelector("input[name='start_time[]']");
+            const currStartInput = allEntries[i].querySelector("input[name='start_time[]']");
+            const currEndInput = allEntries[i].querySelector("input[name='end_time[]']");
+
+            if (!prevStartInput.value) continue;
+
+            const newStartTime = new Date(new Date(prevStartInput.value).getTime() + delta);
+            currStartInput.value = formatDateTimeInput(newStartTime);
+            const newEndTime = new Date(newStartTime.getTime() + eventDuration);
+            currEndInput.value = formatDateTimeInput(newEndTime);
+            validateEndTime(currEndInput);
         }
     }
 
-    startTimeInput.addEventListener("input", () => {
-        updateDuration();
-        updateEndTime();
-    });
-    durationInput.addEventListener("input", () => updateEndTime());
-    endTimeInput.addEventListener("input", () => updateDuration());
+    timeFields.addEventListener("input", (event) => {
+        const input = event.target;
 
-    // check if end time is after start time
-    endTimeInput.addEventListener("input", () => {
+        if (input.name === "start_time[]") {
+            updateFutureStartTimes(input);
+            const entry = input.closest(".time-entry");
+            const endTimeInput = entry.querySelector("input[name='end_time[]']");
+            const startTime = new Date(input.value);
+            endTimeInput.value = formatDateTimeInput(new Date(startTime.getTime() + eventDuration));
+            validateEndTime(endTimeInput);
+        } else if (input.name === "end_time[]") {
+            updateDuration(input);
+            validateEndTime(input);
+        }
+    });
+
+    durationInput.addEventListener("input", () => {
+        duration = parseDuration(durationInput.value);
+        if (duration > 0) {
+            eventDuration = duration;
+            syncEndTimes();
+            durationInput.setCustomValidity("");
+        } else {
+            durationInput.setCustomValidity("Please provide a valid duration in DD:HH:MM format.");
+        }
+    });
+
+    if (addTimeButton) {
+        addTimeButton.addEventListener("click", (event) => {
+            const allEntries = timeFields.querySelectorAll(".time-entry");
+
+            const lastEntry = allEntries[allEntries.length - 1];
+            const prevStartInput = lastEntry.querySelector("input[name='start_time[]']");
+            if (!prevStartInput || !prevStartInput.value) return;
+
+            let delta = 7 * 24 * 60 * 60 * 1000; // default is a week
+            if (allEntries.length > 1) {
+                const penultimateEntry = allEntries[allEntries.length - 2];
+                const penultimateStartInput = penultimateEntry.querySelector("input[name='start_time[]']");
+                delta = new Date(prevStartInput.value).getTime() - new Date(penultimateStartInput.value).getTime();
+            }
+
+            const newStartTime = new Date(new Date(prevStartInput.value).getTime() + delta);
+            const newEndTime = eventDuration > 0 ? new Date(newStartTime.getTime() + eventDuration) : NaN;
+
+            const newEntry = document.createElement("div");
+            newEntry.className = "row g-3 time-entry";
+            newEntry.innerHTML = `
+                <div class="form-floating col-md-4">
+                    <input type="datetime-local" name="start_time[]" id="start_time" class="form-control" value="${formatDateTimeInput(newStartTime)}" required>
+                    <label for="start_time">Start Time</label>
+                    <div class="invalid-feedback">Please provide a start time</div>
+                    <div class="valid-feedback">Looks good!</div>
+                </div>
+
+                <div class="form-floating col-md-4">
+                    <input type="datetime-local" name="end_time[]" id="end_time" class="form-control" value="${formatDateTimeInput(newEndTime)}">
+                    <label for="end_time">End Time</label>
+                    <div class="invalid-feedback">Endtime must be after start time and match the duration</div>
+                    <div class="valid-feedback">Looks good!</div>
+                </div>
+
+                <div class="col-md-4 d-flex align-items-center">
+                    <button type="button" class="btn btn-danger remove-time-entry"><i class="ph-bold ph-trash"></i> Remove</button>
+                </div>
+            `;
+            timeFields.appendChild(newEntry);
+        });
+    }
+
+    timeFields.addEventListener("click", (event) => {
+        if (!event.target.classList.contains("remove-time-entry")) return;
+
+        const entry = event.target.closest(".time-entry");
+        const precedingEntry = entry.previousElementSibling;
+
+        entry.remove();
+
+        if (precedingEntry && precedingEntry.classList.contains("time-entry")) {
+            const startTimeInput = precedingEntry.querySelector("input[name='start_time[]']");
+            if (startTimeInput) updateFutureStartTimes(startTimeInput);
+        } else if (document.quwrySelector(".time-entry")) {
+            const firstEntry = document.querySelector(".time-entry").querySelector("input[name='start_time[]']");
+            if (firstEntry) updateFutureStartTimes(firstEntry);
+        }
+    });
+
+    function initialiseTimes() {
+        const firstEntry = timeFields.querySelector(".time-entry");
+        if (!firstEntry) return;
+
+        const startTimeInput = firstEntry.querySelector("input[name='start_time[]']");
+        const endTimeInput = firstEntry.querySelector("input[name='end_time[]']");
+
         if (startTimeInput.value && endTimeInput.value) {
-            const startTime = new Date(startTimeInput.value);
-            const endTime = new Date(endTimeInput.value);
-
-            if (endTime <= startTime) {
-                endTimeInput.setCustomValidity("End time must be after start time");
-            } else {
-                endTimeInput.setCustomValidity("");
+            const initialDuration = new Date(endTimeInput.value).getTime() - new Date(startTimeInput.value).getTime();
+            if (initialDuration >= 0) {
+                eventDuration = initialDuration;
+                durationInput.value = formatDuration(eventDuration);
+            }
+        } else {
+            const initialDuration = parseDuration(durationInput.value);
+            if (initialDuration > 0) {
+                eventDuration = initialDuration;
+                if (startTimeInput.value) {
+                    const startTime = new Date(startTimeInput.value);
+                    endTimeInput.value = formatDateTimeInput(new Date(startTime.getTime() + eventDuration));
+                }
             }
         }
-    });
 
-    // check if endtime = starttime + duration
-    endTimeInput.addEventListener("input", () => {
-        if (startTimeInput.value && durationInput.value) {
-            const startTime = new Date(startTimeInput.value);
-            const [days, hours, minutes] = durationInput.value.split(':').map(Number);
-            startTime.setDate(startTime.getDate() + days);
-            startTime.setHours(startTime.getHours() + hours);
-            startTime.setMinutes(startTime.getMinutes() + minutes);
-            const endTime = new Date(endTimeInput.value);
-            if (endTime.getTime() !== startTime.getTime()) {
-                endTimeInput.setCustomValidity("End time does not match duration");
-            } else {
-                endTimeInput.setCustomValidity("");
-            }
-        }
-    });
+        document.querySelectorAll("input[name='end_time[]']").forEach(validateEndTime);
+    }
 
+    initialiseTimes();
+
+    // MARK: form validation
 
     // form validation
     const form = document.querySelector("form");
@@ -195,7 +342,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }, false);
 
     // trigger events on load
-    [iconInput, colourText, startTimeInput, endTimeInput].forEach(input => {
+    [iconInput, colourText].forEach(input => {
         if (input && input.value) {
             input.dispatchEvent(new Event('input', { bubbles: true }));
         }
