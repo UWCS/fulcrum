@@ -7,6 +7,7 @@ from config import colours, custom_icons
 from events.utils import (
     create_event,
     create_repeat_event,
+    delete_event,
     edit_event,
     get_all_tags,
     get_datetime_from_string,
@@ -139,7 +140,7 @@ def create() -> str | Response:
 
 
 @events_ui_bp.route(
-    "/<int:year>/<int:term>/<int:week>/<string:slug>/edit", methods=["GET", "PATCH"]
+    "/<int:year>/<int:term>/<int:week>/<string:slug>/edit", methods=["GET", "POST"]
 )
 @is_exec_wrapper
 def edit(
@@ -160,14 +161,14 @@ def edit(
             "events/form.html",
             error=error,
             action="events_ui.edit",
-            method="PATCH",
+            method="POST",
             event=event,
             icons=custom_icons,
             colours=colours,
             tags=tags,
         )
 
-    # if patching, update the event
+    # if posting, update the event
 
     # parse form data
     data = parse_form_data(request.form)
@@ -209,6 +210,25 @@ def edit(
             slug=event.slug,
         )
     )
+
+
+@events_ui_bp.route(
+    "/<int:year>/<int:term>/<int:week>/<string:slug>/delete", methods=["POST"]
+)
+@is_exec_wrapper
+def delete(year: int, term: int, week: int, slug: str) -> Response:
+    """Delete an event by its year, term, week, and, slug"""
+
+    event = get_event_by_slug(year, term, week, slug)
+
+    if event is None:
+        return abort(404, description="Event not found")
+
+    delete_event(event.id)
+
+    flash("Event deleted successfully", "success")
+
+    return redirect("/")
 
 
 @events_ui_bp.route("/<int:year>/<int:term>/<int:week>/<string:slug>")
