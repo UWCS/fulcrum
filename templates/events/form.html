@@ -19,14 +19,14 @@
 </script>
 
 <div class="container text-center my-4">
-    <h1>{% if event %}Edit{% else %}Create{% endif %} Event(s)</h1>
+    <h1>{% if method == "PATCH" %}Edit{% else %}Create{% endif %} Event(s)</h1>
 </div>
 
 <div class="container y-4">
     <div class="y-4 border rounded p-4">
         <form 
             method="{{ method }}"
-            action="{{ url_for(action, year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) if event else url_for(action) }}"
+            action="{{ url_for(action, year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) if method == 'PATCH' else url_for(action) }}"
             class="row g-3 align-items-center needs-validation"
             novalidate>
 
@@ -42,7 +42,7 @@
 
             <!-- name -->
             <div class="form-floating col-md-10">
-                <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" {% if event %}value="{{ event.name }}"{% endif %} required>
+                <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" {% if event and event.name %}value="{{ event.name }}"{% endif %} required>
                 <label for="name">Event Name</label>
                 <div class="invalid-feedback">Please provide a name</div>
                 <div class="valid-feedback">Looks good!</div>
@@ -63,7 +63,7 @@
 
             <!-- description -->
             <div class="form-floating col-12">
-                <textarea name="description" id="description" class="form-control" placeholder="Event Description" style="height: 10rem;" required>{% if event %}{{ event.description }}{% endif %}</textarea>
+                <textarea name="description" id="description" class="form-control" placeholder="Event Description" style="height: 10rem;" required>{% if event and event.description %}{{ event.description }}{% endif %}</textarea>
                 <label for="description">Event Description (Markdown)</label>
                 <div class="invalid-feedback">Please provide a description</div>
                 <div class="valid-feedback">Looks good!</div>
@@ -80,7 +80,7 @@
                     </div>
 
                     <fieldset class="form-floating">
-                        <input type="text" name="location" id="location" class="form-control last-border" placeholder="Event Location" {% if event %}value="{{ event.location }}"{% endif %} required>
+                        <input type="text" name="location" id="location" class="form-control last-border" placeholder="Event Location" {% if event and event.location %}value="{{ event.location }}"{% endif %} required>
                         <label for="location">Event Location</label>
                     </fieldset>
                     <div class="invalid-feedback">Please provide a location</div>
@@ -193,7 +193,7 @@
                 <div class="row g-3 time-entry">
                     <!-- start -->
                     <div class="form-floating col-md-4">
-                        <input type="datetime-local" name="start_time[]" id="start_time" class="form-control" {% if event %}value="{{ event.start_time.strftime('%Y-%m-%dT%H:%M') }}"{% endif %} required>
+                        <input type="datetime-local" name="start_time[]" id="start_time" class="form-control" {% if event and event.start_time %}value="{{ event.start_time.strftime('%Y-%m-%dT%H:%M') }}"{% endif %} required>
                         <label for="start_time">Start Time</label>
                         <div class="invalid-feedback">Please provide a start time</div>
                         <div class="valid-feedback">Looks good!</div>
@@ -217,10 +217,10 @@
                 </div>
             </div>
 
-            {% if not event %}
+            {% if method == "POST" %}
                 <!-- add time -->
                 <div class="col-12 d-flex justify-content-center">
-                    <button type="button" class="btn btn-secondary col-4" id="add-time">Add Time</button>
+                    <button type="button" class="btn btn-secondary disabled col-4" id="add-time">Add Time</button>
                 </div>
             {% endif %}
 

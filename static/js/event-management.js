@@ -214,12 +214,25 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function toggleAddTimeButton() {
+        // enable or disable the add time button if the first entry has a start time
+        const firstTimeInput = timeFields.querySelector("input[name='start_time[]']");
+        if (firstTimeInput && firstTimeInput.value) {
+            addTimeButton.classList.remove("disabled");
+        } else {
+            addTimeButton.classList.add("disabled");
+        }
+    }
+
     timeFields.addEventListener("input", (event) => {
         // handle input changes in time fields
         const input = event.target;
 
+        toggleAddTimeButton();
+
         if (input.name === "start_time[]") {
             // if start time changes, update future start times and end times
+            document.getElementById("add-time").classList.remove("disabled");
             updateFutureStartTimes(input);
             const entry = input.closest(".time-entry");
             const endTimeInput = entry.querySelector("input[name='end_time[]']");
@@ -332,6 +345,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // validate end times
         document.querySelectorAll("input[name='end_time[]']").forEach(validateEndTime);
+
+        toggleAddTimeButton();
     }
 
     initialiseTimes();

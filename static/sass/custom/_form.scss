@@ -48,3 +48,10 @@
     mask: no-repeat center / contain;
     -webkit-mask: no-repeat center / contain;
 }
+
+// set cursor as disabled for disabled inputs
+
+#add-time.disabled {
+    pointer-events: all !important;
+    cursor: not-allowed !important;
+}

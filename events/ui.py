@@ -6,6 +6,7 @@ from auth.auth import is_exec_wrapper
 from config import colours, custom_icons
 from events.utils import (
     create_event,
+    create_repeat_event,
     edit_event,
     get_all_tags,
     get_datetime_from_string,
@@ -33,9 +34,12 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
     colour = text_colour if text_colour else color_colour
 
     # parse dates and duration
-    start_time = get_datetime_from_string(form_data["start_time"])
-    if isinstance(start_time, str):
-        return start_time
+    start_times = [
+        get_datetime_from_string(t) for t in form_data.getlist("start_time[]")
+    ]
+    for start_time in start_times:
+        if isinstance(start_time, str):
+            return start_time
 
     duration = (
         get_timedelta_from_string(form_data["duration"])
@@ -45,19 +49,20 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
     if isinstance(duration, str):
         return duration
 
-    end_time = (
-        get_datetime_from_string(form_data["end_time"])
-        if form_data["end_time"]
-        else None
-    )
-    if isinstance(end_time, str):
-        return end_time
+    end_times = None
+    if form_data.get("end_time") is not None:
+        end_times = [
+            get_datetime_from_string(t) for t in form_data.getlist("end_time[]")
+        ]
+        for end_time in end_times:
+            if isinstance(end_time, str):
+                return end_time
 
     # parse tags
     tags = form_data.getlist("tags[]")
     tags = [tag.strip().lower() for tag in tags if tag.strip()]
 
-    return {
+    data = {
         "name": form_data["name"],
         "description": form_data["description"],
         "draft": "draft" in form_data,
@@ -65,11 +70,18 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
         "location_url": form_data.get("location_url", None),
         "icon": form_data.get("icon", None),
         "colour": colour,
-        "start_time": start_time,
         "duration": duration,
-        "end_time": end_time,
         "tags": tags,
     }
+
+    if len(start_times) == 1:
+        data["start_time"] = start_times[0]
+        data["end_time"] = end_times[0] if end_times is not None else None
+    else:
+        data["start_times"] = start_times
+        data["end_times"] = end_times if end_times is not None else None
+
+    return data
 
 
 @events_ui_bp.route("/create", methods=["GET", "POST"])
@@ -101,12 +113,18 @@ def create() -> str | Response:
         return redirect(url_for("events_ui.create"))
 
     # attempt to create the event
-    event = create_event(**data)
+    if "start_time" in data:
+        event = create_event(**data)
+    else:
+        event = create_repeat_event(**data)
 
     # if failed, redirect to the create page with an error
     if isinstance(event, str):
         flash(event, "error")
         return redirect(url_for("events_ui.create"))
+
+    if isinstance(event, list):
+        event = event[0]
 
     # if successful, redirect to the event page
     return redirect(
@@ -121,7 +139,7 @@ def create() -> str | Response:
 
 
 @events_ui_bp.route(
-    "/<int:year>/<int:term>/<int:week>/<string:slug>/edit", methods=["GET", "POST"]
+    "/<int:year>/<int:term>/<int:week>/<string:slug>/edit", methods=["GET", "PATCH"]
 )
 @is_exec_wrapper
 def edit(
@@ -142,14 +160,14 @@ def edit(
             "events/form.html",
             error=error,
             action="events_ui.edit",
-            method="POST",
+            method="PATCH",
             event=event,
             icons=custom_icons,
             colours=colours,
             tags=tags,
         )
 
-    # if posting, update the event
+    # if patching, update the event
 
     # parse form data
     data = parse_form_data(request.form)
