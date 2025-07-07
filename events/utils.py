@@ -307,19 +307,22 @@ def get_events_by_time(
     return query.order_by(Event.start_time, Event.end_time, Event.name).all()  # type: ignore
 
 
+_KEEP = object()  # placeholder to leave the field unchanged
+
+
 def edit_event(  # noqa: PLR0913
     id: int,
-    name: str | None = None,
-    description: str | None = None,
-    draft: bool | None = None,
-    location: str | None = None,
-    location_url: str | None = None,
-    icon: str | None = None,
-    colour: str | None = None,
-    start_time: datetime | None = None,
-    duration: timedelta | None = None,
-    end_time: datetime | None = None,
-    tags: list[str] | None = None,
+    name: str | object = _KEEP,
+    description: str | object = _KEEP,
+    draft: bool | object = _KEEP,
+    location: str | object = _KEEP,
+    location_url: str | object | None = _KEEP,
+    icon: str | object | None = _KEEP,
+    colour: str | object | None = _KEEP,
+    start_time: datetime | object = _KEEP,
+    duration: timedelta | object | None = _KEEP,
+    end_time: datetime | object | None = _KEEP,
+    tags: list[str] | object | None = _KEEP,
 ) -> Event | str:
     """Edit an existing event"""
 
@@ -328,30 +331,32 @@ def edit_event(  # noqa: PLR0913
         return "Event not found"
 
     # update the event attributes if provided
-    event.name = name if name is not None else event.name
-    event.slug = name.lower().replace(" ", "-") if name else event.slug
-    event.description = description if description is not None else event.description
-    event.draft = draft if draft is not None else event.draft
-    event.location = location if location is not None else event.location
+    event.name = name if name is not _KEEP else event.name
+    event.slug = name.lower().replace(" ", "-") if name is not _KEEP else event.slug  # type: ignore
+    event.description = description if description is not _KEEP else event.description
+    event.draft = draft if draft is not _KEEP else event.draft
+    event.location = location if location is not _KEEP else event.location
     event.location_url = (
-        location_url if location_url is not None else event.location_url
+        location_url if location_url is not _KEEP else event.location_url
     )
-    event.icon = icon.lower() if icon else event.icon
+    if icon is not _KEEP:
+        event.icon = icon.lower() if icon is not None else event.icon  # type: ignore
     event.colour = colour if colour else event.colour
     event.start_time = (
-        start_time.astimezone(pytz.timezone("Europe/London"))
-        if start_time
+        start_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
+        if start_time is not _KEEP
         else event.start_time
     )
-    event.end_time = (
-        end_time.astimezone(pytz.timezone("Europe/London"))
-        if end_time
-        else event.end_time
-    )
+    if end_time is not _KEEP:
+        event.end_time = (
+            end_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
+            if end_time is not None
+            else event.end_time
+        )
 
     # if duration is provided, calculate end_time and verify it
-    if duration:
-        calculated_end_time = event.start_time + duration
+    if duration is not _KEEP and duration is not None:
+        calculated_end_time = event.start_time + duration  # type: ignore
         if event.end_time and event.end_time != calculated_end_time:
             return "End time does not match the duration"
         event.end_time = calculated_end_time
@@ -364,7 +369,7 @@ def edit_event(  # noqa: PLR0913
         return error
 
     # update tags if provided
-    if tags is not None:
+    if tags is not _KEEP:
         # clear existing tags
         event.tags.clear()
         # check all tags exist, create if not

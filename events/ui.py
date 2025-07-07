@@ -22,11 +22,16 @@ events_ui_bp = Blueprint("events_ui", __name__, url_prefix="/events")
 def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
     """Parse event from form data"""
     # parse colour
-    text_colour = form_data.get("text_colour", None)
-    color_colour = form_data.get("color_colour", None)
-
-    text_colour = text_colour.strip().lower() if text_colour else None
-    color_colour = color_colour.strip().lower() if color_colour else None
+    text_colour = (
+        form_data["text_colour"].strip().lower()
+        if form_data["text_colour"] != ""
+        else None
+    )
+    color_colour = (
+        form_data["color_colour"].strip().lower()
+        if form_data["color_colour"] != ""
+        else None
+    )
 
     if (error := validate_colour(text_colour, color_colour)) is not None:
         return error
@@ -44,7 +49,7 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
 
     duration = (
         get_timedelta_from_string(form_data["duration"])
-        if form_data["duration"]
+        if form_data["duration"] != ""
         else None
     )
     if isinstance(duration, str):
@@ -68,8 +73,10 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
         "description": form_data["description"],
         "draft": "draft" in form_data,
         "location": form_data["location"],
-        "location_url": form_data.get("location_url", None),
-        "icon": form_data.get("icon", None),
+        "location_url": (
+            form_data["location_url"] if form_data["location_url"] != "" else None
+        ),
+        "icon": form_data["icon"] if form_data["icon"] != "" else None,
         "colour": colour,
         "duration": duration,
         "tags": tags,
@@ -104,8 +111,6 @@ def create() -> str | Response:
         )
 
     # if posting, create the event
-
-    print("Creating event with data:", request.form)
 
     # parse form data
     data = parse_form_data(request.form)

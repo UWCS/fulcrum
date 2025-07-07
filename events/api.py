@@ -417,8 +417,8 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
 
 @events_api_bp.route("/<int:event_id>", methods=["PATCH"])
 @valid_api_auth
-def edit_event_api(event_id: int) -> tuple[Response, int]:
-    """Edit an existing event
+def edit_event_api(event_id: int) -> tuple[Response, int]:  # noqa: PLR0911, PLR0912
+    """Edit an existing event. Leave a field out to leave it unchanged, or as an empty string to clear it.
     ---
     parameters:
       - name: event_id
@@ -504,36 +504,64 @@ def edit_event_api(event_id: int) -> tuple[Response, int]:
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
+    event = {}
+
+    if "name" in data:
+        if data["name"] == "":
+            return jsonify({"error": "Name cannot be empty"}), 400
+        event["name"] = data["name"]
+
+    if "description" in data:
+        if data["description"] == "":
+            return jsonify({"error": "Description cannot be empty"}), 400
+        event["description"] = data["description"]
+
+    if "draft" in data:
+        if not isinstance(data["draft"], bool):
+            return jsonify({"error": "Draft must be a boolean"}), 400
+        event["draft"] = data["draft"]
+
+    if "location" in data:
+        if data["location"] == "":
+            return jsonify({"error": "Location cannot be empty"}), 400
+        event["location"] = data["location"]
+
+    event["location_url"] = data.get("location_url", None)
+    event["icon"] = data.get("icon", None)
+    event["colour"] = data.get("colour", None)
+
     # convert strings to time objects
     if "start_time" in data:
-        start_time = get_datetime_from_string(data["start_time"])
-        if isinstance(start_time, str):
-            return jsonify({"error": start_time}), 400
+        if data["start_time"] == "":
+            return jsonify({"error": "Start time cannot be empty"}), 400
+        event["start_time"] = get_datetime_from_string(data["start_time"])
+        if isinstance(event["start_time"], str):
+            return jsonify({"error": event["start_time"]}), 400
 
     if "end_time" in data:
-        end_time = get_datetime_from_string(data["end_time"])
-        if isinstance(end_time, str):
-            return jsonify({"error": end_time}), 400
+        if data["end_time"] == "":
+            event["end_time"] = None
+        else:
+            event["end_time"] = get_datetime_from_string(data["end_time"])
+            if isinstance(event["end_time"], str):
+                return jsonify({"error": event["end_time"]}), 400
 
     if "duration" in data:
-        duration = get_timedelta_from_string(data["duration"])
-        if isinstance(duration, str):
-            return jsonify({"error": duration}), 400
+        if data["duration"] == "":
+            event["duration"] = None
+        else:
+            event["duration"] = get_timedelta_from_string(data["duration"])
+            if isinstance(event["duration"], str):
+                return jsonify({"error": event["duration"]}), 400
 
-    event = edit_event(
-        event_id,
-        data.get("name"),
-        data.get("description"),
-        data.get("draft", False),
-        data.get("location"),
-        data.get("location_url"),
-        data.get("icon"),
-        data.get("colour"),
-        start_time if "start_time" in data else None,  # type: ignore
-        duration if "duration" in data else None,  # type: ignore
-        end_time if "end_time" in data else None,  # type: ignore
-        data.get("tags", []),
-    )
+    if "tags" in data:
+        if not isinstance(data["tags"], list):
+            return jsonify({"error": "Tags must be a list"}), 400
+        if any(not isinstance(tag, str) for tag in data["tags"]):
+            return jsonify({"error": "All tags must be strings"}), 400
+        event["tags"] = data["tags"]
+
+    event = edit_event(event_id, **event)
 
     if isinstance(event, str):
         return jsonify({"error": event}), 400
