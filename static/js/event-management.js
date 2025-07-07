@@ -346,7 +346,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // validate end times
         document.querySelectorAll("input[name='end_time[]']").forEach(validateEndTime);
 
-        toggleAddTimeButton();
+        if (addTimeButton) toggleAddTimeButton();
     }
 
     initialiseTimes();
