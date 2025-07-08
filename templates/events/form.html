@@ -27,7 +27,8 @@
         <form 
             method="{{ method }}"
             action="{{ url_for(action, year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) if action == 'events_ui.edit' else url_for(action) }}"
-            class="row g-3 align-items-center"
+            class="row g-3 align-items-center needs-validation"
+            novalidate
         >
 
             {% if error %}
@@ -39,7 +40,7 @@
 
             <!-- name -->
             <div class="form-floating col-md-10">
-                <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" {% if event and event.name %}value="{{ event.name }}"{% endif %}>
+                <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" {% if event and event.name %}value="{{ event.name }}"{% endif %} required>
                 <label for="name">Event Name</label>
                 <div class="invalid-feedback">Please provide a name</div>
                 <div class="valid-feedback">Looks good!</div>
