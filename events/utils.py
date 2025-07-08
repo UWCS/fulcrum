@@ -168,7 +168,6 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
                     )
 
                     db.session.add(week)
-                    db.session.commit()
                     break
         else:
             with Path("olddates.json").open("r") as f:
@@ -193,8 +192,6 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
                         start_date=start_date,
                     )
                     db.session.add(week)
-                    db.session.commit()
-
     return week
 
 

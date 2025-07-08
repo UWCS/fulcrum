@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Create Event{% endblock %}
+{% block title %}{% if action == 'events_ui.edit' %}Edit{% else %}Create{% endif %} Event{% endblock %}
 
 {% block header %}
 <script src="{{ url_for('static', filename='js/event-management.js') }}"></script>
@@ -19,30 +19,27 @@
 </script>
 
 <div class="container text-center my-4">
-    <h1>{% if event %}Edit{% else %}Create{% endif %} Event(s)</h1>
+    <h1>{% if action == 'events_ui.edit' %}Edit{% else %}Create{% endif %} Event(s)</h1>
 </div>
 
 <div class="container y-4">
     <div class="y-4 border rounded p-4">
         <form 
             method="{{ method }}"
-            action="{{ url_for(action, year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) if event else url_for(action) }}"
-            class="row g-3 align-items-center needs-validation"
-            novalidate>
+            action="{{ url_for(action, year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) if action == 'events_ui.edit' else url_for(action) }}"
+            class="row g-3 align-items-center"
+        >
 
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="alert alert-danger col-12">
-                        {% for message in messages %}
-                            {{ message }}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
+            {% if error %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ error }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endif %}
 
             <!-- name -->
             <div class="form-floating col-md-10">
-                <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" {% if event and event.name %}value="{{ event.name }}"{% endif %} required>
+                <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" {% if event and event.name %}value="{{ event.name }}"{% endif %}>
                 <label for="name">Event Name</label>
                 <div class="invalid-feedback">Please provide a name</div>
                 <div class="valid-feedback">Looks good!</div>
@@ -146,7 +143,14 @@
                             name="color_colour"
                             id="color_colour"
                             class="form-control form-control-color no-validate no-validate-colour"
-                            value="{% if event and event.colour %}{{ event.colour }}{% else %}#3A7DFF{% endif %}">
+                            value=
+                                "{% if event and event.colour %}
+                                    {{ event.colour }}
+                                {% elif event and event.color_colour %}
+                                    {{ event.color_colour }}
+                                {% else %}
+                                    #3A7DFF
+                                {% endif %}">
                     </div>
                     <div class="input-group-text">#</div>
                     <fieldset class="form-floating">
@@ -160,7 +164,11 @@
                             data-bs-toggle="tooltip"
                             data-bs-html="true"
                             data-bs-title="Enter a hex colour code or a <a href='https://github.com/UWCS/fulcrum/blob/main/config.py' target='_blank'>predefined colour</a>"
-                            {% if event and event.colour %}value="{{ event.colour }}"{% endif %}
+                            {% if event and event.colour %}
+                                value="{{ event.colour }}"
+                            {% elif event and event.text_colour %}
+                                value="{{ event.text_colour }}"
+                            {% endif %}
                         >
                         <label for="text_colour">Event Colour</label>
                         <datalist id="colour-list">
@@ -190,34 +198,59 @@
             </div>
 
             <div id="time-fields">
-                <div class="row g-3 time-entry">
-                    <!-- start -->
-                    <div class="form-floating col-md-4">
-                        <input type="datetime-local" name="start_time[]" id="start_time" class="form-control" {% if event and event.start_time %}value="{{ event.start_time.strftime('%Y-%m-%dT%H:%M') }}"{% endif %} required>
-                        <label for="start_time">Start Time</label>
-                        <div class="invalid-feedback">Please provide a start time</div>
-                        <div class="valid-feedback">Looks good!</div>
-                    </div>
+                {% if event and event.times %}
+                    {% set times = event.times %}
+                {% elif event and event.start_time %}
+                    {% if event.end_time %}
+                        {% set times = [(event.start_time.strftime('%Y-%m-%dT%H:%M'), event.end_time.strftime('%Y-%m-%dT%H:%M'))] %}
+                    {% else %}
+                        {% set times = [(event.start_time.strftime('%Y-%m-%dT%H:%M'), '')] %}
+                    {% endif %}
+                {% else %}
+                    {% set times = [(None, None)] %}
+                {% endif %}
+                {% for start_time, end_time in times %}
+                    <div class="row g-3 time-entry {% if not loop.first %}mt-0{% endif %}">
+                        <!-- start -->
+                        <div class="form-floating col-md-4">
+                            <input type="datetime-local" name="start_time[]" id="start_time" class="form-control" value="{{ start_time }}" required>
+                            <label for="start_time">Start Time</label>
+                            <div class="invalid-feedback">Please provide a start time</div>
+                            <div class="valid-feedback">Looks good!</div>
+                        </div>
 
-                    <!-- end -->
-                    <div class="form-floating col-md-4">
-                        <input type="datetime-local" name="end_time[]" id="end_time" class="form-control" {% if event and event.end_time %}value="{{ event.end_time.strftime('%Y-%m-%dT%H:%M') }}"{% endif %}>
-                        <label for="end_time">End Time</label>
-                        <div class="invalid-feedback">Endtime must be after start time and match the duration</div>
-                        <div class="valid-feedback">Looks good!</div>
-                    </div>
+                        <!-- end -->
+                        <div class="form-floating col-md-4">
+                            <input type="datetime-local" name="end_time[]" id="end_time" class="form-control" value="{{ end_time }}">
+                            <label for="end_time">End Time</label>
+                            <div class="invalid-feedback">Endtime must be after start time and match the duration</div>
+                            <div class="valid-feedback">Looks good!</div>
+                        </div>
 
-                    <!-- duration -->
-                    <div class="form-floating col-md-4">
-                        <input type="text" name="duration" id="duration" class="form-control" pattern="\d{2}:(?:[01]\d|2[0-3]):[0-5]\d" placeholder="DD:HH:MM">
-                        <label for="duration">Duration (DD:HH:MM)</label>
-                        <div class="invalid-feedback">Please provide a duration in the format DD:HH:MM</div>
-                        <div class="valid-feedback">Looks good!</div>
+                        <div class="col-md-4">
+                            {% if loop.first %}
+                                <!-- duration -->
+                                <div class="form-floating">
+                                    <input type="text" name="duration" id="duration" class="form-control" pattern="\d{2}:(?:[01]\d|2[0-3]):[0-5]\d" placeholder="DD:HH:MM">
+                                    <label for="duration">Duration (DD:HH:MM)</label>
+                                    <div class="invalid-feedback">Please provide a duration in the format DD:HH:MM</div>
+                                    <div class="valid-feedback">Looks good!</div>
+                                </div>
+                            {% else %}
+                                <!-- delete time -->
+                                <div class="d-flex align-items-center h-100">
+                                    <button type="button" class="btn btn-danger d-flex align-items-center gap-1 remove-time-entry">
+                                        <i class="ph-bold ph-trash"></i> Remove
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
+                {% endfor %}
             </div>
 
-            {% if not event %}
+
+            {% if action == 'events_ui.create' %}
                 <!-- add time -->
                 <div class="col-12 d-flex justify-content-center">
                     <button type="button" class="btn btn-secondary disabled col-4" id="add-time">Add Time</button>
@@ -226,7 +259,7 @@
 
             <!-- submit -->
             <div class="col-12 d-flex justify-content-center">
-                <input type="submit" value="{% if event %}Edit{% else %}Create{% endif %} Event(s)" class="btn btn-primary col-6 text-white">
+                <input type="submit" value="{% if action == 'events_ui.edit' %}Edit{% else %}Create{% endif %} Event(s)" class="btn btn-primary col-6 text-white">
             </div>
         </form>
     </div>
@@ -239,7 +272,7 @@
     {% endfor %}
 </div>
 
-{% if event %}
+{% if action == 'events_ui.edit' %}
     <!-- if edit event view, add delte option -->
     <div class="container text-center my-4">
         <h1>Delete Event</h1>

@@ -215,7 +215,11 @@ class Event(db.Model):
     def validate(self) -> str | None:
         """Validates an event's data"""
 
-        # check date
+        # check if required fields are filled
+        for field in ["name", "description", "location"]:
+            if getattr(self, field) == "":
+                return f"{field.capitalize()} is required"
+
         if self.end_time and self.end_time < self.start_time:
             return "End time cannot be before start time"
 

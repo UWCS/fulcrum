@@ -19,6 +19,31 @@ from events.utils import (
 events_ui_bp = Blueprint("events_ui", __name__, url_prefix="/events")
 
 
+def get_event_from_form(form_data: ImmutableMultiDict) -> dict:
+    """Get event dict from form data"""
+    return {
+        "name": form_data["name"],
+        "description": form_data["description"],
+        "draft": "draft" in form_data,
+        "location": form_data["location"],
+        "location_url": (
+            form_data["location_url"] if form_data["location_url"] != "" else None
+        ),
+        "icon": form_data["icon"] if form_data["icon"] != "" else None,
+        "text_colour": (
+            form_data["text_colour"] if form_data["text_colour"] != "" else None
+        ),
+        "color_colour": (
+            form_data["color_colour"] if form_data["color_colour"] != "" else None
+        ),
+        "times": zip(
+            form_data.getlist("start_time[]"), form_data.getlist("end_time[]")
+        ),
+        "duration": (form_data["duration"] if form_data["duration"] != "" else None),
+        "tags": [tag for tag in form_data.getlist("tags[]") if tag],
+    }
+
+
 def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
     """Parse event from form data"""
     # parse colour
@@ -113,10 +138,19 @@ def create() -> str | Response:
     # if posting, create the event
 
     # parse form data
+    user_event = get_event_from_form(request.form)
     data = parse_form_data(request.form)
     if isinstance(data, str):
-        flash(data, "error")
-        return redirect(url_for("events_ui.create"))
+        return render_template(
+            "events/form.html",
+            action="events_ui.create",
+            method="POST",
+            error=data,
+            event=user_event,
+            icons=custom_icons,
+            colours=colours,
+            tags=tags,
+        )
 
     # attempt to create the event
     if "start_time" in data:
@@ -124,10 +158,18 @@ def create() -> str | Response:
     else:
         event = create_repeat_event(**data)
 
-    # if failed, redirect to the create page with an error
+    # if failed, return the form with an error
     if isinstance(event, str):
-        flash(event, "error")
-        return redirect(url_for("events_ui.create"))
+        return render_template(
+            "events/form.html",
+            action="events_ui.create",
+            method="POST",
+            error=event,
+            event=user_event,
+            icons=custom_icons,
+            colours=colours,
+            tags=tags,
+        )
 
     if isinstance(event, list):
         event = event[0]
@@ -148,9 +190,7 @@ def create() -> str | Response:
     "/<int:year>/<int:term>/<int:week>/<string:slug>/edit", methods=["GET", "POST"]
 )
 @is_exec_wrapper
-def edit(
-    year: int, term: int, week: int, slug: str, error: str | None = None
-) -> str | Response:
+def edit(year: int, term: int, week: int, slug: str) -> str | Response:
     """Edit an existing event by its year, term, week, and slug."""
 
     event = get_event_by_slug(year, term, week, slug)
@@ -164,7 +204,6 @@ def edit(
     if request.method == "GET":
         return render_template(
             "events/form.html",
-            error=error,
             action="events_ui.edit",
             method="POST",
             event=event,
@@ -176,17 +215,19 @@ def edit(
     # if posting, update the event
 
     # parse form data
+    user_event = get_event_from_form(request.form)
+    user_event["date"] = event.date.to_dict()
     data = parse_form_data(request.form)
     if isinstance(data, str):
-        flash(data, "error")
-        return redirect(
-            url_for(
-                "events_ui.edit",
-                year=year,
-                term=term,
-                week=week,
-                slug=slug,
-            )
+        return render_template(
+            "events/form.html",
+            action="events_ui.edit",
+            method="POST",
+            error=data,
+            event=user_event,
+            icons=custom_icons,
+            colours=colours,
+            tags=tags,
         )
 
     # attempt to edit the event
@@ -194,15 +235,15 @@ def edit(
 
     # if failed, redirect to the edit page with an error
     if isinstance(event, str):
-        flash(event, "error")
-        return redirect(
-            url_for(
-                "events_ui.edit",
-                year=year,
-                term=term,
-                week=week,
-                slug=slug,
-            )
+        return render_template(
+            "events/form.html",
+            action="events_ui.edit",
+            method="POST",
+            error=event,
+            event=user_event,
+            icons=custom_icons,
+            colours=colours,
+            tags=tags,
         )
 
     # if successful, redirect to the event page
