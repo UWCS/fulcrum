@@ -95,7 +95,8 @@
                         <i class="ph-bold ph-link-simple"></i>
                     </div>
                     <fieldset class="form-floating">
-                        <input type="text" name="location_url" id="location_url" class="form-control last-border" placeholder="https://example.com/" {% if event and event.location_url %}value="{{ event.location_url }}"{% endif %} pattern="https?://.+">
+                        <!-- location url regex from https://dev.to/jbxamora/url-regex-1pol -->
+                        <input type="text" name="location_url" id="location_url" class="form-control last-border" placeholder="https://example.com/" {% if event and event.location_url %}value="{{ event.location_url }}"{% endif %} pattern="^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$">
                         <label for="location_url">Location URL</label>
                     </fieldset>
                     <div class="invalid-feedback">Must be a URL</div>
