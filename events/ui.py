@@ -2,7 +2,7 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.wrappers import Response
 
-from auth.auth import is_exec_wrapper
+from auth.oauth import is_exec_wrapper
 from config import colours, custom_icons
 from events.utils import (
     create_event,

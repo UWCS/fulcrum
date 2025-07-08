@@ -1,6 +1,6 @@
 from flask import Blueprint, Response, jsonify, request
 
-from auth.auth import valid_api_auth
+from auth.api import valid_api_auth
 from config import colours, icons
 from events.utils import (
     create_event,

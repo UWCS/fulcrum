@@ -7,7 +7,8 @@ from flasgger import Swagger
 from flask import Flask, redirect, render_template
 from werkzeug.wrappers import Response
 
-from auth.auth import auth_api_bp, auth_bp, configure_oauth, is_exec, is_logged_in
+from auth.api import auth_api_bp
+from auth.oauth import auth_bp, configure_oauth, is_exec, is_logged_in
 from events.api import events_api_bp
 from events.ui import events_ui_bp
 from schema import initialise_db
