@@ -6,6 +6,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_, func
 from sqlalchemy.orm import foreign
+from werkzeug.security import generate_password_hash
 
 from config import colours, custom_icons, icons
 
@@ -66,6 +67,11 @@ def initialise_db(app: Flask) -> None:
             # associate dummy event with dummy tags
             dummy_event.tags.append(dummy_tag1)
             dummy_event.tags.append(dummy_tag2)
+            db.session.commit()
+
+            # create dummy API key
+            api_key = APIKey(generate_password_hash("testing"), "testing")
+            db.session.add(api_key)
             db.session.commit()
 
 
@@ -274,24 +280,24 @@ class APIKey(db.Model):
     __tablename__ = "api_keys"
 
     id = db.Column(db.Integer, primary_key=True)
-    key = db.Column(db.String, unique=True, nullable=False)
+    key_hash = db.Column(db.String, unique=True, nullable=False)
     owner = db.Column(db.String, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
     active = db.Column(db.Boolean, default=True)
 
-    def __init__(self, key: str, owner: str) -> None:
-        self.key = key
+    def __init__(self, key_hash: str, owner: str) -> None:
+        self.key_hash = key_hash
         self.owner = owner
         self.created_at = datetime.now(pytz.timezone("Europe/London"))
         self.active = True
 
     def __repr__(self) -> str:
-        return f"<APIKey {self.key} (ID: {self.id}) owned by {self.owner}>"
+        return f"<APIKey {self.key_hash} (ID: {self.id}) owned by {self.owner}>"
 
     def to_dict(self) -> dict:
         return {
             "id": self.id,
-            "key": self.key,
+            "key_hash": self.key_hash,
             "owner": self.owner,
             "created_at": self.created_at.isoformat("T", "minutes"),
             "active": self.active,
@@ -300,4 +306,9 @@ class APIKey(db.Model):
     def deactivate(self) -> None:
         """Deactivate the API key"""
         self.active = False
+        db.session.commit()
+
+    def activate(self) -> None:
+        """Activate the API key"""
+        self.active = True
         db.session.commit()

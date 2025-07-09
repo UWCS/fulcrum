@@ -7,7 +7,7 @@ from flasgger import Swagger
 from flask import Flask, redirect, render_template
 from werkzeug.wrappers import Response
 
-from auth.api import auth_api_bp
+from auth.api import auth_api_bp, auth_ui_bp
 from auth.oauth import auth_bp, configure_oauth, is_exec, is_logged_in
 from events.api import events_api_bp
 from events.ui import events_ui_bp
@@ -27,6 +27,7 @@ initialise_db(app)
 # setup oauth and add routes
 configure_oauth(app)
 app.register_blueprint(auth_bp)
+app.register_blueprint(auth_ui_bp, url_prefix="/auth")
 
 # add api routes
 app.register_blueprint(events_api_bp, url_prefix="/api/events")
