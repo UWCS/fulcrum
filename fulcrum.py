@@ -39,7 +39,7 @@ with Path("swagger.json").open("r") as f:
 
 
 # add event ui routes
-app.register_blueprint(events_ui_bp, url_prefix="/events")
+app.register_blueprint(events_ui_bp)
 
 
 # context processor to inject global variables into templates

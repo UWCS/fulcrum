@@ -54,7 +54,7 @@ def is_logged_in() -> bool:
 auth_bp = Blueprint("auth", __name__)
 
 
-@auth_bp.route("/login")
+@auth_bp.route("/login/")
 def login() -> Response:
     # redirect to keycloack for login
     redirect_uri = url_for("auth.auth", _external=True)
@@ -62,7 +62,7 @@ def login() -> Response:
 
 
 # callback route for keycloak to redirect to after login
-@auth_bp.route("/auth")
+@auth_bp.route("/auth/")
 def auth() -> Response:
     token = oauth.keycloak.authorize_access_token()  # type: ignore
     # save id token for logout
@@ -72,7 +72,7 @@ def auth() -> Response:
     return redirect(url_for("index"))
 
 
-@auth_bp.route("/logout")
+@auth_bp.route("/logout/")
 def logout() -> Response:
     if "id_token" in session:
         # save token id for logout

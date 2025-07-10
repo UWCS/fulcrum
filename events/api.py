@@ -21,7 +21,9 @@ from schema import Event, Tag, Week
 events_api_bp = Blueprint("events_api", __name__, url_prefix="/api/events")
 
 
-@events_api_bp.route("/<int:year>/<int:term>/<int:week>/<string:slug>", methods=["GET"])
+@events_api_bp.route(
+    "/<int:year>/<int:term>/<int:week>/<string:slug>/", methods=["GET"]
+)
 def get_event(year: int, term: int, week: int, slug: str) -> tuple[Response, int]:
     """Get a specific event by year, term, week, and slug.
     ---
@@ -63,7 +65,7 @@ def get_event(year: int, term: int, week: int, slug: str) -> tuple[Response, int
     return jsonify(event.to_dict()), 200
 
 
-@events_api_bp.route("/<int:event_id>", methods=["GET"])
+@events_api_bp.route("/<int:event_id>/", methods=["GET"])
 def get_event_by_id_api(event_id: int) -> tuple[Response, int]:
     """Get a specific event by its ID.
     ---
@@ -90,9 +92,9 @@ def get_event_by_id_api(event_id: int) -> tuple[Response, int]:
     return jsonify(event.to_dict()), 200
 
 
-@events_api_bp.route("/<int:year>/<int:term>/<int:week>", methods=["GET"])
-@events_api_bp.route("/<int:year>/<int:term>", methods=["GET"])
-@events_api_bp.route("/<int:year>", methods=["GET"])
+@events_api_bp.route("/<int:year>/<int:term>/<int:week>/", methods=["GET"])
+@events_api_bp.route("/<int:year>/<int:term>/", methods=["GET"])
+@events_api_bp.route("/<int:year>/", methods=["GET"])
 def get_events(
     year: int, term: int | None = None, week: int | None = None
 ) -> tuple[Response, int]:
@@ -141,7 +143,7 @@ def get_events(
     return jsonify([event.to_dict() for event in events]), 200
 
 
-@events_api_bp.route("/create", methods=["POST"])
+@events_api_bp.route("/create/", methods=["POST"])
 @valid_api_auth
 def create_event_api() -> tuple[Response, int]:  # noqa: PLR0911
     """Create a new event
@@ -271,7 +273,7 @@ def create_event_api() -> tuple[Response, int]:  # noqa: PLR0911
         return jsonify({"error": str(e)}), 400
 
 
-@events_api_bp.route("/create_repeat", methods=["POST"])
+@events_api_bp.route("/create_repeat/", methods=["POST"])
 @valid_api_auth
 def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
     """Create a bunch of events at once
@@ -415,7 +417,7 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
         return jsonify({"error": str(e)}), 400
 
 
-@events_api_bp.route("/<int:event_id>", methods=["PATCH"])
+@events_api_bp.route("/<int:event_id>/", methods=["PATCH"])
 @valid_api_auth
 def edit_event_api(event_id: int) -> tuple[Response, int]:  # noqa: PLR0911, PLR0912
     """Edit an existing event. Leave a field out to leave it unchanged, or as an empty string to clear it.
@@ -569,7 +571,7 @@ def edit_event_api(event_id: int) -> tuple[Response, int]:  # noqa: PLR0911, PLR
     return jsonify(event.to_dict()), 200
 
 
-@events_api_bp.route("/<int:event_id>", methods=["DELETE"])
+@events_api_bp.route("/<int:event_id>/", methods=["DELETE"])
 @valid_api_auth
 def delete_event_api(event_id: int) -> tuple[Response, int]:
     """
@@ -603,7 +605,7 @@ def delete_event_api(event_id: int) -> tuple[Response, int]:
     return jsonify({"message": "Event deleted successfully"}), 200
 
 
-@events_api_bp.route("/tags", methods=["GET"])
+@events_api_bp.route("/tags/", methods=["GET"])
 def get_tags() -> tuple[Response, int]:
     """Get all tags
     ---
@@ -633,7 +635,7 @@ def get_tags() -> tuple[Response, int]:
     return jsonify([tag.to_dict() for tag in tags]), 200
 
 
-@events_api_bp.route("/tags/<string:tag_name>", methods=["GET"])
+@events_api_bp.route("/tags/<string:tag_name>/", methods=["GET"])
 def get_tag(tag_name: str) -> tuple[Response, int]:
     """Get all events for a specific tag
     ---
@@ -665,7 +667,7 @@ def get_tag(tag_name: str) -> tuple[Response, int]:
     return jsonify([event.to_dict() for event in events]), 200
 
 
-@events_api_bp.route("/week/<string:date_str>", methods=["GET"])
+@events_api_bp.route("/week/<string:date_str>/", methods=["GET"])
 def get_week_by_date(date_str: str) -> tuple[Response, int]:
     """Get the week for a specific date
     ---
@@ -700,7 +702,7 @@ def get_week_by_date(date_str: str) -> tuple[Response, int]:
     return jsonify(week.to_dict()), 200
 
 
-@events_api_bp.route("/colours", methods=["GET"])
+@events_api_bp.route("/colours/", methods=["GET"])
 def get_colours() -> tuple[Response, int]:
     """Get all available colours
     ---
@@ -720,7 +722,7 @@ def get_colours() -> tuple[Response, int]:
     return jsonify(colours), 200
 
 
-@events_api_bp.route("/icons", methods=["GET"])
+@events_api_bp.route("/icons/", methods=["GET"])
 def get_icons() -> tuple[Response, int]:
     """Get all available icons
     ---

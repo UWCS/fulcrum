@@ -104,7 +104,7 @@ def valid_api_auth(f: Callable) -> Callable:
 auth_api_bp = Blueprint("auth_api", __name__, url_prefix="/api/auth")
 
 
-@auth_api_bp.route("/create", methods=["POST"])
+@auth_api_bp.route("/create/", methods=["POST"])
 @is_exec_wrapper
 def create_api_key_api() -> tuple[Response, int]:
     """Create a new API key
@@ -131,7 +131,7 @@ def create_api_key_api() -> tuple[Response, int]:
     return jsonify(create_api_key(data["owner"])), 201
 
 
-@auth_api_bp.route("/<int:key_id>", methods=["GET"])
+@auth_api_bp.route("/<int:key_id>/", methods=["GET"])
 @is_exec_wrapper
 def get_api_key_api(key_id: int) -> tuple[Response, int]:
     """Get an API key by its ID
@@ -158,7 +158,7 @@ def get_api_key_api(key_id: int) -> tuple[Response, int]:
     return jsonify(api_key.to_dict()), 200
 
 
-@auth_api_bp.route("/<int:key_id>/deactivate", methods=["POST"])
+@auth_api_bp.route("/<int:key_id>/deactivate/", methods=["POST"])
 @is_exec_wrapper
 def deactivate_api_key_api(key_id: int) -> tuple[Response, int]:
     """Deactivate an API key by its ID
@@ -185,7 +185,7 @@ def deactivate_api_key_api(key_id: int) -> tuple[Response, int]:
     return jsonify(api_key.to_dict()), 200
 
 
-@auth_api_bp.route("/<int:key_id>/activate", methods=["POST"])
+@auth_api_bp.route("/<int:key_id>/activate/", methods=["POST"])
 @is_exec_wrapper
 def activate_api_key_api(key_id: int) -> tuple[Response, int]:
     """Activate an API key by its ID
@@ -212,7 +212,7 @@ def activate_api_key_api(key_id: int) -> tuple[Response, int]:
     return jsonify(api_key.to_dict()), 200
 
 
-@auth_api_bp.route("/<int:key_id>/delete", methods=["DELETE"])
+@auth_api_bp.route("/<int:key_id>/delete/", methods=["DELETE"])
 @is_exec_wrapper
 def delete_api_key_api(key_id: int) -> tuple[Response, int]:
     """Delete an API key by its ID
@@ -239,7 +239,7 @@ def delete_api_key_api(key_id: int) -> tuple[Response, int]:
     return jsonify(api_key.to_dict()), 200
 
 
-@auth_api_bp.route("/keys", methods=["GET"])
+@auth_api_bp.route("/keys/", methods=["GET"])
 @is_exec_wrapper
 def get_api_keys_api() -> tuple[Response, int]:
     """Get all API keys
@@ -261,13 +261,13 @@ def get_api_keys_api() -> tuple[Response, int]:
 auth_ui_bp = Blueprint("auth_ui", __name__, url_prefix="/auth")
 
 
-@auth_ui_bp.route("/keys", methods=["GET"])
+@auth_ui_bp.route("/keys/", methods=["GET"])
 @is_exec_wrapper
 def get_api_keys_ui() -> str:
     return render_template("auth/keys.html", keys=get_api_keys())
 
 
-@auth_ui_bp.route("/keys/create", methods=["POST"])
+@auth_ui_bp.route("/keys/create/", methods=["POST"])
 @is_exec_wrapper
 def create_api_key_ui() -> Response:
     owner = request.form.get("owner")
@@ -298,19 +298,19 @@ def handle_api_key_action(
     return redirect(url_for("auth_ui.get_api_keys_ui"))
 
 
-@auth_ui_bp.route("/keys/delete", methods=["POST"])
+@auth_ui_bp.route("/keys/delete/", methods=["POST"])
 @is_exec_wrapper
 def delete_api_key_ui() -> Response:
     return handle_api_key_action(delete_api_key, "deleted")
 
 
-@auth_ui_bp.route("/keys/deactivate", methods=["POST"])
+@auth_ui_bp.route("/keys/deactivate/", methods=["POST"])
 @is_exec_wrapper
 def deactivate_api_key_ui() -> Response:
     return handle_api_key_action(deactivate_api_key, "deactivated")
 
 
-@auth_ui_bp.route("/keys/activate", methods=["POST"])
+@auth_ui_bp.route("/keys/activate/", methods=["POST"])
 @is_exec_wrapper
 def activate_api_key_ui() -> Response:
     return handle_api_key_action(activate_api_key, "activated")

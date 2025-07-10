@@ -16,7 +16,7 @@ from events.utils import (
     validate_colour,
 )
 
-events_ui_bp = Blueprint("events_ui", __name__, url_prefix="/events")
+events_ui_bp = Blueprint("events_ui", __name__)
 
 
 def get_event_from_form(form_data: ImmutableMultiDict) -> dict:
@@ -117,7 +117,7 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
     return data
 
 
-@events_ui_bp.route("/create", methods=["GET", "POST"])
+@events_ui_bp.route("/create/", methods=["GET", "POST"])
 @is_exec_wrapper
 def create() -> str | Response:
     """Create a new event."""
@@ -187,7 +187,7 @@ def create() -> str | Response:
 
 
 @events_ui_bp.route(
-    "/<int:year>/<int:term>/<int:week>/<string:slug>/edit", methods=["GET", "POST"]
+    "/<int:year>/<int:term>/<int:week>/<string:slug>/edit/", methods=["GET", "POST"]
 )
 @is_exec_wrapper
 def edit(year: int, term: int, week: int, slug: str) -> str | Response:
@@ -259,7 +259,7 @@ def edit(year: int, term: int, week: int, slug: str) -> str | Response:
 
 
 @events_ui_bp.route(
-    "/<int:year>/<int:term>/<int:week>/<string:slug>/delete", methods=["POST"]
+    "/<int:year>/<int:term>/<int:week>/<string:slug>/delete/", methods=["POST"]
 )
 @is_exec_wrapper
 def delete(year: int, term: int, week: int, slug: str) -> Response:
@@ -277,7 +277,7 @@ def delete(year: int, term: int, week: int, slug: str) -> Response:
     return redirect("/")
 
 
-@events_ui_bp.route("/<int:year>/<int:term>/<int:week>/<string:slug>")
+@events_ui_bp.route("/<int:year>/<int:term>/<int:week>/<string:slug>/")
 def view(year: int, term: int, week: int, slug: str) -> str:
     """View an event by its year, term, week, and slug."""
 
