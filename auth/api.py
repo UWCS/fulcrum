@@ -277,7 +277,7 @@ def create_api_key_ui() -> Response:
 
     api_key = create_api_key(owner)
     flash(f"API key for {owner}, created successfully!", "success")
-    flash(f"Key: {api_key['key']}", "success")
+    flash(api_key["key"], "key")
     return redirect(url_for("auth_ui.get_api_keys_ui"))
 
 
@@ -294,7 +294,7 @@ def handle_api_key_action(
         flash("API key not found", "error")
         return redirect(url_for("auth_ui.get_api_keys_ui"))
 
-    flash(f"API key {api_key.id} {verb} successfully!", "info")
+    flash(f"API key {api_key.id} {verb} successfully", "info")
     return redirect(url_for("auth_ui.get_api_keys_ui"))
 
 

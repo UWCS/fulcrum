@@ -29,6 +29,43 @@ document.addEventListener("DOMContentLoaded", function () {
 
     ownerInput.addEventListener("input", filterTable);
     activeSelect.addEventListener("change", filterTable);
+
+    var keyModal = document.getElementById("keyModal");
+    if (keyModal) {
+        let copiedKey = false;
+
+        // show modal on load
+        const modal = new bootstrap.Modal(keyModal, {});
+        modal.show();
+
+        const key = document.getElementById("apiKey");
+        const copyButton = document.getElementById("copyKeyButton");
+        const headerClose = document.getElementById("headerClose");
+        const footerClose = document.getElementById("footerClose");
+        const error = document.getElementById("errorMessage");
+
+        function tryClose() {
+            if (copiedKey) {
+                modal.hide();
+            } else {
+                error.classList.remove("d-none");
+            }
+        }
+
+        headerClose.addEventListener("click", tryClose);
+        footerClose.addEventListener("click", tryClose);
+
+        copyButton.addEventListener("click", () => {
+            const keyText = key.textContent;
+            navigator.clipboard.writeText(keyText).then(() => {
+                copiedKey = true;
+                copyButton.classList.remove("btn-outline-secondary");
+                copyButton.classList.add("btn-success");
+                copyButton.innerHTML = "<i class='ph-bold ph-check'></i>";
+                error.classList.add("d-none");
+            });
+        });
+    }
 });
 
 function clearFilters() {
