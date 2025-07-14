@@ -66,8 +66,8 @@ def create_event(  # noqa: PLR0913
     if end_time and end_time < start_time:
         return "End time cannot be before start time"
 
-    # convert icon to lowercase
-    icon = icon.lower() if icon else None
+    # convert icon to lowercase and remove "ph-" prefix
+    icon = icon.lower().removeprefix("ph-") if icon else None
 
     # create the event object
     event = Event(
@@ -96,7 +96,7 @@ def create_event(  # noqa: PLR0913
     # check if week and slug are unique
     if get_event_by_slug(week.academic_year, week.term, week.week, event.slug):
         db.session.rollback()
-        return "An event with this name already exists in this week"
+        return f"An event with the name '{event.name}' already exists in {week.academic_year} t{week.term} w{week.week}"
 
     # add the event to db to allow tags
     db.session.add(event)
@@ -119,80 +119,84 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
     """Get the week from a given date"""
 
     week = Week.query.filter(
-        (date >= Week.start_date) & (date <= Week.end_date)  # type: ignore
+        (date.date() >= Week.start_date) & (date.date() <= Week.end_date)  # type: ignore
     ).first()
 
-    if week is None:
-        # if unable to find week, create the week
-        year, month = date.year, date.month
-        if month < 9:  # noqa: PLR2004
-            # if earlier than september, use the previous academic year
-            year -= 1
+    if week:
+        return week
 
-        api_year = 2006
-        if year >= api_year:
-            # fetch the term dates from the Warwick API
+    # if unable to find week, create the week
+    year, month = date.year, date.month
+    if month < 9:  # noqa: PLR2004
+        # if earlier than september, use the previous academic year
+        year -= 1
 
-            warwick_week = requests.get(
-                f"https://tabula.warwick.ac.uk/api/v1/termdates/{year}/weeks?numberingSystem=term",
-                timeout=5,
-            ).json()
+    api_cutoff = 2006
+    if year >= api_cutoff:
+        # fetch the term dates from the Warwick API
 
-            week_delta = 0
-            for w in reversed(warwick_week["weeks"]):
-                start_date = get_date_from_string(w["start"])
-                if isinstance(start_date, str):
-                    return None
-                if start_date <= date:
-                    name = w["name"]
-                    if "Term" in name:
-                        # term week
-                        # e.g. "Term 1, week 2"
-                        parts = name.split(", ")
-                        term_num = int(parts[0].split(" ")[-1])
-                        week_num = int(parts[1].split(" ")[-1])
-                    elif w["weekNumber"] == 0:
-                        # welcome week
-                        term_num = 1
-                        week_num = 0
-                    else:
-                        # increment week number and continue for holiday weeks
-                        week_delta += 1
-                        continue
+        warwick_week = requests.get(
+            f"https://tabula.warwick.ac.uk/api/v1/termdates/{year}/weeks?numberingSystem=term",
+            timeout=5,
+        ).json()
 
-                    week = Week(
-                        academic_year=year,
-                        term=term_num,
-                        week=week_num + week_delta,
-                        start_date=start_date + timedelta(weeks=week_delta),
-                    )
+        week_delta = 0
+        for w in reversed(warwick_week["weeks"]):
+            start_date = get_date_from_string(w["start"])
+            if isinstance(start_date, str):
+                return None
+            if start_date <= date:
+                name = w["name"]
+                if "Term" in name:
+                    # term week
+                    # e.g. "Term 1, week 2"
+                    parts = name.split(", ")
+                    term_num = int(parts[0].split(" ")[-1])
+                    week_num = int(parts[1].split(" ")[-1])
+                elif w["weekNumber"] == 0:
+                    # welcome week
+                    term_num = 1
+                    week_num = 0
+                else:
+                    # increment week number and continue for holiday weeks
+                    week_delta += 1
+                    continue
 
-                    db.session.add(week)
-                    break
-        else:
-            with Path("olddates.json").open("r") as f:
-                old_dates = load(f)
-            for w in reversed(old_dates["weeks"]):
-                start_date = get_date_from_string(w["date"])
-                if isinstance(start_date, str):
-                    return None
-                if start_date <= date:
-                    term_num = w["term"]
-                    delta = date - start_date
-                    # add 1 to make 1-indexed
-                    # apart from t1 which has welcome week
-                    week_num = delta.days // 7 + 1 if term_num > 1 else delta.days // 7
-                    start_date = start_date + timedelta(
-                        weeks=week_num - (1 if term_num > 1 else 0)
-                    )
-                    week = Week(
-                        academic_year=year,
-                        term=term_num,
-                        week=week_num,
-                        start_date=start_date,
-                    )
-                    db.session.add(week)
-    return week
+                week = Week(
+                    academic_year=year,
+                    term=term_num,
+                    week=week_num + week_delta,
+                    start_date=start_date + timedelta(weeks=week_delta),
+                )
+
+                db.session.add(week)
+                return week
+    else:
+        with Path("events/olddates.json").open("r") as f:
+            old_dates = load(f)
+        for w in reversed(old_dates):
+            start_date = get_date_from_string(w["date"])
+            if isinstance(start_date, str):
+                return None
+            if start_date <= date:
+                term_num = w["term"]
+                delta = date - start_date
+                # add 1 to make 1-indexed
+                # apart from t1 which has welcome week
+                week_num = delta.days // 7 + 1 if term_num > 1 else delta.days // 7
+                start_date = start_date + timedelta(
+                    weeks=week_num - (1 if term_num > 1 else 0)
+                )
+                week = Week(
+                    academic_year=year,
+                    term=term_num,
+                    week=week_num,
+                    start_date=start_date,
+                )
+
+                db.session.add(week)
+                return week
+    return None
 
 
 def create_repeat_event(  # noqa: PLR0913
@@ -370,7 +374,7 @@ def edit_event(  # noqa: PLR0913
         # clear existing tags
         event.tags.clear()
         # check all tags exist, create if not
-        for tag in tags:
+        for tag in tags:  # type: ignore
             tag_obj = Tag.query.filter_by(name=tag).first()
             if not tag_obj:
                 tag_obj = Tag(name=tag)

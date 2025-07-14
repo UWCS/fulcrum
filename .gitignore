@@ -6,3 +6,7 @@ static/css/main.css
 volume/
 # ignore auto-generated instance folder
 instance/
+# ignore archive for importing
+archive/
+errors.txt
+tags.csv

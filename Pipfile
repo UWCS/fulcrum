@@ -13,6 +13,7 @@ dotenv = "*"
 flask-sqlalchemy = "*"
 pytz = "*"
 flasgger = "*"
+parsedatetime = "*"
 
 [dev-packages]
 
