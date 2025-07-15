@@ -12,7 +12,7 @@ import tomllib
 api_key = "testing"
 base_url = "http://127.0.0.1:5000/api/events/"
 events_folder = Path("archive")
-tags_file = "tags.csv"
+tags_file = "tags.txt"
 tags = {}
 error_files = []
 error_file = "errors.txt"
@@ -92,7 +92,7 @@ def get_date_time(date_str: str, path: Path) -> datetime:
         return time
 
 
-def parse_event(path: Path) -> dict:
+def parse_event(path: Path, repeat: bool) -> dict:
     """Parse an event and return it as a dictionary."""
 
     with path.open("rb") as f:
@@ -111,28 +111,31 @@ def parse_event(path: Path) -> dict:
     # add description
     event["description"] = parts[2].strip() if parts[2].strip() else event["title"]
 
-    # parse start time
-    start_time = get_date_time(event["date"], path)
-    event["start_time"] = start_time
+    if not repeat:
+        # parse start time
+        start_time = get_date_time(event["date"], path)
+        event["start_time"] = start_time
 
-    # parse end time if supplied
-    if "end_time" in event:
-        try:
-            # attempt to parse as ISO-8601 format
-            event["end_time"] = datetime.fromisoformat(event["end_time"]).astimezone(
-                pytz.timezone("Europe/London")
-            )
-        except ValueError:
-            # if that fails, use custom parsing
-            time, _ = parsedatetime.Calendar().parseDT(
-                event["end_time"], event["start_time"], pytz.timezone("Europe/London")
-            )
-            event["end_time"] = time
+        # parse end time if supplied
+        if "end_time" in event:
+            try:
+                # attempt to parse as ISO-8601 format
+                event["end_time"] = datetime.fromisoformat(
+                    event["end_time"]
+                ).astimezone(pytz.timezone("Europe/London"))
+            except ValueError:
+                # if that fails, use custom parsing
+                time, _ = parsedatetime.Calendar().parseDT(
+                    event["end_time"],
+                    event["start_time"],
+                    pytz.timezone("Europe/London"),
+                )
+                event["end_time"] = time
 
-        if event["end_time"] < event["start_time"]:
-            raise ValueError(
-                f"End ({event["end_time"]}) is before start ({event["start_time"]})"
-            )
+            if event["end_time"] < event["start_time"]:
+                raise ValueError(
+                    f"End ({event["end_time"]}) is before start ({event["start_time"]})"
+                )
 
     # process icon to convert icons/<icon>.svg to <icon>
     if "icon" in event:
@@ -141,7 +144,63 @@ def parse_event(path: Path) -> dict:
     return event
 
 
-def import_events() -> None:  # noqa: PLR0912
+def add_event(file: Path, event: dict) -> None:  # noqa: PLR0912
+    """Add an event to the API"""
+
+    if "tags" in event:
+        event_tags = event.pop("tags")
+        for tag in event_tags:
+            if tag not in tags:
+                # if tag doesn't exist, create it
+                tags[tag] = [str(file)]
+            else:
+                # otherwise, append to existing tag
+                tags[tag].append(str(file))
+
+    # create colour and icon if not present
+    if "colour" not in event:
+        if "gaming" in event["title"].lower():
+            event["colour"] = "gaming"
+            event["icon"] = "fng" if not event.get("icon") else event["icon"]
+        if "social" in event["title"].lower():
+            event["colour"] = "social"
+        if any(word in event["location"].lower() for word in ["duck", "coach"]):
+            event["colour"] = "social"
+            event["icon"] = "hamburger" if not event.get("icon") else event["icon"]
+
+    # prepare event and send to API
+    event_json = {
+        "name": event["title"],
+        "description": event["description"],
+        "location": event["location"],
+        "start_time": event["start_time"].strftime("%Y-%m-%dT%H:%M"),
+    }
+    if "draft" in event:
+        event_json["draft"] = event["draft"]
+    if "location_url" in event:
+        event_json["location_url"] = event["location_url"]
+    if "icon" in event:
+        event_json["icon"] = event["icon"]
+    if "colour" in event:
+        event_json["colour"] = event["colour"]
+    if "end_time" in event:
+        event_json["end_time"] = event["end_time"].strftime("%Y-%m-%dT%H:%M")
+
+    response = requests.post(
+        base_url + "create/",
+        json=event_json,
+        headers={"Authorization": api_key},
+        timeout=5,
+    )
+
+    if response.status_code == 201:  # noqa: PLR2004
+        print(f"Successfully imported {file}")
+    else:
+        print(f"Failed to import {file}: {response.text.replace("\n", " ")}")
+        error_files.append((file, response.text))
+
+
+def import_events() -> None:
     """Import events from the archive folder and add them to the new API"""
 
     print("Importing events...")
@@ -149,68 +208,30 @@ def import_events() -> None:  # noqa: PLR0912
         print(f"Importing {file}...")
 
         try:
-            if "repeat" in str(file.parent):
-                # skip for now
-                continue
-            else:
-                event = parse_event(file)
-        except Exception as e:
+            event = parse_event(file, "repeat" in file.parts)
+        except ValueError as e:
             print(f"Error parsing {file}: {e}")
             error_files.append((file, str(e)))
             continue
 
-        # tags processing
-        if "tags" in event:
-            event_tags = event.pop("tags")
-            for tag in event_tags:
-                if tag not in tags:
-                    # if tag doesnt exist, create it
-                    tags[tag] = [event["title"]]
-                else:
-                    # otherwise, append to existing tag
-                    tags[tag].append(event["title"])
-
-        # create colour
-        if "colour" not in event:
-            if "gaming" in event["title"].lower():
-                event["colour"] = "gaming"
-                event["icon"] = "fng"
-            if "social" in event["title"].lower():
-                event["colour"] = "social"
-            if any(word in event["location"].lower() for word in ["duck", "coach"]):
-                event["colour"] = "social"
-                event["icon"] = "hamburger"
-
-        # prepare event and send to API
-        event_json = {
-            "name": event["title"],
-            "description": event["description"],
-            "location": event["location"],
-            "start_time": event["start_time"].strftime("%Y-%m-%dT%H:%M"),
-        }
-        if "draft" in event:
-            event_json["draft"] = event["draft"]
-        if "location_url" in event:
-            event_json["location_url"] = event["location_url"]
-        if "icon" in event:
-            event_json["icon"] = event["icon"]
-        if "colour" in event:
-            event_json["colour"] = event["colour"]
-        if "end_time" in event:
-            event_json["end_time"] = event["end_time"].strftime("%Y-%m-%dT%H:%M")
-
-        response = requests.post(
-            base_url + "create/",
-            json=event_json,
-            headers={"Authorization": api_key},
-            timeout=5,
-        )
-
-        if response.status_code == 201:  # noqa: PLR2004
-            print(f"Successfully imported {file}")
+        if "repeat" in file.parts:
+            for week in event["weeks"]:
+                event_copy = event.copy()
+                event_date = get_date_from_week(file.parts[1], file.parts[2], week)
+                time, _ = parsedatetime.Calendar().parseDT(
+                    event["date"], event_date, pytz.timezone("Europe/London")
+                )
+                event_copy["start_time"] = time
+                if "end_time" in event_copy:
+                    time, _ = parsedatetime.Calendar().parseDT(
+                        event["end_time"],
+                        event_copy["start_time"],
+                        pytz.timezone("Europe/London"),
+                    )
+                    event_copy["end_time"] = time
+                add_event(file, event_copy)
         else:
-            print(f"Failed to import {file}: {response.text.replace("\n", " ")}")
-            error_files.append((file, response.text))
+            add_event(file, event)
 
     # write tags to file
     with Path(tags_file).open("w", encoding="utf-8") as f:
