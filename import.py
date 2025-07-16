@@ -35,11 +35,13 @@ def get_date_from_week(year: str, term: str, week: str) -> date | None:
     except Exception as e:
         raise ValueError("Unable to get dates from API") from e
 
-    inferred_weeks = []
+    # find week
+    inferred_weeks = []  # list of intermediary weeks
     current_term = None
     current_week = None
 
     for w in weeks:
+        # extract core info
         name = w["name"]
         start = (
             datetime.strptime(w["start"], "%Y-%m-%d")
@@ -48,6 +50,7 @@ def get_date_from_week(year: str, term: str, week: str) -> date | None:
         )
 
         if "Term" in name:
+            # extract week and term if standard week
             try:
                 parts = name.split(", ")
                 current_term = int(parts[0].split(" ")[1])
@@ -55,24 +58,36 @@ def get_date_from_week(year: str, term: str, week: str) -> date | None:
                 inferred_weeks.append((current_term, current_week, start))
             except (IndexError, ValueError):
                 continue
+        elif name == "Easter vacation, w/c Mon 15ᵗʰ Apr 2024":
+            # w0 revision session (cs241)
+            inferred_weeks.append((3, 0, start))
+        elif name == "Summer vacation, w/c Mon 30ᵗʰ Jun 2025":
+            # w11 online fng
+            inferred_weeks.append((3, 11, start))
         elif w.get("weekNumber") == 0:
+            # welcome week
             inferred_weeks.append((1, 0, start))
 
-    inferred_weeks.sort(key=lambda x: x[2])  # sort by date
+    # sort weeks by term and week number
+    inferred_weeks.sort(key=lambda x: x[2])
 
+    # fill in the weeks
     inferred_timeline = {}
-
     for i, (term_num, week_num, start_date) in enumerate(inferred_weeks):
+        # set the start date for the week
         inferred_timeline[(term_num, week_num)] = start_date
 
         if i + 1 < len(inferred_weeks):
+            # get the next one
             next_start = inferred_weeks[i + 1][2]
+            # fill in the weeks between
             weeks_between = (next_start - start_date).days // 7
             for j in range(1, weeks_between):
                 inferred_timeline[(term_num, week_num + j)] = start_date + timedelta(
                     weeks=j
                 )
 
+    # return the date for the requested week
     return inferred_timeline.get((parsed_term, parsed_week), None)
 
 
@@ -89,6 +104,11 @@ def get_date_time(date_str: str, path: Path) -> datetime:
         time, _ = parsedatetime.Calendar().parseDT(
             date_str, base_date, pytz.timezone("Europe/London")
         )
+        # if time is a week ahead of the base date (on mon), subtract a week from time
+        # yes i know this is a hack, cope
+        if time.date() >= base_date + timedelta(weeks=1):  # type: ignore
+            print(f"Time is adjusted for {path} in {path.parts[3]}")
+            time -= timedelta(weeks=1)
         return time
 
 
@@ -132,6 +152,7 @@ def parse_event(path: Path, repeat: bool) -> dict:
                 )
                 event["end_time"] = time
 
+            # error handling
             if event["end_time"] < event["start_time"]:
                 raise ValueError(
                     f"End ({event["end_time"]}) is before start ({event["start_time"]})"
@@ -147,6 +168,7 @@ def parse_event(path: Path, repeat: bool) -> dict:
 def add_event(file: Path, event: dict) -> None:  # noqa: PLR0912
     """Add an event to the API"""
 
+    # add tags to list for sorting later
     if "tags" in event:
         event_tags = event.pop("tags")
         for tag in event_tags:
@@ -196,18 +218,30 @@ def add_event(file: Path, event: dict) -> None:  # noqa: PLR0912
     if response.status_code == 201:  # noqa: PLR2004
         print(f"Successfully imported {file}")
     else:
-        print(f"Failed to import {file}: {response.text.replace("\n", " ")}")
-        error_files.append((file, response.text))
+        # try again just in case
+        response = requests.post(
+            base_url + "create/",
+            json=event_json,
+            headers={"Authorization": api_key},
+            timeout=5,
+        )
+        if response.status_code == 201:  # noqa: PLR2004
+            print(f"Successfully imported {file} on retry")
+        else:
+            print(f"Failed to import {file}: {response.text.replace('\n', ' ')}")
+            error_files.append((file, response.text.replace("\n", " ")))
 
 
 def import_events() -> None:
     """Import events from the archive folder and add them to the new API"""
 
     print("Importing events...")
+    # loop over all events
     for file in events_folder.rglob("*.md"):
         print(f"Importing {file}...")
 
         try:
+            # create base event dict
             event = parse_event(file, "repeat" in file.parts)
         except ValueError as e:
             print(f"Error parsing {file}: {e}")
@@ -215,12 +249,18 @@ def import_events() -> None:
             continue
 
         if "repeat" in file.parts:
+            # if repeat, add an event for each week
             for week in event["weeks"]:
                 event_copy = event.copy()
+                # date parsing
                 event_date = get_date_from_week(file.parts[1], file.parts[2], week)
                 time, _ = parsedatetime.Calendar().parseDT(
                     event["date"], event_date, pytz.timezone("Europe/London")
                 )
+                # same hack to subtract a week if necessary
+                if time.date() >= event_date + timedelta(weeks=1):  # type: ignore
+                    print(f"Time is adjusted for {file} in {week}")
+                    time -= timedelta(weeks=1)
                 event_copy["start_time"] = time
                 if "end_time" in event_copy:
                     time, _ = parsedatetime.Calendar().parseDT(
@@ -237,6 +277,7 @@ def import_events() -> None:
     with Path(tags_file).open("w", encoding="utf-8") as f:
         f.writelines(f"{tag}:{','.join(events)}\n" for tag, events in tags.items())
 
+    # if error, write them
     if error_files:
         with Path(error_file).open("w", encoding="utf-8") as f:
             f.writelines(f"{file}: {error}\n" for file, error in error_files)

@@ -96,7 +96,10 @@ def create_event(  # noqa: PLR0913
     # check if week and slug are unique
     if get_event_by_slug(week.academic_year, week.term, week.week, event.slug):
         db.session.rollback()
-        return f"An event with the name '{event.name}' already exists in {week.academic_year} t{week.term} w{week.week}"
+        return (
+            f"An event with the name '{event.name}' already exists in "
+            f"{week.academic_year} t{week.term} w{week.week}"
+        )
 
     # add the event to db to allow tags
     db.session.add(event)
@@ -115,7 +118,7 @@ def create_event(  # noqa: PLR0913
     return event
 
 
-def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
+def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0911, PLR0912
     """Get the week from a given date"""
 
     week = Week.query.filter(
@@ -134,11 +137,15 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
     api_cutoff = 2006
     if year >= api_cutoff:
         # fetch the term dates from the Warwick API
+        try:
+            warwick_week = requests.get(
+                f"https://tabula.warwick.ac.uk/api/v1/termdates/{year}/weeks?numberingSystem=term",
+                timeout=5,
+            )
+        except requests.exceptions.SSLError:
+            return None
 
-        warwick_week = requests.get(
-            f"https://tabula.warwick.ac.uk/api/v1/termdates/{year}/weeks?numberingSystem=term",
-            timeout=5,
-        ).json()
+        warwick_week = warwick_week.json()
 
         week_delta = 0
         for w in reversed(warwick_week["weeks"]):
@@ -157,6 +164,10 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0912
                     # welcome week
                     term_num = 1
                     week_num = 0
+                elif w["weekNumber"] < 0:
+                    # holiday week
+                    term_num = 1
+                    week_num = w["weekNumber"]
                 else:
                     # increment week number and continue for holiday weeks
                     week_delta += 1
