@@ -60,7 +60,7 @@
                 },
                 "name": {
                     "type": "string",
-                    "description": "Name of the tag"
+                    "description": "Name of the tag (lowercase)"
                 }
             }
         },

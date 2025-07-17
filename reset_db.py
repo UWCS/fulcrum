@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import date, datetime, timedelta
 
@@ -56,10 +57,12 @@ def reset_database(seed: bool) -> None:
             dummy_event.tags.append(dummy_tag2)
             db.session.commit()
 
-            # create dummy API key
-            api_key = APIKey(generate_password_hash("testing"), "testing")
-            db.session.add(api_key)
-            db.session.commit()
+        # create dummy API key
+        api_key = APIKey(
+            generate_password_hash(str(os.getenv("API_KEY"))), "import-script"
+        )
+        db.session.add(api_key)
+        db.session.commit()
 
 
 if __name__ == "__main__":

@@ -187,7 +187,7 @@
             <!-- tags -->
             <!-- tags from https://github.com/lekoala/bootstrap5-tags -->
             <div class="form-floating col-md-4">
-                <select class="form-select" id="tags" name="tags[]" multiple data-allow-new="true" data-allow-clear="true" data-separator=" |,|  " >
+                <select class="form-select" id="tags" name="tags[]" multiple data-allow-new="true" data-allow-clear="true" data-separator=",|  " >
                     <option value="" disabled selected {% if not (event and event.tags) %}hidden{% endif %}>Select tags...</option>
                     {% for tag in tags %}
                         <option value="{{ tag }}" {% if event and (tag in event.tags | selectattr('name') | map(attribute='name') | list) %}selected="selected"{% endif %}>

@@ -112,7 +112,7 @@ def create_event(  # noqa: PLR0912, PLR0913
     if get_event_by_slug(week.academic_year, week.term, week.week, event.slug):
         db.session.rollback()
         return (
-            f"An event with the name '{event.name}' already exists in "
+            f"An event with the name '{event.slug}' already exists in "
             f"{week.academic_year} t{week.term} w{week.week}"
         )
 
@@ -122,6 +122,7 @@ def create_event(  # noqa: PLR0912, PLR0913
     # attach tags to the event
     # check all tags exist, create if not
     for tag in tags:
+        tag = tag.lower()  # noqa: PLW2901
         tag_obj = Tag.query.filter_by(name=tag).first()
         if not tag_obj:
             tag_obj = Tag(name=tag)
@@ -401,6 +402,7 @@ def edit_event(  # noqa: PLR0913
         event.tags.clear()
         # check all tags exist, create if not
         for tag in tags:  # type: ignore
+            tag = tag.lower()  # noqa: PLW2901
             tag_obj = Tag.query.filter_by(name=tag).first()
             if not tag_obj:
                 tag_obj = Tag(name=tag)

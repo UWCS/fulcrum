@@ -1,5 +1,6 @@
 # imports all the events from the old website and adds them to the new one via the API
 
+import os
 import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -9,7 +10,7 @@ import pytz
 import requests
 import tomllib
 
-api_key = "testing"
+api_key = os.getenv("API_KEY")
 base_url = "http://127.0.0.1:5000/api/events/"
 events_folder = Path("archive")
 tags_file = "tags.txt"
@@ -168,17 +169,6 @@ def parse_event(path: Path, repeat: bool) -> dict:
 def add_event(file: Path, event: dict) -> None:  # noqa: PLR0912
     """Add an event to the API"""
 
-    # add tags to list for sorting later
-    if "tags" in event:
-        event_tags = event.pop("tags")
-        for tag in event_tags:
-            if tag not in tags:
-                # if tag doesn't exist, create it
-                tags[tag] = [str(file)]
-            else:
-                # otherwise, append to existing tag
-                tags[tag].append(str(file))
-
     # create colour and icon if not present
     if "colour" not in event:
         if "gaming" in event["title"].lower():
@@ -230,6 +220,21 @@ def add_event(file: Path, event: dict) -> None:  # noqa: PLR0912
         else:
             print(f"Failed to import {file}: {response.text.replace('\n', ' ')}")
             error_files.append((file, response.text.replace("\n", " ")))
+
+    event_id = response.json().get("id", None)
+    if not event_id:
+        return
+
+    # add tags to list for sorting later
+    if "tags" in event:
+        event_tags = event.pop("tags")
+        for tag in event_tags:
+            if tag not in tags:
+                # if tag doesn't exist, create it
+                tags[tag] = [str(event_id)]
+            else:
+                # otherwise, append to existing tag
+                tags[tag].append(str(event_id))
 
 
 def import_events() -> None:
@@ -285,6 +290,39 @@ def import_events() -> None:
     print("done :)")
 
 
+def import_tags() -> None:
+    """Import tags from tags file and add to API"""
+    # reverse dictionary to get tags for each event
+    event_tags = {}
+    print("Importing tags file")
+    with Path(tags_file).open("r", encoding="utf-8") as f:
+        for line in f:
+            tag, events = line.strip().split(":")
+            for event in events.split(","):
+                if event not in event_tags:
+                    event_tags[event] = []
+                event_tags[event].append(tag)
+    print("Tags imported")
+
+    print("Adding tags to API")
+    for event, tags in event_tags.items():
+        print(f"Processing {event} with tags {", ".join(tags)}")
+
+        # add tags to event
+        response = requests.patch(
+            base_url + event + "/",
+            json={"tags": tags},
+            headers={"Authorization": api_key},
+            timeout=5,
+        )
+
+        if response.status_code == 200:  # noqa: PLR2004
+            print(f"Successfully added tags to {event}")
+        else:
+            print(f"Failed to add tags to {event}: {response.text}")
+            error_files.append((event, response.text.replace("\n", " ")))
+
+
 if __name__ == "__main__":
     start = datetime.now()  # noqa: DTZ005
 
@@ -292,5 +330,7 @@ if __name__ == "__main__":
 
     if arg == "import":
         import_events()
+    elif arg == "tags":
+        import_tags()
 
     print("Finished in", datetime.now() - start)  # noqa: DTZ005

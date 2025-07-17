@@ -205,7 +205,7 @@ class Tag(db.Model):
     name = db.Column(db.String, unique=True, nullable=False)
 
     def __init__(self, name: str) -> None:
-        self.name = name
+        self.name = name.lower()
 
     def __repr__(self) -> str:
         return f"<Tag {self.name} (ID: {self.id})>"

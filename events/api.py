@@ -206,7 +206,6 @@ def create_event_api() -> tuple[Response, int]:  # noqa: PLR0911
         items:
             type : string
             example : "tag1"
-            example : "tag2"
         required: false
         default: []
         description: A list of tags associated with the event.
@@ -344,7 +343,6 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
         items:
           type : string
           example : "tag1"
-          example : "tag2"
         required: false
         default: []
         description: A list of tags associated with the events.
@@ -485,7 +483,6 @@ def edit_event_api(event_id: int) -> tuple[Response, int]:  # noqa: PLR0911, PLR
         items:
             type : string
             example : "tag1"
-            example : "tag2"
         required: false
         default: []
         description: A list of new tags associated with the event.
@@ -626,7 +623,7 @@ def get_tags() -> tuple[Response, int]:
         404:
             description: No tags found.
     """
-    query_string = request.args.get("query", "")
+    query_string = request.args.get("query", "").lower()
     tags = (
         get_tags_by_string(query_string, limit=-1) if query_string else get_all_tags()
     )
@@ -656,7 +653,7 @@ def get_tag(tag_name: str) -> tuple[Response, int]:
         404:
             description: Tag not found or no events found for this tag.
     """
-    tag = Tag.query.filter_by(name=tag_name).first()
+    tag = Tag.query.filter_by(name=tag_name.lower()).first()
     if not tag:
         return jsonify({"error": "Tag not found"}), 404
 
