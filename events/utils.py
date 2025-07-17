@@ -6,7 +6,7 @@ import pytz
 import requests
 from sqlalchemy import and_, exists
 
-from config import colours
+from config import colours, room_mapping
 from schema import Event, Tag, Week, db
 
 
@@ -39,7 +39,7 @@ def get_date_from_string(date_str: str) -> datetime | str:
         return "Invalid date format, expected 'YYYY-MM-DD'"
 
 
-def create_event(  # noqa: PLR0913
+def create_event(  # noqa: PLR0912, PLR0913
     name: str,
     description: str,
     draft: bool,
@@ -68,6 +68,21 @@ def create_event(  # noqa: PLR0913
 
     # convert icon to lowercase and remove "ph-" prefix
     icon = icon.lower().removeprefix("ph-") if icon else None
+
+    if location is not None and location_url is None:
+        temp_location = location.lower()
+        if temp_location in room_mapping:
+            # if location is in the mapping, use the canonical name
+            temp_location = room_mapping[temp_location]
+
+        url = f"https://hub.smartne.com/api/store/projects/warwick/live/locations/search/{temp_location}?limit=1"
+
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:  # noqa: PLR2004
+            data = response.json()
+            if len(data) > 0:
+                id = data[0]["_id"]
+                location_url = f"https://campus.warwick.ac.uk/search/{id}"
 
     # create the event object
     event = Event(

@@ -41,3 +41,18 @@ phosphor_icons = sorted(
 )
 
 icons = sorted(custom_icons + phosphor_icons)
+
+# mapping of common location names to their canonical names
+# mapping also exists in static/js/event-management.js if updating
+room_mapping = {
+    "mb001": "Computer Science Teaching Room",
+    "sports hub": "Sports and Wellbeing Hub",
+    "dcs": "Computer Science",
+    "cs dept": "Computer Science",
+    "dcs atrium": "Computer Science",
+    "computer science dept": "Computer Science",
+    "computer science department": "Computer Science",
+    "department of computer science": "Computer Science",
+    "junction hall 1": "jx003",
+    "junction hall 2": "jx010",
+}

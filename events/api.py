@@ -65,7 +65,7 @@ def get_event(year: int, term: int, week: int, slug: str) -> tuple[Response, int
     return jsonify(event.to_dict()), 200
 
 
-@events_api_bp.route("/<int:event_id>/", methods=["GET"])
+@events_api_bp.route("/id/<int:event_id>/", methods=["GET"])
 def get_event_by_id_api(event_id: int) -> tuple[Response, int]:
     """Get a specific event by its ID.
     ---
