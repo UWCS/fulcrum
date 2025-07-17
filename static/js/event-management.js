@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let locationUrlSetByUser = false; // flag to check if the user has set URL manually
 
     // map of common location names and their canonical names
+    // list also in config.py if updating
     const location_map = {
         "mb001": "Computer Science Teaching Room",
         "sports hub": "Sports and Wellbeing Hub",
