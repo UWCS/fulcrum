@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytz
 import requests
-from sqlalchemy import and_, exists
 
 from config import colours, room_mapping
 from schema import Event, Tag, Week, db
@@ -152,7 +151,7 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0911, PLR0912
 
     api_cutoff = 2006
     if year >= api_cutoff:
-        # fetch the term dates from the Warwick API
+        # if before cutoff, use the API
         try:
             warwick_week = requests.get(
                 f"https://tabula.warwick.ac.uk/api/v1/termdates/{year}/weeks?numberingSystem=term",
@@ -162,67 +161,74 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0911, PLR0912
             return None
 
         warwick_week = warwick_week.json()
+        week_delta = 0  # the number of weeks in a holiday we are
 
-        week_delta = 0
-        for w in reversed(warwick_week["weeks"]):
-            start_date = get_date_from_string(w["start"])
-            if isinstance(start_date, str):
+        for w in warwick_week["weeks"]:
+            # loop through the weeks
+            name = w["name"]
+            if "Term" in name:
+                # normal term week
+                # reset week counter and set term and week
+                week_delta = 0
+                term, week = name.split(", ")
+                term_num = int(term.split(" ")[-1])
+                week_num = int(week.split(" ")[-1])
+            elif w["weekNumber"] <= 0:
+                # welcome week or weeks before
+                week_delta = 0
+                term_num = 1
+                week_num = int(w["weekNumber"])
+            else:
+                # holiday week so add 1 week
+                week_delta += 1
+
+            week_start_date = get_date_from_string(w["start"])
+            if isinstance(week_start_date, str):
                 return None
-            if start_date <= date:
-                name = w["name"]
-                if "Term" in name:
-                    # term week
-                    # e.g. "Term 1, week 2"
-                    parts = name.split(", ")
-                    term_num = int(parts[0].split(" ")[-1])
-                    week_num = int(parts[1].split(" ")[-1])
-                elif w["weekNumber"] == 0:
-                    # welcome week
-                    term_num = 1
-                    week_num = 0
-                elif w["weekNumber"] < 0:
-                    # holiday week
-                    term_num = 1
-                    week_num = w["weekNumber"]
-                else:
-                    # increment week number and continue for holiday weeks
-                    week_delta += 1
-                    continue
-
-                week = Week(
-                    academic_year=year,
-                    term=term_num,
-                    week=week_num + week_delta,
-                    start_date=start_date + timedelta(weeks=week_delta),
-                )
-
-                db.session.add(week)
-                return week
-    else:
-        with Path("events/olddates.json").open("r") as f:
-            old_dates = load(f)
-        for w in reversed(old_dates):
-            start_date = get_date_from_string(w["date"])
-            if isinstance(start_date, str):
+            week_end_date = get_date_from_string(w["end"])
+            if isinstance(week_end_date, str):
                 return None
-            if start_date <= date:
-                term_num = w["term"]
-                delta = date - start_date
-                # add 1 to make 1-indexed
-                # apart from t1 which has welcome week
-                week_num = delta.days // 7 + 1 if term_num > 1 else delta.days // 7
-                start_date = start_date + timedelta(
-                    weeks=week_num - (1 if term_num > 1 else 0)
-                )
-                week = Week(
-                    academic_year=year,
-                    term=term_num,
-                    week=week_num,
-                    start_date=start_date,
-                )
+            week_end_date += timedelta(hours=23, minutes=59, seconds=59)
 
-                db.session.add(week)
-                return week
+            if week_start_date <= date <= week_end_date:
+                # if the date is within the week, create the week
+                break
+
+        week = Week(
+            academic_year=year,
+            term=term_num,  # type: ignore
+            week=week_num + week_delta,  # type: ignore
+            start_date=week_start_date,  # type: ignore
+        )
+
+        db.session.add(week)
+        return week
+
+    # otherwise use the old dates file
+    with Path("events/olddates.json").open("r") as f:
+        old_dates = load(f)
+    for w in reversed(old_dates):
+        week_start_date = get_date_from_string(w["date"])
+        if isinstance(week_start_date, str):
+            return None
+        if week_start_date <= date:
+            term_num = w["term"]
+            delta = date - week_start_date
+            # add 1 to make 1-indexed
+            # apart from t1 which has welcome week
+            week_num = delta.days // 7 + 1 if term_num > 1 else delta.days // 7
+            week_start_date = week_start_date + timedelta(
+                weeks=week_num - (1 if term_num > 1 else 0)
+            )
+            week = Week(
+                academic_year=year,
+                term=term_num,
+                week=week_num,
+                start_date=week_start_date,
+            )
+
+            db.session.add(week)
+            return week
     return None
 
 
@@ -276,16 +282,7 @@ def clean_weeks() -> None:
     """Clean weeks that are not associated with any events"""
     weeks = Week.query.all()
     for week in weeks:
-        has_events = db.session.query(
-            exists().where(
-                and_(
-                    Event.start_time >= week.start_date,
-                    Event.start_time <= week.end_date,
-                )
-            )
-        ).scalar()
-
-        if not has_events:  # type: ignore
+        if not week.events:
             db.session.delete(week)
 
     db.session.commit()
@@ -352,7 +349,11 @@ def edit_event(  # noqa: PLR0913
     end_time: datetime | object | None = _KEEP,
     tags: list[str] | object | None = _KEEP,
 ) -> Event | str:
-    """Edit an existing event"""
+    """
+    Edit an existing event
+    If field is set to None, it will be deleted
+    If field is set to _KEEP, it will not be changed
+    """
 
     event = get_event_by_id(id)
     if not event:
@@ -369,7 +370,8 @@ def edit_event(  # noqa: PLR0913
     )
     if icon is not _KEEP:
         event.icon = icon.lower() if icon is not None else event.icon  # type: ignore
-    event.colour = colour if colour else event.colour
+    event.colour = colour if colour is not _KEEP else event.colour
+
     event.start_time = (
         start_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
         if start_time is not _KEEP
@@ -390,7 +392,8 @@ def edit_event(  # noqa: PLR0913
         event.end_time = calculated_end_time
 
     # update the week associated with the event
-    event.date = get_week_from_date(event.start_time)  # type: ignore
+    if start_time is not _KEEP or end_time is not _KEEP or duration is not _KEEP:
+        event.date = get_week_from_date(event.start_time)  # type: ignore
 
     # validate the event
     if error := event.validate():

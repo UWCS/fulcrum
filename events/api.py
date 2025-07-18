@@ -525,9 +525,14 @@ def edit_event_api(event_id: int) -> tuple[Response, int]:  # noqa: PLR0911, PLR
             return jsonify({"error": "Location cannot be empty"}), 400
         event["location"] = data["location"]
 
-    event["location_url"] = data.get("location_url", None)
-    event["icon"] = data.get("icon", None)
-    event["colour"] = data.get("colour", None)
+    if "location_url" in data:
+        event["location_url"] = data["location_url"]
+
+    if "icon" in data:
+        event["icon"] = data["icon"]
+
+    if "colour" in data:
+        event["colour"] = data["colour"]
 
     # convert strings to time objects
     if "start_time" in data:

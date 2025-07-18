@@ -46,6 +46,17 @@ class Week(db.Model):
         db.UniqueConstraint("academic_year", "term", "week", name="unique_week"),
     )
 
+    # events in a week
+    events = db.relationship(
+        "Event",
+        primaryjoin=lambda: db.and_(
+            db.foreign(db.func.date(Event.start_time)) >= Week.start_date,
+            db.foreign(db.func.date(Event.start_time)) <= Week.end_date,
+        ),
+        viewonly=True,
+        lazy="dynamic",
+    )
+
     def __init__(
         self, academic_year: int, term: int, week: int, start_date: date
     ) -> None:
