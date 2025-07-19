@@ -2,12 +2,12 @@ from pathlib import Path
 
 import sass
 
-scss_path = "static/sass/main.scss"
+scss_path = "sass/main.scss"
 css_path = "static/css/main.css"
 
 print("compiling scss")
 css = sass.compile(
-    filename=scss_path, include_paths=["static/sass"], output_style="compressed"
+    filename=scss_path, include_paths=["sass"], output_style="compressed"
 )
 
 print("writing css")
