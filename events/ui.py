@@ -1,6 +1,13 @@
 from datetime import datetime
+from typing import Match
+from xml.etree import ElementTree as ET
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from markdown import Markdown, markdown
+from markdown.extensions import Extension
+from markdown.inlinepatterns import InlineProcessor
+from markdown.treeprocessors import Treeprocessor
+from markupsafe import escape
 from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.wrappers import Response
 
@@ -282,6 +289,35 @@ def delete(year: int, term: int, week: int, slug: str) -> Response:
     return redirect("/")
 
 
+# shamelessly stolen from docs (https://python-markdown.github.io/extensions/api/#example_3)
+# allows for markdown strikethrough
+class DelInlineProcessor(InlineProcessor):
+    def handleMatch(  # noqa: N802
+        self, m: Match[str], data: str  # noqa: ARG002
+    ) -> tuple[ET.Element[str], int, int]:
+        el = ET.Element("del")
+        el.text = m.group(1)
+        return el, m.start(0), m.end(0)
+
+
+class DelExtension(Extension):
+    def extendMarkdown(self, md: Markdown) -> None:  # noqa: N802
+        del_pattern = r"~~(.*?)~~"  # like ~~del~~
+        md.inlinePatterns.register(DelInlineProcessor(del_pattern, md), "del", 175)
+
+
+# convert links to target="_blank"
+class TargetTreeprocessor(Treeprocessor):
+    def run(self, root: ET.Element) -> None:
+        for element in root.iter("a"):
+            element.set("target", "_blank")
+
+
+class TargetExtension(Extension):
+    def extendMarkdown(self, md: Markdown) -> None:  # noqa: N802
+        md.treeprocessors.register(TargetTreeprocessor(md), "target", 15)
+
+
 def prepare_event(event: Event) -> dict:
     """Prepare an event for rendering"""
 
@@ -292,11 +328,17 @@ def prepare_event(event: Event) -> dict:
     if event_dict["end_time"]:
         event_dict["end_time"] = datetime.fromisoformat(event_dict["end_time"])
 
-    # convert colour
+    # convert colour to hex
     if event_dict["colour"] in colours:
         event_dict["colour"] = colours[event_dict["colour"]]
     if not event_dict["colour"].startswith("#"):
         event_dict["colour"] = f"#{event_dict["colour"]}"
+
+    # convert markdown to html
+    event_dict["description"] = markdown(
+        escape(event_dict["description"]),
+        extensions=[DelExtension(), TargetExtension()],
+    )
 
     return event_dict
 

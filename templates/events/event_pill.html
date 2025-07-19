@@ -15,7 +15,7 @@
         {% if event.tags %}
             <div class="mb-2">
                 {% for tag in event.tags %}
-                    <span class="badge bg-secondary">
+                    <span class="badge bg-secondary hover">
                         <a href="{{ url_for('events_ui.view_tag', tag=tag.name)}}" class="text-decoration-none text-white">
                             {{ tag.name }}
                         </a>

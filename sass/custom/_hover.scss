@@ -1,0 +1,9 @@
+// grow by 10% on hover
+
+.hover {
+    transition: transform 0.2s ease-in-out;
+}
+
+.hover:hover {
+    transform: scale(1.1);
+}
