@@ -5,7 +5,7 @@ from pathlib import Path
 import pytz
 import requests
 
-from config import colours, room_mapping
+from config import colours, phosphor_icons, room_mapping
 from schema import Event, Tag, Week, db
 
 
@@ -65,8 +65,10 @@ def create_event(  # noqa: PLR0912, PLR0913
     if end_time and end_time < start_time:
         return "End time cannot be before start time"
 
-    # convert icon to lowercase and remove "ph-" prefix
-    icon = icon.lower().removeprefix("ph-") if icon else None
+    # convert icon to lowercase and append ph- if necessary
+    icon = icon.lower() if icon else None
+    if icon in phosphor_icons:
+        icon = f"ph-{icon}"
 
     if location is not None and location_url is None:
         temp_location = location.lower()
@@ -472,6 +474,15 @@ def get_name_from_hex(hex_colour: str) -> str | None:
 def get_all_tags() -> list[Tag]:
     """Get all tags from the database"""
     return Tag.query.order_by(Tag.name).all()
+
+
+def get_events_by_tag(tag_name: str) -> list[Event]:
+    """Get all events associated with a tag"""
+    tag = Tag.query.filter_by(name=tag_name.lower()).first()
+    if not tag:
+        return []
+
+    return tag.events
 
 
 def get_tags_by_string(search: str, limit: int = 10) -> list[Tag]:

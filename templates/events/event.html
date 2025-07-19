@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "events/event_pill.html" import event_pill %}
+
+{% block title %}{{ event.name }}{% endblock %}
+
+{% block content %}
+
+<div class="container-lg mt-2">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('events_ui.view_list', year=event.date.academic_year) }}">{{ event.date.academic_year }}</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('events_ui.view_list', year=event.date.academic_year, term=event.date.term) }}">Term {{ event.date.term }}</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('events_ui.view_list', year=event.date.academic_year, term=event.date.term, week=event.date.week) }}">Week {{ event.date.week }}</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ event.name }}</li>
+        </ol>
+    </nav>
+
+    {{ event_pill(event) }}
+
+    <div class="mt-3 px-3">
+        {{ event.description | safe }}
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,51 @@
+{% macro event_pill(event) %}
+
+<div class="card" {% if event.colour %}style="background-color: {{ event.colour }}90;"{% endif %}>
+    <div class="card-body">
+        <h1 class="card-title">
+            {% if event.icon %}
+                {% if event.icon.startswith('ph-') %}
+                    <i class="ph-bold {{ event.icon }}"></i>
+                {% else %}
+                    <div class="custom-icon icon-text" style="mask-image: url('{{ url_for('static', filename='icons/' + event.icon + '.svg') }}');"></div>
+                {% endif %}
+            {% endif %}
+            {{ event.name }}
+        </h1>
+        {% if event.tags %}
+            <div class="mb-2">
+                {% for tag in event.tags %}
+                    <span class="badge bg-secondary">
+                        <a href="{{ url_for('events_ui.view_tag', tag=tag.name)}}" class="text-decoration-none text-white">
+                            {{ tag.name }}
+                        </a>
+                    </span>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <h3>
+            <i class="ph-bold ph-clock"></i>
+            {% if not event.end_time %}
+                {{ event.start_time.strftime('%H:%M %A') }}
+            {% else %}
+                {% if event.start_time.date() == event.end_time.date() %}
+                    {{ event.start_time.strftime('%H:%M') }} - {{ event.end_time.strftime('%H:%M %A') }}
+                {% else %}
+                    {{ event.start_time.strftime('%H:%M %A') }} - {{ event.end_time.strftime('%H:%M %A') }}
+                {% endif %}
+            {% endif %}
+        </h3>
+        <h3>
+            <i class="ph-bold ph-map-pin"></i>
+            {% if event.location_url %}
+                <a href="{{ event.location_url }}" target="_blank">
+            {% endif %}
+                    {{ event.location }}
+            {% if event.location_url %}
+                </a>
+            {% endif %}
+        </h3>
+    </div>
+</div>
+
+{% endmacro %}

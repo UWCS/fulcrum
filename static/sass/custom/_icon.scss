@@ -1,0 +1,16 @@
+// same height as colour as text
+
+.custom-icon {
+    height: 1em;
+    width: 1em;
+    background-color: var(--bs-body-color);
+    mask: no-repeat center / contain;
+    -webkit-mask: no-repeat center / contain;
+}
+
+// inlines an icon with text
+
+.icon-text {
+    display: inline-block;
+    vertical-align: -0.125em;
+}

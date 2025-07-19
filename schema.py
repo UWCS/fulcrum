@@ -198,7 +198,7 @@ class Event(db.Model):
             return "Colour must be a valid hex code or one of: " + ", ".join(colours)
 
         # check if icon is valid
-        if self.icon and self.icon not in icons:
+        if self.icon and self.icon.removeprefix("ph-") not in icons:
             return (
                 "Icon must be a phosphor icon (https://phosphoricons.com/) or one of: "
                 + ", ".join(custom_icons)

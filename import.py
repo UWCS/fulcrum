@@ -178,7 +178,7 @@ def add_event(file: Path, event: dict) -> None:  # noqa: PLR0912
             event["colour"] = "social"
         if any(word in event["location"].lower() for word in ["duck", "coach"]):
             event["colour"] = "social"
-            event["icon"] = "hamburger" if not event.get("icon") else event["icon"]
+            event["icon"] = "ph-hamburger" if not event.get("icon") else event["icon"]
 
     # prepare event and send to API
     event_json = {
@@ -202,7 +202,7 @@ def add_event(file: Path, event: dict) -> None:  # noqa: PLR0912
         base_url + "create/",
         json=event_json,
         headers={"Authorization": api_key},
-        timeout=5,
+        timeout=50,
     )
 
     if response.status_code == 201:  # noqa: PLR2004
@@ -213,7 +213,7 @@ def add_event(file: Path, event: dict) -> None:  # noqa: PLR0912
             base_url + "create/",
             json=event_json,
             headers={"Authorization": api_key},
-            timeout=5,
+            timeout=50,
         )
         if response.status_code == 201:  # noqa: PLR2004
             print(f"Successfully imported {file} on retry")
@@ -313,7 +313,7 @@ def import_tags() -> None:
             base_url + event + "/",
             json={"tags": tags},
             headers={"Authorization": api_key},
-            timeout=5,
+            timeout=50,
         )
 
         if response.status_code == 200:  # noqa: PLR2004

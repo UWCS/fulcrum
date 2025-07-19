@@ -39,16 +39,6 @@
     display: block;
 }
 
-// size form images accordingly
-
-.form-image {
-    width: 1rem;
-    height: 1rem;
-    background-color: var(--bs-body-color);
-    mask: no-repeat center / contain;
-    -webkit-mask: no-repeat center / contain;
-}
-
 // set cursor as disabled for disabled inputs
 
 #add-time.disabled {

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.wrappers import Response
@@ -12,9 +14,12 @@ from events.utils import (
     get_all_tags,
     get_datetime_from_string,
     get_event_by_slug,
+    get_events_by_tag,
+    get_events_by_time,
     get_timedelta_from_string,
     validate_colour,
 )
+from schema import Event
 
 events_ui_bp = Blueprint("events_ui", __name__)
 
@@ -277,6 +282,25 @@ def delete(year: int, term: int, week: int, slug: str) -> Response:
     return redirect("/")
 
 
+def prepare_event(event: Event) -> dict:
+    """Prepare an event for rendering"""
+
+    event_dict = event.to_dict()
+
+    # convert start and end times back to datetime
+    event_dict["start_time"] = datetime.fromisoformat(event_dict["start_time"])
+    if event_dict["end_time"]:
+        event_dict["end_time"] = datetime.fromisoformat(event_dict["end_time"])
+
+    # convert colour
+    if event_dict["colour"] in colours:
+        event_dict["colour"] = colours[event_dict["colour"]]
+    if not event_dict["colour"].startswith("#"):
+        event_dict["colour"] = f"#{event_dict["colour"]}"
+
+    return event_dict
+
+
 @events_ui_bp.route("/<int:year>/<int:term>/<int:week>/<string:slug>/")
 def view(year: int, term: int, week: int, slug: str) -> str:
     """View an event by its year, term, week, and slug."""
@@ -286,7 +310,39 @@ def view(year: int, term: int, week: int, slug: str) -> str:
     if event is None:
         return abort(404, description="Event not found")
 
-    return str(event.to_dict())
+    event = prepare_event(event)
+
+    return render_template(
+        "events/event.html",
+        event=event,
+    )
 
 
-# TODO: combos of events
+@events_ui_bp.route("/<int:year>/")
+@events_ui_bp.route("/<int:year>/<int:term>/")
+@events_ui_bp.route("/<int:year>/<int:term>/<int:week>/")
+def view_list(year: int, term: int | None = None, week: int | None = None) -> str:
+    """View all events in a time frame in list form"""
+
+    events = get_events_by_time(year, term, week)
+
+    if not events:
+        return abort(404, description="No events found for this week")
+
+    events = [prepare_event(event) for event in events]
+
+    return ", ".join(event["name"] for event in events)
+
+
+@events_ui_bp.route("/tags/<string:tag>/")
+def view_tag(tag: str) -> str:
+    """View all events associated with a tag"""
+
+    events = get_events_by_tag(tag)
+
+    if not events:
+        return abort(404, description="No events found for this tag")
+
+    events = [prepare_event(event) for event in events]
+
+    return ", ".join(event["name"] for event in events)
