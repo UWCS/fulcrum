@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% from "events/macros/list.html" import list %}
+
+{% block title %}UWCS Events{% endblock %}
+
+{% block content %}
+<div class="container-lg mt-2">
+    {{ list(events) }}
+</div>
+{% endblock %}

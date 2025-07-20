@@ -1,0 +1,82 @@
+{% macro pill(event, large) %}
+
+{% if not large %}
+<a href="{{ url_for('events_ui.view', year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) }}" class="text-decoration-none text-emphasis">
+{% endif %}
+    <div class="card {% if not large %}mb-2 grow-05{% endif %}"
+        {% if event.draft %}
+            style="background-color: var(--bs-secondary-bg); border: calc(2 * var(--bs-border-width)) dashed {{event.colour}}80;"
+        {% else %}
+            style="background-color: {{event.colour}}80;"
+        {% endif %}
+    >
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                {% if large %}
+                    <h1 class="card-title mb-0">
+                {% else %}
+                    <h5 class="h4 card-title mb-0 fw-semibold">
+                {% endif %}
+                        {% if event.icon %}
+                            {% if event.icon.startswith('ph-') %}
+                                <i class="ph-bold {{ event.icon }}"></i>
+                            {% else %}
+                                <div class="custom-icon icon-text" style="mask-image: url('{{ url_for('static', filename='icons/' + event.icon + '.svg') }}');"></div>
+                            {% endif %}
+                        {% endif %}
+                        {{ event.name }}
+                {% if large %}
+                    </h1>
+                {% else %}
+                    </h5>
+                {% endif %}
+
+                {% if is_exec and not large %}
+                    <a href="{{ url_for('events_ui.edit', year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) }}" class="btn btn-secondary">
+                        <i class="ph-bold ph-pencil-simple"></i> Edit
+                    </a>
+                {% endif %}
+            </div>
+            
+            {% if event.tags and large %}
+                <div class="mb-2">
+                    {% for tag in event.tags %}
+                        <span class="badge bg-secondary grow-10">
+                            <a href="{{ url_for('events_ui.view_tag', tag=tag.name)}}" class="text-decoration-none text-white">
+                                {{ tag.name }}
+                            </a>
+                        </span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <{% if large %}h3{% else %}p class="mb-0"{% endif %}>
+                <i class="ph-bold ph-clock"></i>
+                {% if not event.end_time %}
+                    {{ event.start_time.strftime('%H:%M %A') }}
+                {% else %}
+                    {% if event.start_time.date() == event.end_time.date() %}
+                        {{ event.start_time.strftime('%H:%M') }} - {{ event.end_time.strftime('%H:%M') }} {% if large %} {{ event.start_time.strftime('%A') }}{% endif %}
+                    {% else %}
+                        {{ event.start_time.strftime('%H:%M %A') }} - {{ event.end_time.strftime('%H:%M %A') }}
+                    {% endif %}
+                {% endif %}
+            {% if large %}
+            </h3>
+            <h3>
+            {% endif %}
+                <i class="ph-bold ph-map-pin"></i>
+                {% if event.location_url and large %}
+                    <a href="{{ event.location_url }}" target="_blank">
+                {% endif %}
+                        {{ event.location }}
+                {% if event.location_url and large %}
+                    </a>
+                {% endif %}
+            </{% if large %}h3{% else %}p{% endif %}>
+        </div>
+    </div>
+{% if not large %}
+</a>
+{% endif %}
+
+{% endmacro %}

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime
 from typing import Match
 from xml.etree import ElementTree as ET
@@ -11,7 +12,7 @@ from markupsafe import escape
 from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.wrappers import Response
 
-from auth.oauth import is_exec_wrapper
+from auth.oauth import is_exec, is_exec_wrapper
 from config import colours, custom_icons
 from events.utils import (
     create_event,
@@ -360,20 +361,53 @@ def view(year: int, term: int, week: int, slug: str) -> str:
     )
 
 
+def group_events(events: list[Event]) -> list[dict]:
+    """Group events by term, week, and day"""
+
+    # initalise dictionary
+    grouped_events = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+
+    # for each event, group by term, week, and day
+    for event in events:
+        term = event.date.term
+        week = event.date.week
+        day = event.start_time.strftime("%A")
+        grouped_events[term][week][day].append(event)
+
+    # combine into a list of dictionaries
+    result = []
+    for term, weeks in grouped_events.items():
+        week_list = []
+        for week, days in weeks.items():
+            day_list = []
+            # get start_date of the week from the first event
+            start_date = next(iter(days.values()))[0].date.start_date
+            for day, day_events in days.items():
+                day_list.append(
+                    {
+                        "day": day,
+                        "events": [prepare_event(event) for event in day_events],
+                    }
+                )
+            week_list.append({"week": week, "days": day_list, "start_date": start_date})
+        result.append({"term": term, "weeks": week_list})
+    return result
+
+
 @events_ui_bp.route("/<int:year>/")
 @events_ui_bp.route("/<int:year>/<int:term>/")
 @events_ui_bp.route("/<int:year>/<int:term>/<int:week>/")
 def view_list(year: int, term: int | None = None, week: int | None = None) -> str:
     """View all events in a time frame in list form"""
 
-    events = get_events_by_time(year, term, week)
+    events = get_events_by_time(year, term, week, draft=is_exec())
 
     if not events:
         return abort(404, description="No events found for this week")
 
-    events = [prepare_event(event) for event in events]
+    events = group_events(events)
 
-    return ", ".join(event["name"] for event in events)
+    return render_template("events/list.html", events=events)
 
 
 @events_ui_bp.route("/tags/<string:tag>/")

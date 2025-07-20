@@ -1,0 +1,14 @@
+// grow on hover
+
+.grow-05,
+.grow-10 {
+    transition: transform 0.2s ease-in-out;
+}
+
+.grow-05:hover {
+    transform: scale(1.05);
+}
+
+.grow-1:hover {
+    transform: scale(1.1);
+}
