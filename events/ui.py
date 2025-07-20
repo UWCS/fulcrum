@@ -294,7 +294,7 @@ def delete(year: int, term: int, week: int, slug: str) -> Response:
 class DelInlineProcessor(InlineProcessor):
     def handleMatch(  # noqa: N802
         self, m: Match[str], data: str  # noqa: ARG002
-    ) -> tuple[ET.Element[str], int, int]:
+    ) -> tuple[ET.Element, int, int]:
         el = ET.Element("del")
         el.text = m.group(1)
         return el, m.start(0), m.end(0)
