@@ -365,33 +365,42 @@ def group_events(events: list[Event]) -> list[dict]:
     """Group events by term, week, and day"""
 
     # initalise dictionary
-    grouped_events = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    # this is not too nested i have no clue what youre talking about
+    grouped_events = defaultdict(
+        lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    )
 
     # for each event, group by term, week, and day
     for event in events:
+        year = event.date.academic_year
         term = event.date.term
         week = event.date.week
         day = event.start_time.strftime("%A")
-        grouped_events[term][week][day].append(event)
+        grouped_events[year][term][week][day].append(event)
 
     # combine into a list of dictionaries
-    result = []
-    for term, weeks in grouped_events.items():
-        week_list = []
-        for week, days in weeks.items():
-            day_list = []
-            # get start_date of the week from the first event
-            start_date = next(iter(days.values()))[0].date.start_date
-            for day, day_events in days.items():
-                day_list.append(
-                    {
-                        "day": day,
-                        "events": [prepare_event(event) for event in day_events],
-                    }
+    year_list = []
+    for year, terms in grouped_events.items():
+        term_list = []
+        for term, weeks in terms.items():
+            week_list = []
+            for week, days in weeks.items():
+                day_list = []
+                # get start_date of the week from the first event
+                start_date = next(iter(days.values()))[0].date.start_date
+                for day, day_events in days.items():
+                    day_list.append(
+                        {
+                            "day": day,
+                            "events": [prepare_event(event) for event in day_events],
+                        }
+                    )
+                week_list.append(
+                    {"week": week, "days": day_list, "start_date": start_date}
                 )
-            week_list.append({"week": week, "days": day_list, "start_date": start_date})
-        result.append({"term": term, "weeks": week_list})
-    return result
+            term_list.append({"term": term, "weeks": week_list})
+        year_list.append({"year": year, "terms": term_list})
+    return year_list
 
 
 @events_ui_bp.route("/<int:year>/")
@@ -407,7 +416,9 @@ def view_list(year: int, term: int | None = None, week: int | None = None) -> st
 
     events = group_events(events)
 
-    return render_template("events/list.html", events=events)
+    return render_template(
+        "events/list.html", events=events, year=year, term=term, week=week
+    )
 
 
 @events_ui_bp.route("/tags/<string:tag>/")
