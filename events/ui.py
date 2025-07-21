@@ -24,6 +24,7 @@ from events.utils import (
     get_event_by_slug,
     get_events_by_tag,
     get_events_by_time,
+    get_tag_by_name,
     get_timedelta_from_string,
     validate_colour,
 )
@@ -421,15 +422,29 @@ def view_list(year: int, term: int | None = None, week: int | None = None) -> st
     )
 
 
+@events_ui_bp.route("/tags/")
+def view_tags() -> str:
+    """View all tags"""
+
+    tags = get_all_tags()
+
+    if not tags:
+        return abort(404, description="No tags found")
+
+    return ", ".join(tag.name for tag in tags)
+
+
 @events_ui_bp.route("/tags/<string:tag>/")
 def view_tag(tag: str) -> str:
     """View all events associated with a tag"""
 
     events = get_events_by_tag(tag)
 
+    tag_obj = get_tag_by_name(tag)
+
     if not events:
         return abort(404, description="No events found for this tag")
 
-    events = [prepare_event(event) for event in events]
+    events = group_events(events)
 
-    return ", ".join(event["name"] for event in events)
+    return render_template("events/tag.html", events=events, tag=tag_obj)

@@ -485,6 +485,11 @@ def get_events_by_tag(tag_name: str) -> list[Event]:
     return tag.events
 
 
+def get_tag_by_name(tag_name: str) -> Tag | None:
+    """Get a tag by its name"""
+    return Tag.query.filter_by(name=tag_name.lower()).first()
+
+
 def get_tags_by_string(search: str, limit: int = 10) -> list[Tag]:
     """get tags by a string query"""
     search = search.lower()
