@@ -31,7 +31,7 @@
                     </h5>
                 {% endif %}
 
-                {% if is_exec and not large %}
+                {% if is_exec and large %}
                     <a href="{{ url_for('events_ui.edit', year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) }}" class="btn btn-secondary">
                         <i class="ph-bold ph-pencil-simple"></i> Edit
                     </a>

@@ -95,7 +95,7 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
         return duration
 
     end_times = None
-    if form_data.get("end_time") is not None:
+    if form_data.get("end_time[]") is not None:
         end_times = [
             get_datetime_from_string(t) for t in form_data.getlist("end_time[]")
         ]

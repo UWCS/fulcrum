@@ -372,18 +372,20 @@ def edit_event(  # noqa: PLR0913
     )
     if icon is not _KEEP:
         event.icon = icon.lower() if icon is not None else event.icon  # type: ignore
+        if icon in phosphor_icons:
+            event.icon = f"ph-{icon}"
     event.colour = colour if colour is not _KEEP else event.colour
 
     event.start_time = (
         start_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
         if start_time is not _KEEP
-        else event.start_time
+        else event.start_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
     )
     if end_time is not _KEEP:
         event.end_time = (
             end_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
             if end_time is not None
-            else event.end_time
+            else event.end_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
         )
 
     # if duration is provided, calculate end_time and verify it
