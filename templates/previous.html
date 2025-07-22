@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% from "events/macros/list.html" import list with context %}
+
+{% block title %}Previous Events{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h1>Previous Events</h1>
+    <p class="lead">An archive of our (known) events:</p>
+    {{ list(events, True, True, True) }}
+</div>
+{% endblock %}

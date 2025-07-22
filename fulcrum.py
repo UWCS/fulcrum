@@ -11,6 +11,7 @@ from auth.api import auth_api_bp, auth_ui_bp
 from auth.oauth import auth_bp, configure_oauth, is_exec, is_logged_in
 from events.api import events_api_bp
 from events.ui import events_ui_bp
+from events.utils import get_previous_events, get_upcoming_events, group_events
 from schema import initialise_db
 
 # if .env file exists, load it
@@ -26,7 +27,7 @@ initialise_db(app)
 
 # setup oauth and add routes
 configure_oauth(app)
-app.register_blueprint(auth_bp)
+app.register_blueprint(auth_bp, url_prefix="/")
 app.register_blueprint(auth_ui_bp, url_prefix="/auth")
 
 # add api routes
@@ -39,7 +40,7 @@ with Path("swagger.json").open("r") as f:
 
 
 # add event ui routes
-app.register_blueprint(events_ui_bp)
+app.register_blueprint(events_ui_bp, url_prefix="/")
 
 
 # context processor to inject global variables into templates
@@ -53,8 +54,18 @@ def inject_globals() -> dict:
 
 
 @app.route("/")
+@app.route("/current/")
+@app.route("/upcoming/")
 def index() -> str:
-    return render_template("index.html")
+    events = group_events(get_upcoming_events())
+    return render_template("upcoming.html", events=events)
+
+
+@app.route("/previous/")
+@app.route("/past/")
+def previous() -> str:
+    events = group_events(get_previous_events())
+    return render_template("previous.html", events=events)
 
 
 @app.route("/api/")

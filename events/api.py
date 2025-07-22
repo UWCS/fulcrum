@@ -14,8 +14,9 @@ from events.utils import (
     get_events_by_time,
     get_tags_by_string,
     get_timedelta_from_string,
+    get_week_by_date,
 )
-from schema import Event, Tag, Week
+from schema import Event, Tag
 
 # bind endpoints to /api/events/...
 events_api_bp = Blueprint("events_api", __name__, url_prefix="/api/events")
@@ -670,7 +671,7 @@ def get_tag(tag_name: str) -> tuple[Response, int]:
 
 
 @events_api_bp.route("/week/<string:date_str>/", methods=["GET"])
-def get_week_by_date(date_str: str) -> tuple[Response, int]:
+def get_week_by_date_api(date_str: str) -> tuple[Response, int]:
     """Get the week for a specific date
     ---
     parameters:
@@ -694,9 +695,7 @@ def get_week_by_date(date_str: str) -> tuple[Response, int]:
     if isinstance(date, str):
         return jsonify({"error": date}), 400
 
-    week = Week.query.filter(
-        (date >= Week.start_date) & (date <= Week.end_date)  # type: ignore
-    ).first()
+    week = get_week_by_date(date)
 
     if not week:
         return jsonify({"error": "Week not found"}), 404

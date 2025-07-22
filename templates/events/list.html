@@ -1,9 +1,10 @@
 {% extends "base.html" %}
-{% from "events/macros/list.html" import list %}
+{% from "events/macros/list.html" import list with context %}
 
 {% block title %}UWCS Events{% endblock %}
 
 {% block content %}
+{% set week_display = (week or week == 0) %}
 <div class="container-lg mt-2">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -16,18 +17,18 @@
             </li>
             {% if term %}
                 <li class="breadcrumb-item {% if not week %}active{% endif %}">
-                    {% if not week %}
+                    {% if not week_display %}
                         Term {{ term }}
                     {% else %}
                         <a href="{{ url_for('events_ui.view_list', year=year, term=term) }}">Term {{ term }}</a>
                     {% endif %}  
                 </li>
             {% endif %}
-            {% if week %}
+            {% if week_display %}
                 <li class="breadcrumb-item active">Week {{ week }}</li>
             {% endif %}
         </ol>
     </nav>
-    {{ list(events) }}
+    {{ list(events, term, week_display, False) }}
 </div>
 {% endblock %}

@@ -119,7 +119,7 @@
                         <a class="nav-link" href="{{ url_for('index') }}">Current Events</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="https://example.com">Past Events</a>
+                        <a class="nav-link" href="{{ url_for('previous' )}}">Past Events</a>
                     </li>
                     <!-- exec only links -->
                     {% if is_exec %}

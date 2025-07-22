@@ -1,10 +1,20 @@
+from collections import defaultdict
 from datetime import datetime, timedelta
 from json import load
 from pathlib import Path
+from typing import Match
+from xml.etree import ElementTree as ET
 
 import pytz
 import requests
+from markdown import Markdown, markdown
+from markdown.extensions import Extension
+from markdown.inlinepatterns import InlineProcessor
+from markdown.treeprocessors import Treeprocessor
+from markupsafe import escape
+from sqlalchemy import func
 
+from auth.oauth import is_exec
 from config import colours, phosphor_icons, room_mapping
 from schema import Event, Tag, Week, db
 
@@ -104,7 +114,7 @@ def create_event(  # noqa: PLR0912, PLR0913
         return error
 
     # create week from the start_time
-    week = get_week_from_date(start_time)
+    week = create_week_from_date(start_time)
     if week is None:
         db.session.rollback()
         return "Unable to find or create a week for the event date"
@@ -135,7 +145,7 @@ def create_event(  # noqa: PLR0912, PLR0913
     return event
 
 
-def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0911, PLR0912
+def get_week_by_date(date: datetime) -> Week | None:  # noqa: PLR0911, PLR0912
     """Get the week from a given date"""
 
     week = Week.query.filter(
@@ -196,15 +206,12 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0911, PLR0912
                 # if the date is within the week, create the week
                 break
 
-        week = Week(
+        return Week(
             academic_year=year,
             term=term_num,  # type: ignore
             week=week_num + week_delta,  # type: ignore
             start_date=week_start_date,  # type: ignore
         )
-
-        db.session.add(week)
-        return week
 
     # otherwise use the old dates file
     with Path("events/olddates.json").open("r") as f:
@@ -222,16 +229,32 @@ def get_week_from_date(date: datetime) -> Week | None:  # noqa: PLR0911, PLR0912
             week_start_date = week_start_date + timedelta(
                 weeks=week_num - (1 if term_num > 1 else 0)
             )
-            week = Week(
+            return Week(
                 academic_year=year,
                 term=term_num,
                 week=week_num,
                 start_date=week_start_date,
             )
-
-            db.session.add(week)
-            return week
     return None
+
+
+def create_week_from_date(date: datetime) -> Week | None:
+    """Create a week from a given date"""
+
+    week = Week.query.filter(
+        (date.date() >= Week.start_date) & (date.date() <= Week.end_date)  # type: ignore
+    ).first()
+
+    if week:
+        return week
+
+    week = get_week_by_date(date)
+
+    if week is None:
+        return week
+
+    db.session.add(week)
+    return week
 
 
 def create_repeat_event(  # noqa: PLR0913
@@ -314,6 +337,102 @@ def get_event_by_slug(year: int, term: int, week: int, slug: str) -> Event | Non
     ).first()
 
 
+# shamelessly stolen from docs (https://python-markdown.github.io/extensions/api/#example_3)
+# allows for markdown strikethrough
+class DelInlineProcessor(InlineProcessor):
+    def handleMatch(  # noqa: N802
+        self, m: Match[str], data: str  # noqa: ARG002
+    ) -> tuple[ET.Element, int, int]:
+        el = ET.Element("del")
+        el.text = m.group(1)
+        return el, m.start(0), m.end(0)
+
+
+class DelExtension(Extension):
+    def extendMarkdown(self, md: Markdown) -> None:  # noqa: N802
+        del_pattern = r"~~(.*?)~~"  # like ~~del~~
+        md.inlinePatterns.register(DelInlineProcessor(del_pattern, md), "del", 175)
+
+
+# convert links to target="_blank"
+class TargetTreeprocessor(Treeprocessor):
+    def run(self, root: ET.Element) -> None:
+        for element in root.iter("a"):
+            element.set("target", "_blank")
+
+
+class TargetExtension(Extension):
+    def extendMarkdown(self, md: Markdown) -> None:  # noqa: N802
+        md.treeprocessors.register(TargetTreeprocessor(md), "target", 15)
+
+
+def prepare_event(event: Event) -> dict:
+    """Prepare an event for rendering"""
+
+    event_dict = event.to_dict()
+
+    # convert start and end times back to datetime
+    event_dict["start_time"] = datetime.fromisoformat(event_dict["start_time"])
+    if event_dict["end_time"]:
+        event_dict["end_time"] = datetime.fromisoformat(event_dict["end_time"])
+
+    # convert colour to hex
+    if event_dict["colour"] in colours:
+        event_dict["colour"] = colours[event_dict["colour"]]
+    if not event_dict["colour"].startswith("#"):
+        event_dict["colour"] = f"#{event_dict["colour"]}"
+
+    # convert markdown to html
+    event_dict["description"] = markdown(
+        escape(event_dict["description"]),
+        extensions=[DelExtension(), TargetExtension()],
+    )
+
+    return event_dict
+
+
+def group_events(events: list[Event]) -> list[dict]:
+    """Group events by term, week, and day"""
+
+    # initalise dictionary
+    # this is not too nested i have no clue what youre talking about
+    grouped_events = defaultdict(
+        lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    )
+
+    # for each event, group by term, week, and day
+    for event in events:
+        year = event.date.academic_year
+        term = event.date.term
+        week = event.date.week
+        day = event.start_time.strftime("%A")
+        grouped_events[year][term][week][day].append(event)
+
+    # combine into a list of dictionaries
+    year_list = []
+    for year, terms in grouped_events.items():
+        term_list = []
+        for term, weeks in terms.items():
+            week_list = []
+            for week, days in weeks.items():
+                day_list = []
+                # get start_date of the week from the first event
+                start_date = next(iter(days.values()))[0].date.start_date
+                for day, day_events in days.items():
+                    day_list.append(
+                        {
+                            "day": day,
+                            "events": [prepare_event(event) for event in day_events],
+                        }
+                    )
+                week_list.append(
+                    {"week": week, "days": day_list, "start_date": start_date}
+                )
+            term_list.append({"term": term, "weeks": week_list})
+        year_list.append({"year": year, "terms": term_list})
+    return year_list
+
+
 def get_events_by_time(
     year: int, term: int | None = None, week: int | None = None, draft: bool = False
 ) -> list[Event]:
@@ -332,6 +451,37 @@ def get_events_by_time(
 
     # order by start_time, end_time, and name
     return query.order_by(Event.start_time, Event.end_time, Event.name).all()  # type: ignore
+
+
+def get_upcoming_events() -> list[Event]:
+    """Get all events in this week, and future weeks"""
+    now = datetime.now(pytz.timezone("Europe/London")) - timedelta(days=200)
+    week = get_week_by_date(now)
+
+    if not week:
+        return []
+
+    return (
+        Event.query.filter(Event.draft.is_(is_exec()))  # type: ignore
+        .filter(func.date(Event.start_time) >= week.start_date)
+        .order_by(Event.start_time, Event.end_time, Event.name)  # type: ignore
+        .all()
+    )
+
+
+def get_previous_events() -> list[Event]:
+    now = datetime.now(pytz.timezone("Europe/London"))
+    week = get_week_by_date(now)
+
+    if not week:
+        return []
+
+    return (
+        Event.query.filter(Event.draft.is_(is_exec()))  # type: ignore
+        .filter(func.date(Event.start_time) < week.start_date)
+        .order_by(Event.start_time, Event.end_time, Event.name)  # type: ignore
+        .all()
+    )
 
 
 _KEEP = object()  # placeholder to leave the field unchanged
@@ -397,7 +547,7 @@ def edit_event(  # noqa: PLR0913
 
     # update the week associated with the event
     if start_time is not _KEEP or end_time is not _KEEP or duration is not _KEEP:
-        event.date = get_week_from_date(event.start_time)  # type: ignore
+        event.date = create_week_from_date(event.start_time)  # type: ignore
 
     # validate the event
     if error := event.validate():

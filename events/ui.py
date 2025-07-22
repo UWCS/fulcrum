@@ -1,14 +1,4 @@
-from collections import defaultdict
-from datetime import datetime
-from typing import Match
-from xml.etree import ElementTree as ET
-
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
-from markdown import Markdown, markdown
-from markdown.extensions import Extension
-from markdown.inlinepatterns import InlineProcessor
-from markdown.treeprocessors import Treeprocessor
-from markupsafe import escape
 from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.wrappers import Response
 
@@ -26,9 +16,10 @@ from events.utils import (
     get_events_by_time,
     get_tag_by_name,
     get_timedelta_from_string,
+    group_events,
+    prepare_event,
     validate_colour,
 )
-from schema import Event
 
 events_ui_bp = Blueprint("events_ui", __name__)
 
@@ -291,60 +282,6 @@ def delete(year: int, term: int, week: int, slug: str) -> Response:
     return redirect("/")
 
 
-# shamelessly stolen from docs (https://python-markdown.github.io/extensions/api/#example_3)
-# allows for markdown strikethrough
-class DelInlineProcessor(InlineProcessor):
-    def handleMatch(  # noqa: N802
-        self, m: Match[str], data: str  # noqa: ARG002
-    ) -> tuple[ET.Element, int, int]:
-        el = ET.Element("del")
-        el.text = m.group(1)
-        return el, m.start(0), m.end(0)
-
-
-class DelExtension(Extension):
-    def extendMarkdown(self, md: Markdown) -> None:  # noqa: N802
-        del_pattern = r"~~(.*?)~~"  # like ~~del~~
-        md.inlinePatterns.register(DelInlineProcessor(del_pattern, md), "del", 175)
-
-
-# convert links to target="_blank"
-class TargetTreeprocessor(Treeprocessor):
-    def run(self, root: ET.Element) -> None:
-        for element in root.iter("a"):
-            element.set("target", "_blank")
-
-
-class TargetExtension(Extension):
-    def extendMarkdown(self, md: Markdown) -> None:  # noqa: N802
-        md.treeprocessors.register(TargetTreeprocessor(md), "target", 15)
-
-
-def prepare_event(event: Event) -> dict:
-    """Prepare an event for rendering"""
-
-    event_dict = event.to_dict()
-
-    # convert start and end times back to datetime
-    event_dict["start_time"] = datetime.fromisoformat(event_dict["start_time"])
-    if event_dict["end_time"]:
-        event_dict["end_time"] = datetime.fromisoformat(event_dict["end_time"])
-
-    # convert colour to hex
-    if event_dict["colour"] in colours:
-        event_dict["colour"] = colours[event_dict["colour"]]
-    if not event_dict["colour"].startswith("#"):
-        event_dict["colour"] = f"#{event_dict["colour"]}"
-
-    # convert markdown to html
-    event_dict["description"] = markdown(
-        escape(event_dict["description"]),
-        extensions=[DelExtension(), TargetExtension()],
-    )
-
-    return event_dict
-
-
 @events_ui_bp.route("/<int:year>/<int:term>/<int:week>/<string:slug>/")
 def view(year: int, term: int, week: int, slug: str) -> str:
     """View an event by its year, term, week, and slug."""
@@ -360,48 +297,6 @@ def view(year: int, term: int, week: int, slug: str) -> str:
         "events/event.html",
         event=event,
     )
-
-
-def group_events(events: list[Event]) -> list[dict]:
-    """Group events by term, week, and day"""
-
-    # initalise dictionary
-    # this is not too nested i have no clue what youre talking about
-    grouped_events = defaultdict(
-        lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-    )
-
-    # for each event, group by term, week, and day
-    for event in events:
-        year = event.date.academic_year
-        term = event.date.term
-        week = event.date.week
-        day = event.start_time.strftime("%A")
-        grouped_events[year][term][week][day].append(event)
-
-    # combine into a list of dictionaries
-    year_list = []
-    for year, terms in grouped_events.items():
-        term_list = []
-        for term, weeks in terms.items():
-            week_list = []
-            for week, days in weeks.items():
-                day_list = []
-                # get start_date of the week from the first event
-                start_date = next(iter(days.values()))[0].date.start_date
-                for day, day_events in days.items():
-                    day_list.append(
-                        {
-                            "day": day,
-                            "events": [prepare_event(event) for event in day_events],
-                        }
-                    )
-                week_list.append(
-                    {"week": week, "days": day_list, "start_date": start_date}
-                )
-            term_list.append({"term": term, "weeks": week_list})
-        year_list.append({"year": year, "terms": term_list})
-    return year_list
 
 
 @events_ui_bp.route("/<int:year>/")
