@@ -431,7 +431,7 @@ def view_tags() -> str:
     if not tags:
         return abort(404, description="No tags found")
 
-    return ", ".join(tag.name for tag in tags)
+    return render_template("events/tags.html", tags=tags)
 
 
 @events_ui_bp.route("/tags/<string:tag>/")
