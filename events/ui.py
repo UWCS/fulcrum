@@ -413,7 +413,7 @@ def view_list(year: int, term: int | None = None, week: int | None = None) -> st
     events = get_events_by_time(year, term, week, draft=is_exec())
 
     if not events:
-        return abort(404, description="No events found for this week")
+        return abort(404, description="No events found for this time period")
 
     events = group_events(events)
 
@@ -440,10 +440,10 @@ def view_tag(tag: str) -> str:
 
     events = get_events_by_tag(tag)
 
-    tag_obj = get_tag_by_name(tag)
-
     if not events:
         return abort(404, description="No events found for this tag")
+
+    tag_obj = get_tag_by_name(tag)
 
     events = group_events(events)
 

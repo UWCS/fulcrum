@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}403 Forbidden{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="display-4">403 Forbidden</h1>
+    <p class="lead">You do not have permission to access this page</p>
+    <p class="text-muted">{{ error }}</p>
+    <p class="text-muted">If you think this is in error, contact a member of tech team</p>
+    <p class="text-muted">If you are a member of tech team, a user can gain permissions by adding them to the exec or sysadmin group on keycloak</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Go back Home</a>
+</div>
+{% endblock %}
