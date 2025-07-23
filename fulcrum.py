@@ -5,6 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from flasgger import Swagger
 from flask import Flask, redirect, render_template
+from werkzeug.routing import IntegerConverter
 from werkzeug.wrappers import Response
 
 from auth.api import auth_api_bp, auth_ui_bp
@@ -22,6 +23,14 @@ if Path(".env").exists():
 # initialise flask app
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
+
+
+# allow for use of signed ints in routes
+class SignedIntConverter(IntegerConverter):
+    regex = r"-?\d+"
+
+
+app.url_map.converters["sint"] = SignedIntConverter
 
 # initialise database
 initialise_db(app)

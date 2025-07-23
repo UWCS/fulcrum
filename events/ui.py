@@ -192,7 +192,7 @@ def create() -> str | Response:
 
 
 @events_ui_bp.route(
-    "/<int:year>/<int:term>/<int:week>/<string:slug>/edit/", methods=["GET", "POST"]
+    "/<int:year>/<int:term>/<sint:week>/<string:slug>/edit/", methods=["GET", "POST"]
 )
 @is_exec_wrapper
 def edit(year: int, term: int, week: int, slug: str) -> str | Response:
@@ -264,7 +264,7 @@ def edit(year: int, term: int, week: int, slug: str) -> str | Response:
 
 
 @events_ui_bp.route(
-    "/<int:year>/<int:term>/<int:week>/<string:slug>/delete/", methods=["POST"]
+    "/<int:year>/<int:term>/<sint:week>/<string:slug>/delete/", methods=["POST"]
 )
 @is_exec_wrapper
 def delete(year: int, term: int, week: int, slug: str) -> Response:
@@ -282,7 +282,7 @@ def delete(year: int, term: int, week: int, slug: str) -> Response:
     return redirect("/")
 
 
-@events_ui_bp.route("/<int:year>/<int:term>/<int:week>/<string:slug>/")
+@events_ui_bp.route("/<int:year>/<int:term>/<sint:week>/<string:slug>/")
 def view(year: int, term: int, week: int, slug: str) -> str:
     """View an event by its year, term, week, and slug."""
 
@@ -301,7 +301,7 @@ def view(year: int, term: int, week: int, slug: str) -> str:
 
 @events_ui_bp.route("/<int:year>/")
 @events_ui_bp.route("/<int:year>/<int:term>/")
-@events_ui_bp.route("/<int:year>/<int:term>/<int:week>/")
+@events_ui_bp.route("/<int:year>/<int:term>/<sint:week>/")
 def view_list(year: int, term: int | None = None, week: int | None = None) -> str:
     """View all events in a time frame in list form"""
 

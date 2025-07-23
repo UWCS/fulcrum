@@ -23,7 +23,7 @@ events_api_bp = Blueprint("events_api", __name__, url_prefix="/api/events")
 
 
 @events_api_bp.route(
-    "/<int:year>/<int:term>/<int:week>/<string:slug>/", methods=["GET"]
+    "/<int:year>/<int:term>/<sint:week>/<string:slug>/", methods=["GET"]
 )
 def get_event(year: int, term: int, week: int, slug: str) -> tuple[Response, int]:
     """Get a specific event by year, term, week, and slug.
@@ -93,7 +93,7 @@ def get_event_by_id_api(event_id: int) -> tuple[Response, int]:
     return jsonify(event.to_dict()), 200
 
 
-@events_api_bp.route("/<int:year>/<int:term>/<int:week>/", methods=["GET"])
+@events_api_bp.route("/<int:year>/<int:term>/<sint:week>/", methods=["GET"])
 @events_api_bp.route("/<int:year>/<int:term>/", methods=["GET"])
 @events_api_bp.route("/<int:year>/", methods=["GET"])
 def get_events(
