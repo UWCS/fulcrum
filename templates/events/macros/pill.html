@@ -1,13 +1,27 @@
 {% macro pill(event, large) %}
 
 {% if not large %}
-<a href="{{ url_for('events_ui.view', year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) }}" class="text-decoration-none text-emphasis">
+<a 
+    href="{{ url_for('events_ui.view', year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) }}" 
+    class="text-decoration-none text-emphasis event"
+    {% if event.colour %}
+        data-event-colour="{{ event.colour }}"
+    {% endif %}
+    {% if event.tags %}
+        data-event-tags="{{ event.tags|map(attribute='name')|join(', ') }}"
+    {% endif %}
+>
 {% endif %}
+    {% if event.colour in colours %}
+        {% set colour = colours[event.colour] %}
+    {% else %}
+        {% set colour = event.colour %}
+    {% endif %}
     <div class="card {% if not large %}mb-2 grow-05{% endif %}"
         {% if event.draft %}
-            style="background-color: var(--bs-secondary-bg); border: calc(2 * var(--bs-border-width)) dashed {{event.colour}}80;"
+            style="background-color: var(--bs-secondary-bg); border: calc(2 * var(--bs-border-width)) dashed {{colour}}80;"
         {% else %}
-            style="background-color: {{event.colour}}80;"
+            style="background-color: {{colour}}80;"
         {% endif %}
     >
         <div class="card-body">

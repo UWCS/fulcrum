@@ -377,9 +377,7 @@ def prepare_event(event: Event) -> dict:
         event_dict["end_time"] = datetime.fromisoformat(event_dict["end_time"])
 
     # convert colour to hex
-    if event_dict["colour"] in colours:
-        event_dict["colour"] = colours[event_dict["colour"]]
-    if not event_dict["colour"].startswith("#"):
+    if not event_dict["colour"].startswith("#") and event_dict["colour"] not in colours:
         event_dict["colour"] = f"#{event_dict["colour"]}"
 
     # convert markdown to html
@@ -461,12 +459,14 @@ def get_upcoming_events() -> list[Event]:
     if not week:
         return []
 
-    return (
-        Event.query.filter(Event.draft.is_(is_exec()))  # type: ignore
-        .filter(func.date(Event.start_time) >= week.start_date)
-        .order_by(Event.start_time, Event.end_time, Event.name)  # type: ignore
-        .all()
-    )
+    query = Event.query.filter(func.date(Event.start_time) >= week.start_date)  # type: ignore
+
+    if not is_exec():
+        query = query.filter(Event.draft.is_(False))  # type: ignore
+
+    return query.order_by(
+        Event.start_time, Event.end_time, Event.name  # type: ignore
+    ).all()
 
 
 def get_previous_events() -> list[Event]:
@@ -476,12 +476,14 @@ def get_previous_events() -> list[Event]:
     if not week:
         return []
 
-    return (
-        Event.query.filter(Event.draft.is_(is_exec()))  # type: ignore
-        .filter(func.date(Event.start_time) < week.start_date)
-        .order_by(Event.start_time, Event.end_time, Event.name)  # type: ignore
-        .all()
-    )
+    query = Event.query.filter(func.date(Event.start_time) < week.start_date)  # type: ignore
+
+    if not is_exec():
+        query = query.filter(Event.draft.is_(False))  # type: ignore
+
+    return query.order_by(
+        Event.start_time, Event.end_time, Event.name  # type: ignore
+    ).all()
 
 
 _KEEP = object()  # placeholder to leave the field unchanged

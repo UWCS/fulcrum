@@ -1,0 +1,21 @@
+.event-tag {
+    --highlight-colour: var(--bs-border-color);
+
+    --bs-btn-color: var(--bs-emphasis-color);
+    --bs-btn-border-color: color-mix(in srgb, var(--highlight-colour) 50%, transparent); // actual value is 128/255, close enough to 50% though
+
+    --bs-btn-hover-color: var(--bs-emphasis-color);
+    --bs-btn-hover-bg: var(--bs-btn-border-color);
+    --bs-btn-hover-border-color: transparent;
+
+    --bs-btn-active-color: var(--bs-emphasis-color);
+    --bs-btn-active-bg: var(--bs-btn-border-color);
+    --bs-btn-active-border-color: transparent;
+}
+
+.event-tag.event-tag-selected {
+    --bs-btn-bg: color-mix(in srgb, var(--highlight-colour) 80%, transparent);
+    --bs-btn-hover-bg: var(--bs-btn-bg);
+    --bs-btn-active-bg: var(--bs-btn-bg);
+    --bs-btn-border-color: transparent;
+}

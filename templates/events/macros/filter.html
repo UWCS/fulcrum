@@ -1,0 +1,276 @@
+{% macro filter() %}
+<div class="d-none" id="filter-controls">
+    <span class="h4">Filter Events</span>
+    <span id="category-filters" class="d-none"></span>
+    <span id="tag-filters" class="d-none"></span>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const ALLOWED_CATEGORIES = [
+        "gaming", "academic", "social", "inclusivity", "tech", "other"
+    ];
+    const CATEGORY_COLOURS = {
+        {% for name, colour in colours.items() %}
+            "{{ name }}":"{{ colour }}",
+        {% endfor %}
+        "other":"{{ colours['secretary'] }}"
+    };
+    const CATEGORY_NAMES = {
+        "gaming": "Gaming",
+        "academic": "Academic",
+        "tech": "Tech",
+        "social": "Social",
+        "inclusivity": "Wildcards",
+        "other": "Other"
+    };
+
+    const used_categories = new Set();
+    const used_tags = new Set();
+    const tag_categories = new Map(); // tag -> Set(categories)
+
+    function load_single_event_data(elem) {
+        let category = elem.getAttribute("data-event-colour") || "";
+        if (!ALLOWED_CATEGORIES.includes(category)) {
+            category = "other";
+        }
+        used_categories.add(category);
+
+        const data_tags_raw = elem.getAttribute("data-event-tags") || "";
+        const tags = data_tags_raw === ""
+            ? []
+            : data_tags_raw.split(",").map(t => t.trim()).filter(Boolean);
+
+        for (const tag of tags) {
+            if (!tag_categories.has(tag)) {
+                tag_categories.set(tag, new Set());
+            }
+            used_tags.add(tag);
+            tag_categories.get(tag).add(category);
+        }
+
+        return { elem, category, tags };
+    }
+
+    const event_holder = document.getElementById("events");
+    const event_elms = event_holder.querySelectorAll("a.event");
+    const events = Array.from(event_elms).map(load_single_event_data);
+
+    const category_filter_holder = document.getElementById("category-filters");
+    const tag_filter_holder = document.getElementById("tag-filters");
+
+    // Unhide controls if needed
+    if (used_categories.size > 0 || used_tags.size > 0) {
+        document.getElementById("filter-controls").classList.remove("d-none");
+    }
+    if (used_categories.size > 0) {
+        category_filter_holder.classList.remove("d-none");
+    }
+    if (used_tags.size > 0) {
+        tag_filter_holder.classList.remove("d-none");
+    }
+
+    // Categories UI
+    for (const cat of Array.from(used_categories).sort()) {
+        const b = document.createElement("button");
+        b.innerText = CATEGORY_NAMES[cat];
+        b.classList.add("btn", "event-tag", "m-1");
+        b.style.setProperty("--highlight-colour", CATEGORY_COLOURS[cat] ?? CATEGORY_COLOURS.other);
+        b.addEventListener("click", () => toggle_filter_category(cat));
+        category_filter_holder.appendChild(b);
+    }
+
+    // Tags UI
+    for (const tag of Array.from(used_tags).sort()) {
+        const b = document.createElement("button");
+        b.innerText = tag;
+        b.classList.add("btn", "event-tag", "m-1");
+        b.addEventListener("click", () => toggle_filter_tag(tag));
+        tag_filter_holder.appendChild(b);
+    }
+
+    const filter_categories = new Set();
+    const selected_tags = new Set();
+    let enabled_tags = new Set(used_tags); // <-- important: copy!
+
+    function toggle_filter_category(category_name) {
+        // Toggle visual state
+        for (const child of category_filter_holder.children) {
+            if (child.innerText === CATEGORY_NAMES[category_name]) {
+                if (filter_categories.has(category_name)) {
+                    child.classList.remove("event-tag-selected");
+                    filter_categories.delete(category_name);
+                } else {
+                    child.classList.add("event-tag-selected");
+                    filter_categories.add(category_name);
+                }
+                break;
+            }
+        }
+
+        // Update which tags remain enabled
+        enabled_tags = new Set(); // rebuild each time; simpler & correct
+        for (const tag of used_tags) {
+            const cats_for_tag = tag_categories.get(tag) || new Set();
+            if (
+                filter_categories.size === 0 ||
+                intersect(cats_for_tag, filter_categories).size !== 0
+            ) {
+                // keep tag visible + enabled
+                showTagButton(tag, true);
+                enabled_tags.add(tag);
+            } else {
+                showTagButton(tag, false);
+            }
+        }
+
+        // Hide tag filter holder entirely if nothing left
+        if (enabled_tags.size === 0) {
+            tag_filter_holder.classList.add("d-none");
+        } else {
+            tag_filter_holder.classList.remove("d-none");
+        }
+
+        update_event_view();
+    }
+
+    function showTagButton(tag_name, show) {
+        for (const child of tag_filter_holder.children) {
+            if (child.innerText === tag_name) {
+                if (show) {
+                    child.classList.remove("d-none");
+                } else {
+                    child.classList.add("d-none");
+                    // also de-select if it was selected
+                    child.classList.remove("event-tag-selected");
+                    selected_tags.delete(tag_name);
+                }
+                break;
+            }
+        }
+    }
+
+    function toggle_filter_tag(tag_name) {
+        for (const child of tag_filter_holder.children) {
+            if (child.innerText === tag_name) {
+                if (selected_tags.has(tag_name)) {
+                    child.classList.remove("event-tag-selected");
+                    selected_tags.delete(tag_name);
+                } else {
+                    child.classList.add("event-tag-selected");
+                    selected_tags.add(tag_name);
+                }
+                break;
+            }
+        }
+        update_event_view();
+    }
+
+    function update_event_view() {
+        // Effective tag filters = selected tags that are currently enabled by category selection
+        const filter_tags = intersect(enabled_tags, selected_tags);
+
+        // Show/hide events
+        for (const event of events) {
+            let hide_cat = (filter_categories.size !== 0 && !filter_categories.has(event.category));
+
+            // Tags: if any filter_tags selected, event must have at least one
+            let hide_tag = false;
+            if (filter_tags.size > 0) {
+                hide_tag = true;
+                for (const t of event.tags) {
+                    if (filter_tags.has(t)) {
+                        hide_tag = false;
+                        break;
+                    }
+                }
+            }
+
+            if (hide_cat || hide_tag) {
+                event.elem.classList.add("d-none");
+            } else {
+                event.elem.classList.remove("d-none");
+            }
+        }
+
+        // Update headings visibility
+        hideEmptyDays();
+        hideEmptyWeeks();
+        hideEmptyTerms();
+        hideEmptyYears();
+    }
+
+    /* ---------- Heading hide helpers ---------- */
+
+    function isVisibleEventElem(el) {
+        return el.matches("a.event") && !el.classList.contains("d-none");
+    }
+
+    // Scan forward until encountering one of stopTags
+    function hasVisibleEventBetween(startNode, stopTags) {
+        let node = startNode.nextElementSibling;
+        while (node) {
+            const tag = node.tagName;
+            if (stopTags.has(tag)) return false;
+            if (isVisibleEventElem(node)) return true;
+            node = node.nextElementSibling;
+        }
+        return false;
+    }
+
+    function hideEmptyDays() {
+        const stopTags = new Set(["H4", "H3", "H2", "H1"]);
+        for (const dayHeading of event_holder.querySelectorAll("h4")) {
+            const hasVisible = hasVisibleEventBetween(dayHeading, stopTags);
+            dayHeading.classList.toggle("d-none", !hasVisible);
+        }
+    }
+
+    function hideEmptyWeeks() {
+        const stopTags = new Set(["H3", "H2", "H1"]);
+        // Allow optional ASCII hyphen-minus -, en dash – (U+2013), or minus sign − (U+2212)
+        const weekRe = /Week\s+([-–−]?\d+)/i;
+
+        for (const weekHeading of event_holder.querySelectorAll("h3")) {
+            const txt = weekHeading.textContent;
+            if (!weekRe.test(txt)) continue;
+
+            const hasVisible = hasVisibleEventBetween(weekHeading, stopTags);
+            weekHeading.classList.toggle("d-none", !hasVisible);
+        }
+    }
+
+
+    function hideEmptyTerms() {
+        const stopTags = new Set(["H2", "H1"]);
+        for (const termHeading of event_holder.querySelectorAll("h2")) {
+            const hasVisible = hasVisibleEventBetween(termHeading, stopTags);
+            termHeading.classList.toggle("d-none", !hasVisible);
+        }
+    }
+
+    function hideEmptyYears() {
+        const stopTags = new Set(["H1"]);
+        // Years are top-level; scan until next H1 or end.
+        const years = event_holder.querySelectorAll("h1");
+        for (const yearHeading of years) {
+            const hasVisible = hasVisibleEventBetween(yearHeading, stopTags);
+            yearHeading.classList.toggle("d-none", !hasVisible);
+        }
+    }
+
+    /* ---------- utilities ---------- */
+    function intersect(a, b) {
+        const res = new Set();
+        for (const v of a) {
+            if (b.has(v)) res.add(v);
+        }
+        return res;
+    }
+
+    // initial pass to clean headings
+    update_event_view();
+});
+</script>
+
+{% endmacro %}

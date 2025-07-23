@@ -9,6 +9,7 @@ from werkzeug.wrappers import Response
 
 from auth.api import auth_api_bp, auth_ui_bp
 from auth.oauth import auth_bp, configure_oauth, is_exec, is_logged_in
+from config import colours
 from events.api import events_api_bp
 from events.ui import events_ui_bp
 from events.utils import get_previous_events, get_upcoming_events, group_events
@@ -50,6 +51,7 @@ def inject_globals() -> dict:
     return {
         "is_logged_in": is_logged_in(),
         "is_exec": is_exec(),
+        "colours": colours,
     }
 
 
