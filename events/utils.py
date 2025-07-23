@@ -455,7 +455,7 @@ def get_events_by_time(
 
 def get_upcoming_events() -> list[Event]:
     """Get all events in this week, and future weeks"""
-    now = datetime.now(pytz.timezone("Europe/London")) - timedelta(days=200)
+    now = datetime.now(pytz.timezone("Europe/London"))
     week = get_week_by_date(now)
 
     if not week:

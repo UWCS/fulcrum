@@ -14,7 +14,7 @@
     {% endif %}
     {% for year in events %}
         {% if year_display %}
-            <h1><a href="{{ url_for('events_ui.view_list', year=year.year) }}" class="text-decoration-none link-light link-opacity-50-hover">{{ year.year }}</a></h1>
+            <h1 id="{{ year.year }}"><a href="{{ url_for('events_ui.view_list', year=year.year) }}" class="text-decoration-none link-light link-opacity-50-hover">{{ year.year }}</a></h1>
         {% endif %}
         {% for term in year.terms %}
             {% if term_display %}

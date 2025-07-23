@@ -7,6 +7,14 @@
 <div class="container my-4">
     <h1>Previous Events</h1>
     <p class="lead">An archive of our (known) events:</p>
+    <ul class="nav mb-3">
+        {% for year in events|reverse %}
+            <li class="nav-item">
+                <a class="nav-link" href="#{{ year.year }}">{{ year.year }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+
     {{ list(events, True, True, True) }}
 </div>
 {% endblock %}
