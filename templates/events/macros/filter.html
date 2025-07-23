@@ -7,15 +7,18 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+    // import categories as the various colours
     const ALLOWED_CATEGORIES = [
         "gaming", "academic", "social", "inclusivity", "tech", "other"
     ];
+    // each category has a colour, with a default for "other"
     const CATEGORY_COLOURS = {
         {% for name, colour in colours.items() %}
             "{{ name }}":"{{ colour }}",
         {% endfor %}
         "other":"{{ colours['secretary'] }}"
     };
+    // display names
     const CATEGORY_NAMES = {
         "gaming": "Gaming",
         "academic": "Academic",
@@ -25,22 +28,25 @@ document.addEventListener("DOMContentLoaded", () => {
         "other": "Other"
     };
 
-    const used_categories = new Set();
-    const used_tags = new Set();
-    const tag_categories = new Map(); // tag -> Set(categories)
+    const used_categories = new Set(); // categories in existence
+    const used_tags = new Set(); // tags in existence
+    const tag_categories = new Map(); // tag -> Set of categories that use this tag
 
     function load_single_event_data(elem) {
+        // get category by colour attribute (other if none)
         let category = elem.getAttribute("data-event-colour") || "";
         if (!ALLOWED_CATEGORIES.includes(category)) {
             category = "other";
         }
         used_categories.add(category);
 
+        // get tags from tags attribute
         const data_tags_raw = elem.getAttribute("data-event-tags") || "";
         const tags = data_tags_raw === ""
             ? []
             : data_tags_raw.split(",").map(t => t.trim()).filter(Boolean);
 
+        // add tags to used_tags and map
         for (const tag of tags) {
             if (!tag_categories.has(tag)) {
                 tag_categories.set(tag, new Set());
@@ -52,14 +58,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return { elem, category, tags };
     }
 
+    // load all events
     const event_holder = document.getElementById("events");
     const event_elms = event_holder.querySelectorAll("a.event");
     const events = Array.from(event_elms).map(load_single_event_data);
 
+    // get filters
     const category_filter_holder = document.getElementById("category-filters");
     const tag_filter_holder = document.getElementById("tag-filters");
 
-    // Unhide controls if needed
+    // unhide filter if usable
     if (used_categories.size > 0 || used_tags.size > 0) {
         document.getElementById("filter-controls").classList.remove("d-none");
     }
@@ -70,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
         tag_filter_holder.classList.remove("d-none");
     }
 
-    // Categories UI
+    // create category buttons
     for (const cat of Array.from(used_categories).sort()) {
         const b = document.createElement("button");
         b.innerText = CATEGORY_NAMES[cat];
@@ -80,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
         category_filter_holder.appendChild(b);
     }
 
-    // Tags UI
+    // create tag buttons
     for (const tag of Array.from(used_tags).sort()) {
         const b = document.createElement("button");
         b.innerText = tag;
@@ -89,18 +97,21 @@ document.addEventListener("DOMContentLoaded", () => {
         tag_filter_holder.appendChild(b);
     }
 
+    // initial state: all categories selected, no tags selected, all tags can be selected
     const filter_categories = new Set();
     const selected_tags = new Set();
-    let enabled_tags = new Set(used_tags); // <-- important: copy!
+    let enabled_tags = new Set(used_tags);
 
     function toggle_filter_category(category_name) {
-        // Toggle visual state
+        // toggle visual state of a catefory
         for (const child of category_filter_holder.children) {
             if (child.innerText === CATEGORY_NAMES[category_name]) {
                 if (filter_categories.has(category_name)) {
+                    // remove from filter if selected
                     child.classList.remove("event-tag-selected");
                     filter_categories.delete(category_name);
                 } else {
+                    // add to filter if not selected
                     child.classList.add("event-tag-selected");
                     filter_categories.add(category_name);
                 }
@@ -108,8 +119,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // Update which tags remain enabled
-        enabled_tags = new Set(); // rebuild each time; simpler & correct
+        // update tag visibility
+        enabled_tags = new Set();
         for (const tag of used_tags) {
             const cats_for_tag = tag_categories.get(tag) || new Set();
             if (
@@ -120,11 +131,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 showTagButton(tag, true);
                 enabled_tags.add(tag);
             } else {
+                // hide tag if not selected or usable
                 showTagButton(tag, false);
             }
         }
 
-        // Hide tag filter holder entirely if nothing left
+        // hide tag filter holder entirely if nothing left
         if (enabled_tags.size === 0) {
             tag_filter_holder.classList.add("d-none");
         } else {
@@ -135,6 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function showTagButton(tag_name, show) {
+        // show or hide a tag button
         for (const child of tag_filter_holder.children) {
             if (child.innerText === tag_name) {
                 if (show) {
@@ -151,12 +164,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function toggle_filter_tag(tag_name) {
+        // filter events by tag
         for (const child of tag_filter_holder.children) {
             if (child.innerText === tag_name) {
                 if (selected_tags.has(tag_name)) {
+                    // remove from selected tags if already selected
                     child.classList.remove("event-tag-selected");
                     selected_tags.delete(tag_name);
                 } else {
+                    // add to selected tags if not selected
                     child.classList.add("event-tag-selected");
                     selected_tags.add(tag_name);
                 }
@@ -167,14 +183,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function update_event_view() {
-        // Effective tag filters = selected tags that are currently enabled by category selection
+        // find tags that can be shown
         const filter_tags = intersect(enabled_tags, selected_tags);
 
         // Show/hide events
         for (const event of events) {
+            // event can be seen if it has a category selected
             let hide_cat = (filter_categories.size !== 0 && !filter_categories.has(event.category));
 
-            // Tags: if any filter_tags selected, event must have at least one
+            // event can be seen if it has a tag selected
             let hide_tag = false;
             if (filter_tags.size > 0) {
                 hide_tag = true;
@@ -186,6 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
+            // hide if no category selected or no tag selected
             if (hide_cat || hide_tag) {
                 event.elem.classList.add("d-none");
             } else {
@@ -200,14 +218,13 @@ document.addEventListener("DOMContentLoaded", () => {
         hideEmptyYears();
     }
 
-    /* ---------- Heading hide helpers ---------- */
-
     function isVisibleEventElem(el) {
+        // check if an event is visible
         return el.matches("a.event") && !el.classList.contains("d-none");
     }
 
-    // Scan forward until encountering one of stopTags
     function hasVisibleEventBetween(startNode, stopTags) {
+        // scan forward until next heading is reached or an event is found
         let node = startNode.nextElementSibling;
         while (node) {
             const tag = node.tagName;
@@ -219,6 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function hideEmptyDays() {
+        // hide all day headings that have no visible events
         const stopTags = new Set(["H4", "H3", "H2", "H1"]);
         for (const dayHeading of event_holder.querySelectorAll("h4")) {
             const hasVisible = hasVisibleEventBetween(dayHeading, stopTags);
@@ -227,8 +245,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function hideEmptyWeeks() {
+        // hide all week headings that have no visible events
         const stopTags = new Set(["H3", "H2", "H1"]);
-        // Allow optional ASCII hyphen-minus -, en dash – (U+2013), or minus sign − (U+2212)
+
+        // funky regex for negative week numbers
         const weekRe = /Week\s+([-–−]?\d+)/i;
 
         for (const weekHeading of event_holder.querySelectorAll("h3")) {
@@ -242,6 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     function hideEmptyTerms() {
+        // hide all term headings that have no visible events
         const stopTags = new Set(["H2", "H1"]);
         for (const termHeading of event_holder.querySelectorAll("h2")) {
             const hasVisible = hasVisibleEventBetween(termHeading, stopTags);
@@ -250,8 +271,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function hideEmptyYears() {
+        // hide all year headings that have no visible events
         const stopTags = new Set(["H1"]);
-        // Years are top-level; scan until next H1 or end.
         const years = event_holder.querySelectorAll("h1");
         for (const yearHeading of years) {
             const hasVisible = hasVisibleEventBetween(yearHeading, stopTags);
@@ -259,7 +280,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    /* ---------- utilities ---------- */
     function intersect(a, b) {
         const res = new Set();
         for (const v of a) {
