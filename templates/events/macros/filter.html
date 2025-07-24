@@ -13,18 +13,10 @@
 {% macro filterjs() %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    // import categories as the various colours
+    // allowed categories and their display names
     const ALLOWED_CATEGORIES = [
         "gaming", "academic", "social", "inclusivity", "tech", "other"
     ];
-    // each category has a colour, with a default for "other"
-    const CATEGORY_COLOURS = {
-        {% for name, colour in colours.items() %}
-            "{{ name }}":"{{ colour }}",
-        {% endfor %}
-        "other":"{{ colours['secretary'] }}"
-    };
-    // display names
     const CATEGORY_NAMES = {
         "gaming": "Gaming",
         "academic": "Academic",
@@ -34,265 +26,187 @@ document.addEventListener("DOMContentLoaded", () => {
         "other": "Other"
     };
 
-    const used_categories = new Set(); // categories in existence
-    const used_tags = new Set(); // tags in existence
-    const tag_categories = new Map(); // tag -> Set of categories that use this tag
+    const usedCategories = new Set(); // categories that have events
+    const usedTags = new Set(); // tags that have events
+    const tagCategories = new Map(); // map of tags to which categories they belong to
 
-    function load_single_event_data(elem) {
-        // get category by colour attribute (other if none)
-        let category = elem.getAttribute("data-event-colour") || "";
+    function loadSingleEventData(event) {
+        // categories can be loosly mapped to colours
+        // assign to other if unknown
+        let category = event.getAttribute("data-event-colour") || "other";
         if (!ALLOWED_CATEGORIES.includes(category)) {
             category = "other";
         }
-        used_categories.add(category);
+        usedCategories.add(category);
 
-        // get tags from tags attribute
-        const data_tags_raw = elem.getAttribute("data-event-tags") || "";
-        const tags = data_tags_raw === ""
-            ? []
-            : data_tags_raw.split(",").map(t => t.trim()).filter(Boolean);
-
-        // add tags to used_tags and map
+        // get tags by splitting the data-event-tags attribute
+        const tags = (event.getAttribute("data-event-tags") || "").split(",").map(t => t.trim()).filter(Boolean);
         for (const tag of tags) {
-            if (!tag_categories.has(tag)) {
-                tag_categories.set(tag, new Set());
+            // add tags to the used set
+            // also add to the mapping
+            usedTags.add(tag);
+            if (!tagCategories.has(tag)) {
+                tagCategories.set(tag, new Set());
             }
-            used_tags.add(tag);
-            tag_categories.get(tag).add(category);
+            tagCategories.get(tag).add(category);
         }
 
-        return { elem, category, tags };
+        return { elem: event, category, tags };
     }
 
-    // load all events
-    const event_holder = document.getElementById("events");
-    const event_elms = event_holder.querySelectorAll("a.event");
-    const events = Array.from(event_elms).map(load_single_event_data);
+    // get all page elements
+    const eventsDiv = document.getElementById("events");
+    const events = Array.from(eventsDiv.querySelectorAll("a.event")).map(loadSingleEventData);
+    const categorySelect = document.getElementById("category-filter");
+    const tagSelect = document.getElementById("tag-filter");
+    const resetButton = document.getElementById("reset-filters");
+    const filterControls = document.getElementById("filter-controls");
 
-    // get filters
-    const category_filter_holder = document.getElementById("category-filter");
-    const tag_filter_holder = document.getElementById("tag-filter");
+    console.log(usedCategories, usedTags)
 
-    // unhide filter if usable
-    if (used_categories.size > 0 || used_tags.size > 0) {
-        const filter_controls = document.getElementById("filter-controls");
-        filter_controls.classList.remove("d-none");
-        filter_controls.classList = "d-flex align-items-center gap-2";
-    }
-    if (used_categories.size > 0) {
-        category_filter_holder.classList.remove("d-none");
-    }
-    if (used_tags.size > 0) {
-        tag_filter_holder.classList.remove("d-none");
+    if (usedCategories.size > 0 || usedTags.size > 0) {
+        // if things can be filtered, display the filter controls
+        filterControls.classList.remove("d-none");
+        filterControls.className = "d-flex align-items-center gap-2";
     }
 
-    // create category buttons
-    for (const cat of Array.from(used_categories).sort()) {
-        const opt = document.createElement("option");
-        opt.value = cat;
-        opt.textContent = CATEGORY_NAMES[cat];
-        category_filter_holder.appendChild(opt);
+    // create category options
+    const sortedCategories = Array.from(usedCategories).sort((a, b) => {
+        if (a === "other") return 1; // always put "other" at the end
+        if (b === "other") return -1;
+        return CATEGORY_NAMES[a].localeCompare(CATEGORY_NAMES[b]); // sort by display name alphabetically
+    });
+    for (const category of sortedCategories) {
+        const option = document.createElement("option");
+        option.value = category;
+        option.textContent = CATEGORY_NAMES[category];
+        categorySelect.appendChild(option);
     }
 
-    // create tag buttons
-    for (const tag of Array.from(used_tags).sort()) {
-        const opt = document.createElement("option");
-        opt.value = tag;
-        opt.textContent = tag;
-        tag_filter_holder.appendChild(opt);
+    // create tags
+    for (const tag of Array.from(usedTags).sort()) {
+        const option = document.createElement("option");
+        option.value = tag;
+        option.textContent = tag;
+        tagSelect.appendChild(option);
     }
 
-    // add event listene for category filter
-    category_filter_holder.addEventListener("change", () => {
-        filter_categories.clear();
-        for (const option of category_filter_holder.selectedOptions) {
-            filter_categories.add(option.value);
-        }
-        update_available_tags();
-        update_event_view();
+    // current state of filters
+    let selectedCategory = null;
+    let selectedTag = null;
+    let enabledTags = new Set(usedTags); // tags that intersect with the selected category
+
+    categorySelect.addEventListener("change", () => {
+        // update selected category
+        selectedCategory = categorySelect.value;
+        updateAvailableTags(); // this will change the number of available tags
+        updateEventView();
     });
 
-    // add event listener for tag filter
-    tag_filter_holder.addEventListener("change", () => {
-        selected_tags.clear();
-        for (const option of tag_filter_holder.selectedOptions) {
-            selected_tags.add(option.value);
-        }
-        update_event_view();
+    tagSelect.addEventListener("change", () => {
+        selectedTag = tagSelect.value;
+        updateEventView();
     });
 
-    // initial state: all categories selected, no tags selected, all tags can be selected
-    const filter_categories = new Set();
-    const selected_tags = new Set();
-    let enabled_tags = new Set(used_tags);
-
-    function showTagButton(tag_name, show) {
-        // show or hide a tag button
-        for (const child of tag_filter_holder.children) {
-            if (child.innerText === tag_name) {
-                if (show) {
-                    child.classList.remove("d-none");
-                } else {
-                    child.classList.add("d-none");
-                    // also de-select if it was selected
-                    child.classList.remove("event-tag-selected");
-                    selected_tags.delete(tag_name);
-                }
-                break;
+    function updateAvailableTags() {
+        enabledTags = new Set(); // tags that intersect with the selected category
+        for (const tag of usedTags) {
+            const categories = tagCategories.get(tag) || new Set();
+            if (!selectedCategory || categories.has(selectedCategory)) {
+                // enable a tag if it belongs to the selected category or if no category is selected
+                enabledTags.add(tag);
             }
         }
+
+        for (const option of tagSelect.options) {
+            // toggle visibility if the tag is enabled or not
+            option.classList.toggle("d-none", !enabledTags.has(option.value));
+            if (!enabledTags.has(option.value) && option.selected) {
+                option.selected = false;
+                selectedTag = null;
+            }
+        }
+
+        // remove tags select if no tags are available
+        tagSelect.classList.toggle("d-none", enabledTags.size === 0);
     }
 
-    // update available tags based on selected categories
-    function update_available_tags() {
-        enabled_tags = new Set();
-        // attempt to ebable all used tags
-        for (const tag of used_tags) {
-            const cats_for_tag = tag_categories.get(tag) || new Set();
-            if (filter_categories.size === 0 || intersect(filter_categories, cats_for_tag).size > 0) {
-                enabled_tags.add(tag);
-            }
-        }
-
-        // hide or show tag filtering options
-        for (const opt of tag_filter_holder.options) {
-            if (enabled_tags.has(opt.value)) {
-                opt.classList.remove("d-none");
-            } else {
-                opt.classList.add("d-none");
-                opt.selected = false;
-                selected_tags.delete(opt.value);
-            }
-        }
-
-        // update tag filter holder visibility
-        tag_filter_holder.classList.toggle("d-none", enabled_tags.size === 0);
-    }
-
-    function update_event_view() {
-        // find tags that can be shown
-        const filter_tags = intersect(enabled_tags, selected_tags);
-
-        // Show/hide events
+    function updateEventView() {
         for (const event of events) {
-            // event can be seen if it has a category selected
-            let hide_cat = (filter_categories.size !== 0 && !filter_categories.has(event.category));
-
-            // event can be seen if it has a tag selected
-            let hide_tag = false;
-            if (filter_tags.size > 0) {
-                hide_tag = true;
-                for (const t of event.tags) {
-                    if (filter_tags.has(t)) {
-                        hide_tag = false;
-                        break;
-                    }
-                }
-            }
-
-            // hide if no category selected or no tag selected
-            if (hide_cat || hide_tag) {
-                event.elem.classList.add("d-none");
-            } else {
-                event.elem.classList.remove("d-none");
-            }
+            // remove an event if it not a member of selected category or tag
+            const matchesCategory = !selectedCategory || event.category === selectedCategory;
+            const matchesTag = !selectedTag || event.tags.includes(selectedTag);
+            const visible = matchesCategory && matchesTag;
+            event.elem.classList.toggle("d-none", !visible);
         }
 
-        // Update headings visibility
+        // hide empty sections
         hideEmptyDays();
         hideEmptyWeeks();
         hideEmptyTerms();
         hideEmptyYears();
     }
 
-    function isVisibleEventElem(el) {
-        // check if an event is visible
-        return el.matches("a.event") && !el.classList.contains("d-none");
+    resetButton.addEventListener("click", () => {
+        // reset filters
+        categorySelect.selectedIndex = 0;
+        tagSelect.selectedIndex = 0;
+        selectedCategory = null;
+        selectedTag = null;
+        updateAvailableTags();
+        updateEventView();
+    });
+
+    function isVisibleEventElem(event) {
+        // check if an event is valid under the current tags (displayed)
+        return event.matches("a.event") && !event.classList.contains("d-none");
     }
 
     function hasVisibleEventBetween(startNode, stopTags) {
-        // scan forward until next heading is reached or an event is found
+        // check if there is a visible event between startNode and the next stop tag
         let node = startNode.nextElementSibling;
         while (node) {
-            const tag = node.tagName;
-            if (stopTags.has(tag)) return false;
-            if (isVisibleEventElem(node)) return true;
+            if (stopTags.has(node.tagName)) return false; // if reached a stop tag, no events
+            if (isVisibleEventElem(node)) return true; // if reached a visible event, events
             node = node.nextElementSibling;
         }
         return false;
     }
 
     function hideEmptyDays() {
-        // hide all day headings that have no visible events
-        const stopTags = new Set(["H4", "H3", "H2", "H1"]);
-        for (const dayHeading of event_holder.querySelectorAll("h4")) {
-            const hasVisible = hasVisibleEventBetween(dayHeading, stopTags);
-            dayHeading.classList.toggle("d-none", !hasVisible);
+        const stopTags = new Set(["H4", "H3", "H2", "H1"]); // H1: year, H2: term, H3: week, H4: day
+        for (const h of eventsDiv.querySelectorAll("h4")) {
+            // if the day has no events associated, hide it
+            h.classList.toggle("d-none", !hasVisibleEventBetween(h, stopTags));
         }
     }
 
     function hideEmptyWeeks() {
-        // hide all week headings that have no visible events
         const stopTags = new Set(["H3", "H2", "H1"]);
-
-        // funky regex for negative week numbers
-        const weekRe = /Week\s+([-–−]?\d+)/i;
-
-        for (const weekHeading of event_holder.querySelectorAll("h3")) {
-            const txt = weekHeading.textContent;
-            if (!weekRe.test(txt)) continue;
-
-            const hasVisible = hasVisibleEventBetween(weekHeading, stopTags);
-            weekHeading.classList.toggle("d-none", !hasVisible);
+        for (const h of eventsDiv.querySelectorAll("h3")) {
+            if (/Week\s+[-–−]?\d+/i.test(h.textContent)) { // regex to match negative weeks
+                h.classList.toggle("d-none", !hasVisibleEventBetween(h, stopTags));
+            }
         }
     }
 
-
     function hideEmptyTerms() {
-        // hide all term headings that have no visible events
         const stopTags = new Set(["H2", "H1"]);
-        for (const termHeading of event_holder.querySelectorAll("h2")) {
-            const hasVisible = hasVisibleEventBetween(termHeading, stopTags);
-            termHeading.classList.toggle("d-none", !hasVisible);
+        for (const h of eventsDiv.querySelectorAll("h2")) {
+            h.classList.toggle("d-none", !hasVisibleEventBetween(h, stopTags));
         }
     }
 
     function hideEmptyYears() {
-        // hide all year headings that have no visible events
         const stopTags = new Set(["H1"]);
-        const years = event_holder.querySelectorAll("h1");
-        for (const yearHeading of years) {
-            const hasVisible = hasVisibleEventBetween(yearHeading, stopTags);
-            yearHeading.classList.toggle("d-none", !hasVisible);
+        for (const h of eventsDiv.querySelectorAll("h1")) {
+            h.classList.toggle("d-none", !hasVisibleEventBetween(h, stopTags));
         }
     }
 
-    function intersect(a, b) {
-        const res = new Set();
-        for (const v of a) {
-            if (b.has(v)) res.add(v);
-        }
-        return res;
-    }
-
-    // reset filters button
-    document.getElementById("reset-filters").addEventListener("click", () => {
-        // reset all filters
-        category_filter_holder.selectedIndex = 0; // deselect all categories
-        tag_filter_holder.selectedIndex = 0; // deselect all tags
-
-        // clear filter sets
-        filter_categories.clear();
-        selected_tags.clear();
-
-        // update ui
-        update_available_tags();
-        update_event_view();
-    });
-
-    // initial pass to clean headings
-    update_event_view();
-    update_available_tags();
+    // initially parse to hide stuff if necessary
+    updateAvailableTags();
+    updateEventView();
 });
 </script>
 {% endmacro %}
