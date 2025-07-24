@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% from "events/macros/filter.html" import filter with context %}
 {% from "events/macros/list.html" import list with context %}
 
 {% block title %}Upcoming Events{% endblock %}
@@ -20,8 +19,6 @@
     {% endwith %}
     <h1>Hello World!</h1>
     <p class="lead">We run some events! Here are the upcoming ones:</p>
-    {{ filter() }}
     {{ list(events, True, True, False) }}
 </div>
-
 {% endblock %}

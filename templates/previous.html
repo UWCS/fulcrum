@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% from "events/macros/filter.html" import filter, filterjs with context %}
 {% from "events/macros/list.html" import list with context %}
 
 {% block title %}Previous Events{% endblock %}
@@ -8,20 +7,6 @@
 <div class="container my-4">
     <h1>Previous Events</h1>
     <p class="lead">An archive of our (known) events:</p>
-    <div class="d-flex justify-content-start align-items-center gap-2 mb-3">
-        <div class="dropdown">
-            <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Jump to Year
-            </button>
-            <ul class="dropdown-menu p-2" style="max-height: 20vh; overflow-y: auto;">
-                {% for year in events|reverse %}
-                    <li><a class="dropdown-item" href="#{{ year.year }}">{{ year.year }}</a></li>
-                {% endfor %}
-            </ul>
-        </div>
-        {{ filter() }}
-    </div>
     {{ list(events, True, True, True) }}
 </div>
-{{ filterjs() }}
 {% endblock %}
