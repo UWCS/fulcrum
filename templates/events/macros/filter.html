@@ -1,10 +1,16 @@
 {% macro filter() %}
-<div class="d-none" id="filter-controls">
-    <span class="h4">Filter Events</span>
-    <span id="category-filters" class="d-none"></span>
-    <span id="tag-filters" class="d-none"></span>
+<div id="filter-controls" class="d-none">
+    <select id="category-filter" class="form-select">
+        <option selected disabled>Select Categories</option>
+    </select>
+    <select id="tag-filter" class="form-select">
+        <option selected>Select Tags</option>
+    </select>
+    <button class="btn btn-secondary text-nowrap" id="reset-filters">Reset Filters</button>
 </div>
+{% endmacro %}
 
+{% macro filterjs() %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     // import categories as the various colours
@@ -64,12 +70,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const events = Array.from(event_elms).map(load_single_event_data);
 
     // get filters
-    const category_filter_holder = document.getElementById("category-filters");
-    const tag_filter_holder = document.getElementById("tag-filters");
+    const category_filter_holder = document.getElementById("category-filter");
+    const tag_filter_holder = document.getElementById("tag-filter");
 
     // unhide filter if usable
     if (used_categories.size > 0 || used_tags.size > 0) {
-        document.getElementById("filter-controls").classList.remove("d-none");
+        const filter_controls = document.getElementById("filter-controls");
+        filter_controls.classList.remove("d-none");
+        filter_controls.classList = "d-flex align-items-center gap-2";
     }
     if (used_categories.size > 0) {
         category_filter_holder.classList.remove("d-none");
@@ -80,71 +88,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // create category buttons
     for (const cat of Array.from(used_categories).sort()) {
-        const b = document.createElement("button");
-        b.innerText = CATEGORY_NAMES[cat];
-        b.classList.add("btn", "event-tag", "m-1");
-        b.style.setProperty("--highlight-colour", CATEGORY_COLOURS[cat] ?? CATEGORY_COLOURS.other);
-        b.addEventListener("click", () => toggle_filter_category(cat));
-        category_filter_holder.appendChild(b);
+        const opt = document.createElement("option");
+        opt.value = cat;
+        opt.textContent = CATEGORY_NAMES[cat];
+        category_filter_holder.appendChild(opt);
     }
 
     // create tag buttons
     for (const tag of Array.from(used_tags).sort()) {
-        const b = document.createElement("button");
-        b.innerText = tag;
-        b.classList.add("btn", "event-tag", "m-1");
-        b.addEventListener("click", () => toggle_filter_tag(tag));
-        tag_filter_holder.appendChild(b);
+        const opt = document.createElement("option");
+        opt.value = tag;
+        opt.textContent = tag;
+        tag_filter_holder.appendChild(opt);
     }
+
+    // add event listene for category filter
+    category_filter_holder.addEventListener("change", () => {
+        filter_categories.clear();
+        for (const option of category_filter_holder.selectedOptions) {
+            filter_categories.add(option.value);
+        }
+        update_available_tags();
+        update_event_view();
+    });
+
+    // add event listener for tag filter
+    tag_filter_holder.addEventListener("change", () => {
+        selected_tags.clear();
+        for (const option of tag_filter_holder.selectedOptions) {
+            selected_tags.add(option.value);
+        }
+        update_event_view();
+    });
 
     // initial state: all categories selected, no tags selected, all tags can be selected
     const filter_categories = new Set();
     const selected_tags = new Set();
     let enabled_tags = new Set(used_tags);
-
-    function toggle_filter_category(category_name) {
-        // toggle visual state of a catefory
-        for (const child of category_filter_holder.children) {
-            if (child.innerText === CATEGORY_NAMES[category_name]) {
-                if (filter_categories.has(category_name)) {
-                    // remove from filter if selected
-                    child.classList.remove("event-tag-selected");
-                    filter_categories.delete(category_name);
-                } else {
-                    // add to filter if not selected
-                    child.classList.add("event-tag-selected");
-                    filter_categories.add(category_name);
-                }
-                break;
-            }
-        }
-
-        // update tag visibility
-        enabled_tags = new Set();
-        for (const tag of used_tags) {
-            const cats_for_tag = tag_categories.get(tag) || new Set();
-            if (
-                filter_categories.size === 0 ||
-                intersect(cats_for_tag, filter_categories).size !== 0
-            ) {
-                // keep tag visible + enabled
-                showTagButton(tag, true);
-                enabled_tags.add(tag);
-            } else {
-                // hide tag if not selected or usable
-                showTagButton(tag, false);
-            }
-        }
-
-        // hide tag filter holder entirely if nothing left
-        if (enabled_tags.size === 0) {
-            tag_filter_holder.classList.add("d-none");
-        } else {
-            tag_filter_holder.classList.remove("d-none");
-        }
-
-        update_event_view();
-    }
 
     function showTagButton(tag_name, show) {
         // show or hide a tag button
@@ -163,23 +143,30 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function toggle_filter_tag(tag_name) {
-        // filter events by tag
-        for (const child of tag_filter_holder.children) {
-            if (child.innerText === tag_name) {
-                if (selected_tags.has(tag_name)) {
-                    // remove from selected tags if already selected
-                    child.classList.remove("event-tag-selected");
-                    selected_tags.delete(tag_name);
-                } else {
-                    // add to selected tags if not selected
-                    child.classList.add("event-tag-selected");
-                    selected_tags.add(tag_name);
-                }
-                break;
+    // update available tags based on selected categories
+    function update_available_tags() {
+        enabled_tags = new Set();
+        // attempt to ebable all used tags
+        for (const tag of used_tags) {
+            const cats_for_tag = tag_categories.get(tag) || new Set();
+            if (filter_categories.size === 0 || intersect(filter_categories, cats_for_tag).size > 0) {
+                enabled_tags.add(tag);
             }
         }
-        update_event_view();
+
+        // hide or show tag filtering options
+        for (const opt of tag_filter_holder.options) {
+            if (enabled_tags.has(opt.value)) {
+                opt.classList.remove("d-none");
+            } else {
+                opt.classList.add("d-none");
+                opt.selected = false;
+                selected_tags.delete(opt.value);
+            }
+        }
+
+        // update tag filter holder visibility
+        tag_filter_holder.classList.toggle("d-none", enabled_tags.size === 0);
     }
 
     function update_event_view() {
@@ -288,9 +275,24 @@ document.addEventListener("DOMContentLoaded", () => {
         return res;
     }
 
+    // reset filters button
+    document.getElementById("reset-filters").addEventListener("click", () => {
+        // reset all filters
+        category_filter_holder.selectedIndex = 0; // deselect all categories
+        tag_filter_holder.selectedIndex = 0; // deselect all tags
+
+        // clear filter sets
+        filter_categories.clear();
+        selected_tags.clear();
+
+        // update ui
+        update_available_tags();
+        update_event_view();
+    });
+
     // initial pass to clean headings
     update_event_view();
+    update_available_tags();
 });
 </script>
-
 {% endmacro %}
