@@ -29,6 +29,6 @@
             {% endif %}
         </ol>
     </nav>
-    {{ list(events, term, week_display, False) }}
+    {{ list(events, not term, not week_display, False) }}
 </div>
 {% endblock %}
