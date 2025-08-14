@@ -301,12 +301,12 @@ def view(year: int, term: int, week: int, slug: str) -> str:
     )
 
 
-@events_ui_bp.route("/<int:year>/")
-@events_ui_bp.route("/<int:year>/<int:term>/")
-@events_ui_bp.route("/<int:year>/<int:term>/<sint:week>/")
 @events_ui_bp.route("/stardust/<int:year>/")
 @events_ui_bp.route("/stardust/<int:year>/<int:term>/")
 @events_ui_bp.route("/stardust/<int:year>/<int:term>/<sint:week>/")
+@events_ui_bp.route("/<int:year>/")
+@events_ui_bp.route("/<int:year>/<int:term>/")
+@events_ui_bp.route("/<int:year>/<int:term>/<sint:week>/")
 def view_list(year: int, term: int | None = None, week: int | None = None) -> str:
     """View all events in a time frame in list form"""
 
