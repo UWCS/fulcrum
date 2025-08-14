@@ -4,7 +4,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from flasgger import Swagger
-from flask import Flask, redirect, render_template
+from flask import Flask, redirect, render_template, request
 from werkzeug.routing import IntegerConverter
 from werkzeug.wrappers import Response
 
@@ -61,12 +61,14 @@ def inject_globals() -> dict:
         "is_logged_in": is_logged_in(),
         "is_exec": is_exec(),
         "colours": colours,
+        "stardust": "stardust" in request.path,
     }
 
 
 @app.route("/")
 @app.route("/current/")
 @app.route("/upcoming/")
+@app.route("/stardust/")
 def index() -> str:
     events = group_events(get_upcoming_events())
     return render_template("upcoming.html", events=events)
@@ -74,6 +76,7 @@ def index() -> str:
 
 @app.route("/previous/")
 @app.route("/past/")
+@app.route("/stardust/previous/")
 def previous() -> str:
     events = group_events(get_previous_events())
     return render_template("previous.html", events=events)
