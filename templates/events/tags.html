@@ -3,23 +3,21 @@
 {% block title %}UWCS Tags{% endblock %}
 
 {% block content %}
-<div class="container-lg mt-2">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item active ">Tags</a></li>
-        </ol>
-    </nav>
-    <h1 class="mb-4">All UWCS Tags</h1>
-    <div class="d-flex flex-wrap gap-2">
-        {% for tag in tags %}
-            <h2 class="h4 grow-05">
-                <span class="badge bg-secondary">
-                    <a href="{{ url_for('events_ui.view_tag', tag=tag.name) }}" class="text-decoration-none text-white">
-                        {{ tag.name }}
-                    </a>
-                </span>
-            </h2>
-        {% endfor %}
-    </div>
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active ">Tags</a></li>
+    </ol>
+</nav>
+<h1 class="mb-4">All UWCS Tags</h1>
+<div class="d-flex flex-wrap gap-2">
+    {% for tag in tags %}
+        <h2 class="h4 grow-05">
+            <span class="badge bg-secondary">
+                <a href="{{ url_for('events_ui.view_tag', tag=tag.name) }}" class="text-decoration-none text-white">
+                    {{ tag.name }}
+                </a>
+            </span>
+        </h2>
+    {% endfor %}
 </div>
 {% endblock %}

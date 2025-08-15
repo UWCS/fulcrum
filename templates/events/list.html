@@ -5,30 +5,28 @@
 
 {% block content %}
 {% set week_display = (week or week == 0) %}
-<div class="container-lg mt-2">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item {% if not term %}active{% endif %}">
-                {% if not term %}
-                    {{ year }}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item {% if not term %}active{% endif %}">
+            {% if not term %}
+                {{ year }}
+            {% else %}
+                <a href="{{ url_for('events_ui.view_list', year=year) }}">{{ year }}</a>
+            {% endif %}
+        </li>
+        {% if term %}
+            <li class="breadcrumb-item {% if not week %}active{% endif %}">
+                {% if not week_display %}
+                    Term {{ term }}
                 {% else %}
-                    <a href="{{ url_for('events_ui.view_list', year=year) }}">{{ year }}</a>
-                {% endif %}
+                    <a href="{{ url_for('events_ui.view_list', year=year, term=term) }}">Term {{ term }}</a>
+                {% endif %}  
             </li>
-            {% if term %}
-                <li class="breadcrumb-item {% if not week %}active{% endif %}">
-                    {% if not week_display %}
-                        Term {{ term }}
-                    {% else %}
-                        <a href="{{ url_for('events_ui.view_list', year=year, term=term) }}">Term {{ term }}</a>
-                    {% endif %}  
-                </li>
-            {% endif %}
-            {% if week_display %}
-                <li class="breadcrumb-item active">Week {{ week }}</li>
-            {% endif %}
-        </ol>
-    </nav>
-    {{ list(events, not term, not week_display, False) }}
-</div>
+        {% endif %}
+        {% if week_display %}
+            <li class="breadcrumb-item active">Week {{ week }}</li>
+        {% endif %}
+    </ol>
+</nav>
+{{ list(events, not term, not week_display, False) }}
 {% endblock %}

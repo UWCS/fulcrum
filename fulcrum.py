@@ -65,18 +65,18 @@ def inject_globals() -> dict:
     }
 
 
-@app.route("/")
+@app.route("/stardust/")
 @app.route("/current/")
 @app.route("/upcoming/")
-@app.route("/stardust/")
+@app.route("/")
 def index() -> str:
     events = group_events(get_upcoming_events())
     return render_template("upcoming.html", events=events)
 
 
-@app.route("/previous/")
-@app.route("/past/")
 @app.route("/stardust/previous/")
+@app.route("/past/")
+@app.route("/previous/")
 def previous() -> str:
     events = group_events(get_previous_events())
     return render_template("previous.html", events=events)

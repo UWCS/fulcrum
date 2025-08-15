@@ -18,253 +18,251 @@
     Tags.init();
 </script>
 
-<div class="container text-center my-4">
+<div class="text-center">
     <h1>{% if action == 'events_ui.edit' %}Edit{% else %}Create{% endif %} Event(s)</h1>
 </div>
 
-<div class="container y-4">
-    <div class="y-4 border rounded p-4">
-        <form 
-            method="{{ method }}"
-            action="{{ url_for(action, year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) if action == 'events_ui.edit' else url_for(action) }}"
-            class="row g-3 align-items-center needs-validation"
-            novalidate
-        >
+<div class="y-4 border rounded p-4">
+    <form 
+        method="{{ method }}"
+        action="{{ url_for(action, year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) if action == 'events_ui.edit' else url_for(action) }}"
+        class="row g-3 align-items-center needs-validation"
+        novalidate
+    >
 
-            {% if error %}
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    {{ error }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        {% if error %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endif %}
+
+        <!-- name -->
+        <div class="form-floating col-md-10">
+            <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" {% if event and event.name %}value="{{ event.name }}"{% endif %} required>
+            <label for="name">Event Name</label>
+            <div class="invalid-feedback">Please provide a name</div>
+            <div class="valid-feedback">Looks good!</div>
+        </div>
+
+        <!-- draft -->
+        <div class="col-md-2">
+            <!-- same height calculation as form-floating to stay same size -->
+            <div class="input-group has-validation" style="height: calc(3.5rem + var(--bs-border-width) * 2);">
+                <div class="input-group-text">
+                    <input type="checkbox" name="draft" id="draft" class="form-check-input no-validate-checkbox" {% if event and event.draft %}checked{% endif %}>
                 </div>
-            {% endif %}
+                <label for="draft" class="form-control d-flex align-items-center">Draft</label>
+            </div>
+            <!-- dummy spacer for aligning checkbox with every field -->
+            <div class="valid-feedback invalid-feedback validation-spacer">&nbsp;</div>
+        </div>
 
-            <!-- name -->
-            <div class="form-floating col-md-10">
-                <input type="text" name="name" id="name" class="form-control" placeholder="Event Name" {% if event and event.name %}value="{{ event.name }}"{% endif %} required>
-                <label for="name">Event Name</label>
-                <div class="invalid-feedback">Please provide a name</div>
+        <!-- description -->
+        <div class="form-floating col-12">
+            <textarea name="description" id="description" class="form-control" placeholder="Event Description" style="height: 10rem;" required>{% if event and event.description %}{{ event.description }}{% endif %}</textarea>
+            <label for="description">Event Description (Markdown)</label>
+            <div class="invalid-feedback">Please provide a description</div>
+            <div class="valid-feedback">Looks good!</div>
+        </div>
+
+        <!-- location -->
+        <!-- TODO: maybe update location url automatically? -->
+        <!-- known issue with bootstrap (https://github.com/twbs/bootstrap/pull/34527#pullrequestreview-830171528) means form-floating needs to be a div when using input-groups -->
+        <!-- github issue for tracking: https://github.com/twbs/bootstrap/issues/41575 -->
+        <div class="col-md-6">
+            <div class="input-group col-md-4">
+                <div class="input-group-text">
+                    <i class="ph-bold ph-map-pin"></i>
+                </div>
+
+                <fieldset class="form-floating">
+                    <input type="text" name="location" id="location" class="form-control last-border" placeholder="Event Location" {% if event and event.location %}value="{{ event.location }}"{% endif %} required>
+                    <label for="location">Event Location</label>
+                </fieldset>
+                <div class="invalid-feedback">Please provide a location</div>
                 <div class="valid-feedback">Looks good!</div>
             </div>
+        </div>
 
-            <!-- draft -->
-            <div class="col-md-2">
-                <!-- same height calculation as form-floating to stay same size -->
-                <div class="input-group has-validation" style="height: calc(3.5rem + var(--bs-border-width) * 2);">
-                    <div class="input-group-text">
-                        <input type="checkbox" name="draft" id="draft" class="form-check-input no-validate-checkbox" {% if event and event.draft %}checked{% endif %}>
-                    </div>
-                    <label for="draft" class="form-control d-flex align-items-center">Draft</label>
+        <!-- location url -->
+        <!-- you'd think it would be better to merge these 2 for ui right? you would be right. the problem is bootstrap validation has a fun little hissy fit when validating input groups -->
+        <!-- github issue for tracking: https://github.com/twbs/bootstrap/issues/41575 -->
+        <div class="col-md-6">
+            <div class="input-group col-md-4">
+                <div class="input-group-text">
+                    <i class="ph-bold ph-link-simple"></i>
                 </div>
-                <!-- dummy spacer for aligning checkbox with every field -->
-                <div class="valid-feedback invalid-feedback validation-spacer">&nbsp;</div>
-            </div>
-
-            <!-- description -->
-            <div class="form-floating col-12">
-                <textarea name="description" id="description" class="form-control" placeholder="Event Description" style="height: 10rem;" required>{% if event and event.description %}{{ event.description }}{% endif %}</textarea>
-                <label for="description">Event Description (Markdown)</label>
-                <div class="invalid-feedback">Please provide a description</div>
+                <fieldset class="form-floating">
+                    <!-- location url regex from https://dev.to/jbxamora/url-regex-1pol -->
+                    <input type="text" name="location_url" id="location_url" class="form-control last-border" placeholder="https://example.com/" {% if event and event.location_url %}value="{{ event.location_url }}"{% endif %} pattern="^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$">
+                    <label for="location_url">Location URL</label>
+                </fieldset>
+                <div class="invalid-feedback">Must be a URL</div>
                 <div class="valid-feedback">Looks good!</div>
             </div>
+        </div>
 
-            <!-- location -->
-            <!-- TODO: maybe update location url automatically? -->
-            <!-- known issue with bootstrap (https://github.com/twbs/bootstrap/pull/34527#pullrequestreview-830171528) means form-floating needs to be a div when using input-groups -->
-            <!-- github issue for tracking: https://github.com/twbs/bootstrap/issues/41575 -->
-            <div class="col-md-6">
-                <div class="input-group col-md-4">
-                    <div class="input-group-text">
-                        <i class="ph-bold ph-map-pin"></i>
-                    </div>
-
-                    <fieldset class="form-floating">
-                        <input type="text" name="location" id="location" class="form-control last-border" placeholder="Event Location" {% if event and event.location %}value="{{ event.location }}"{% endif %} required>
-                        <label for="location">Event Location</label>
-                    </fieldset>
-                    <div class="invalid-feedback">Please provide a location</div>
-                    <div class="valid-feedback">Looks good!</div>
+        <!-- icon -->
+        <div class="col-md-4">
+            <div class="input-group">
+                <div class="input-group-text">
+                    <i class="ph-bold ph-phosphor-logo" id="icon-preview"></i>
+                    <div id="custom-icon-preview" class="d-none custom-icon"></div>
                 </div>
+                <fieldset class="form-floating">
+                    <input 
+                        type="text" 
+                        name="icon" 
+                        id="icon" 
+                        class="form-control last-border" 
+                        placeholder="ph-calendar" 
+                        list="icon-list"
+                        data-bs-toggle="tooltip"
+                        data-bs-html="true"
+                        data-bs-title="Enter a <a href='https://phosphoricons.com/' target='_blank'>Phosphor Icon</a> name or a <a href='https://github.com/UWCS/fulcrum/tree/main/static/icons' target='_blank'>custom icon</a> (upload files here if you want)"
+                        {% if event and event.icon %}value="{{ event.icon }}"{% endif %}
+                    >
+                    <label for="icon">Event Icon</label>
+                    <datalist id="icon-list">
+                        {% for icon in icons %}
+                            <option value="{{ icon }}">
+                        {% endfor %}
+                    </datalist>
+                </fieldset>
+                <div class="invalid-feedback">Please provide a valid <a href="https://phosphoricons.com/" target="_blank">Phosphor Icon</a> name or one of: {{ ", ".join(icons) }}</div>
+                <div class="valid-feedback">Looks good!</div>
             </div>
+        </div>
 
-            <!-- location url -->
-            <!-- you'd think it would be better to merge these 2 for ui right? you would be right. the problem is bootstrap validation has a fun little hissy fit when validating input groups -->
-            <!-- github issue for tracking: https://github.com/twbs/bootstrap/issues/41575 -->
-            <div class="col-md-6">
-                <div class="input-group col-md-4">
-                    <div class="input-group-text">
-                        <i class="ph-bold ph-link-simple"></i>
-                    </div>
-                    <fieldset class="form-floating">
-                        <!-- location url regex from https://dev.to/jbxamora/url-regex-1pol -->
-                        <input type="text" name="location_url" id="location_url" class="form-control last-border" placeholder="https://example.com/" {% if event and event.location_url %}value="{{ event.location_url }}"{% endif %} pattern="^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$">
-                        <label for="location_url">Location URL</label>
-                    </fieldset>
-                    <div class="invalid-feedback">Must be a URL</div>
-                    <div class="valid-feedback">Looks good!</div>
-                </div>
-            </div>
-
-            <!-- icon -->
-            <div class="col-md-4">
-                <div class="input-group">
-                    <div class="input-group-text">
-                        <i class="ph-bold ph-phosphor-logo" id="icon-preview"></i>
-                        <div id="custom-icon-preview" class="d-none custom-icon"></div>
-                    </div>
-                    <fieldset class="form-floating">
-                        <input 
-                            type="text" 
-                            name="icon" 
-                            id="icon" 
-                            class="form-control last-border" 
-                            placeholder="ph-calendar" 
-                            list="icon-list"
-                            data-bs-toggle="tooltip"
-                            data-bs-html="true"
-                            data-bs-title="Enter a <a href='https://phosphoricons.com/' target='_blank'>Phosphor Icon</a> name or a <a href='https://github.com/UWCS/fulcrum/tree/main/static/icons' target='_blank'>custom icon</a> (upload files here if you want)"
-                            {% if event and event.icon %}value="{{ event.icon }}"{% endif %}
-                        >
-                        <label for="icon">Event Icon</label>
-                        <datalist id="icon-list">
-                            {% for icon in icons %}
-                                <option value="{{ icon }}">
-                            {% endfor %}
-                        </datalist>
-                    </fieldset>
-                    <div class="invalid-feedback">Please provide a valid <a href="https://phosphoricons.com/" target="_blank">Phosphor Icon</a> name or one of: {{ ", ".join(icons) }}</div>
-                    <div class="valid-feedback">Looks good!</div>
-                </div>
-            </div>
-
-            <!-- colour -->
-            <div class="col-md-4">
-                <div class="input-group">
-                    <div class="input-group-text">
-                        <input 
-                            type="color"
-                            name="color_colour"
-                            id="color_colour"
-                            class="form-control form-control-color no-validate no-validate-colour"
-                            value=
-                                "{% if event and event.colour %}
-                                    {{ event.colour }}
-                                {% elif event and event.color_colour %}
-                                    {{ event.color_colour }}
-                                {% else %}
-                                    #3A7DFF
-                                {% endif %}">
-                    </div>
-                    <div class="input-group-text">#</div>
-                    <fieldset class="form-floating">
-                        <input 
-                            type="text"
-                            name="text_colour"
-                            id="text_colour"
-                            class="form-control last-border"
-                            placeholder="#000000"
-                            list="colour-list"
-                            data-bs-toggle="tooltip"
-                            data-bs-html="true"
-                            data-bs-title="Enter a hex colour code or a <a href='https://github.com/UWCS/fulcrum/blob/main/config.py' target='_blank'>predefined colour</a>"
-                            {% if event and event.colour %}
-                                value="{{ event.colour }}"
-                            {% elif event and event.text_colour %}
-                                value="{{ event.text_colour }}"
-                            {% endif %}
-                        >
-                        <label for="text_colour">Event Colour</label>
-                        <datalist id="colour-list">
-                            {% for colour in colours %}
-                                <option value="{{ colour }}">
-                            {% endfor %}
-                        </datalist>
-                    </fieldset>
-                    <div class="invalid-feedback">Please provide a valid hex color code or one of: {{ ", ".join(colours) }}</div>
-                    <div class="valid-feedback">Looks good!</div>                  
-                </div>
-            </div>
-
-            <!-- tags -->
-            <!-- tags from https://github.com/lekoala/bootstrap5-tags -->
-            <div class="form-floating col-md-4">
-                <select class="form-select" id="tags" name="tags[]" multiple data-allow-new="true" data-allow-clear="true" data-separator=",|  " >
-                    <option value="" disabled selected {% if not (event and event.tags) %}hidden{% endif %}>Select tags...</option>
-                    {% for tag in tags %}
-                        <option value="{{ tag }}" {% if event and (tag in event.tags | selectattr('name') | map(attribute='name') | list) %}selected="selected"{% endif %}>
-                            {{ tag }}
-                        </option>
-                    {% endfor %}
-                </select> 
-                <label for="tags">Tags</label>
-                <div class="valid-feedback invalid-feedback validation-spacer">&nbsp;</div>
-            </div>
-
-            <div id="time-fields">
-                {% if event and event.times %}
-                    {% set times = event.times %}
-                {% elif event and event.start_time %}
-                    {% if event.end_time %}
-                        {% set times = [(event.start_time.strftime('%Y-%m-%dT%H:%M'), event.end_time.strftime('%Y-%m-%dT%H:%M'))] %}
-                    {% else %}
-                        {% set times = [(event.start_time.strftime('%Y-%m-%dT%H:%M'), '')] %}
-                    {% endif %}
-                {% else %}
-                    {% set times = [(None, None)] %}
-                {% endif %}
-                {% for start_time, end_time in times %}
-                    <div class="row g-3 time-entry {% if not loop.first %}mt-0{% endif %}">
-                        <!-- start -->
-                        <div class="form-floating col-md-4">
-                            <input type="datetime-local" name="start_time[]" id="start_time" class="form-control" value="{{ start_time }}" required>
-                            <label for="start_time">Start Time</label>
-                            <div class="invalid-feedback">Please provide a start time</div>
-                            <div class="valid-feedback">Looks good!</div>
-                        </div>
-
-                        <!-- end -->
-                        <div class="form-floating col-md-4">
-                            <input type="datetime-local" name="end_time[]" id="end_time" class="form-control" value="{{ end_time }}">
-                            <label for="end_time">End Time</label>
-                            <div class="invalid-feedback">Endtime must be after start time and match the duration</div>
-                            <div class="valid-feedback">Looks good!</div>
-                        </div>
-
-                        <div class="col-md-4">
-                            {% if loop.first %}
-                                <!-- duration -->
-                                <div class="form-floating">
-                                    <input type="text" name="duration" id="duration" class="form-control" pattern="\d{2}:(?:[01]\d|2[0-3]):[0-5]\d" placeholder="DD:HH:MM">
-                                    <label for="duration">Duration (DD:HH:MM)</label>
-                                    <div class="invalid-feedback">Please provide a duration in the format DD:HH:MM</div>
-                                    <div class="valid-feedback">Looks good!</div>
-                                </div>
+        <!-- colour -->
+        <div class="col-md-4">
+            <div class="input-group">
+                <div class="input-group-text">
+                    <input 
+                        type="color"
+                        name="color_colour"
+                        id="color_colour"
+                        class="form-control form-control-color no-validate no-validate-colour"
+                        value=
+                            "{% if event and event.colour %}
+                                {{ event.colour }}
+                            {% elif event and event.color_colour %}
+                                {{ event.color_colour }}
                             {% else %}
-                                <!-- delete time -->
-                                <div class="d-flex align-items-center h-100">
-                                    <button type="button" class="btn btn-danger d-flex align-items-center gap-1 remove-time-entry">
-                                        <i class="ph-bold ph-trash"></i> Remove
-                                    </button>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-
-
-            {% if action == 'events_ui.create' %}
-                <!-- add time -->
-                <div class="col-12 d-flex justify-content-center">
-                    <button type="button" class="btn btn-secondary disabled col-4" id="add-time">Add Time</button>
+                                #3A7DFF
+                            {% endif %}">
                 </div>
-            {% endif %}
-
-            <!-- submit -->
-            <div class="col-12 d-flex justify-content-center">
-                <input type="submit" value="{% if action == 'events_ui.edit' %}Edit{% else %}Create{% endif %} Event(s)" class="btn btn-primary col-6 text-white">
+                <div class="input-group-text">#</div>
+                <fieldset class="form-floating">
+                    <input 
+                        type="text"
+                        name="text_colour"
+                        id="text_colour"
+                        class="form-control last-border"
+                        placeholder="#000000"
+                        list="colour-list"
+                        data-bs-toggle="tooltip"
+                        data-bs-html="true"
+                        data-bs-title="Enter a hex colour code or a <a href='https://github.com/UWCS/fulcrum/blob/main/config.py' target='_blank'>predefined colour</a>"
+                        {% if event and event.colour %}
+                            value="{{ event.colour }}"
+                        {% elif event and event.text_colour %}
+                            value="{{ event.text_colour }}"
+                        {% endif %}
+                    >
+                    <label for="text_colour">Event Colour</label>
+                    <datalist id="colour-list">
+                        {% for colour in colours %}
+                            <option value="{{ colour }}">
+                        {% endfor %}
+                    </datalist>
+                </fieldset>
+                <div class="invalid-feedback">Please provide a valid hex color code or one of: {{ ", ".join(colours) }}</div>
+                <div class="valid-feedback">Looks good!</div>                  
             </div>
-        </form>
-    </div>
+        </div>
+
+        <!-- tags -->
+        <!-- tags from https://github.com/lekoala/bootstrap5-tags -->
+        <div class="form-floating col-md-4">
+            <select class="form-select" id="tags" name="tags[]" multiple data-allow-new="true" data-allow-clear="true" data-separator=",|  " >
+                <option value="" disabled selected {% if not (event and event.tags) %}hidden{% endif %}>Select tags...</option>
+                {% for tag in tags %}
+                    <option value="{{ tag }}" {% if event and (tag in event.tags | selectattr('name') | map(attribute='name') | list) %}selected="selected"{% endif %}>
+                        {{ tag }}
+                    </option>
+                {% endfor %}
+            </select> 
+            <label for="tags">Tags</label>
+            <div class="valid-feedback invalid-feedback validation-spacer">&nbsp;</div>
+        </div>
+
+        <div id="time-fields">
+            {% if event and event.times %}
+                {% set times = event.times %}
+            {% elif event and event.start_time %}
+                {% if event.end_time %}
+                    {% set times = [(event.start_time.strftime('%Y-%m-%dT%H:%M'), event.end_time.strftime('%Y-%m-%dT%H:%M'))] %}
+                {% else %}
+                    {% set times = [(event.start_time.strftime('%Y-%m-%dT%H:%M'), '')] %}
+                {% endif %}
+            {% else %}
+                {% set times = [(None, None)] %}
+            {% endif %}
+            {% for start_time, end_time in times %}
+                <div class="row g-3 time-entry {% if not loop.first %}mt-0{% endif %}">
+                    <!-- start -->
+                    <div class="form-floating col-md-4">
+                        <input type="datetime-local" name="start_time[]" id="start_time" class="form-control" value="{{ start_time }}" required>
+                        <label for="start_time">Start Time</label>
+                        <div class="invalid-feedback">Please provide a start time</div>
+                        <div class="valid-feedback">Looks good!</div>
+                    </div>
+
+                    <!-- end -->
+                    <div class="form-floating col-md-4">
+                        <input type="datetime-local" name="end_time[]" id="end_time" class="form-control" value="{{ end_time }}">
+                        <label for="end_time">End Time</label>
+                        <div class="invalid-feedback">Endtime must be after start time and match the duration</div>
+                        <div class="valid-feedback">Looks good!</div>
+                    </div>
+
+                    <div class="col-md-4">
+                        {% if loop.first %}
+                            <!-- duration -->
+                            <div class="form-floating">
+                                <input type="text" name="duration" id="duration" class="form-control" pattern="\d{2}:(?:[01]\d|2[0-3]):[0-5]\d" placeholder="DD:HH:MM">
+                                <label for="duration">Duration (DD:HH:MM)</label>
+                                <div class="invalid-feedback">Please provide a duration in the format DD:HH:MM</div>
+                                <div class="valid-feedback">Looks good!</div>
+                            </div>
+                        {% else %}
+                            <!-- delete time -->
+                            <div class="d-flex align-items-center h-100">
+                                <button type="button" class="btn btn-danger d-flex align-items-center gap-1 remove-time-entry">
+                                    <i class="ph-bold ph-trash"></i> Remove
+                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+
+        {% if action == 'events_ui.create' %}
+            <!-- add time -->
+            <div class="col-12 d-flex justify-content-center">
+                <button type="button" class="btn btn-secondary disabled col-4" id="add-time">Add Time</button>
+            </div>
+        {% endif %}
+
+        <!-- submit -->
+        <div class="col-12 d-flex justify-content-center">
+            <input type="submit" value="{% if action == 'events_ui.edit' %}Edit{% else %}Create{% endif %} Event(s)" class="btn btn-primary col-6 text-white">
+        </div>
+    </form>
 </div>
 
 <!-- full dict of invisible colours -->
@@ -276,7 +274,7 @@
 
 {% if action == 'events_ui.edit' %}
     <!-- if edit event view, add delte option -->
-    <div class="container text-center my-4">
+    <div class="text-center">
         <h1>Delete Event</h1>
     </div>
 

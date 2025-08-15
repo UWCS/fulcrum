@@ -4,16 +4,14 @@
 {% block title %}UWCS Tags{% endblock %}
 
 {% block content %}
-<div class="container-lg mt-2">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a href="{{ url_for('events_ui.view_tags') }}">Tags</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">{{ tag.name }}</li>
-        </ol>
-    </nav>
-    <h1 class="mb-4">Events tagged as <span class="badge text-bg-secondary">{{tag.name}}</span></h1>
-    {{ list(events,True,True,True) }}
-</div>
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('events_ui.view_tags') }}">Tags</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ tag.name }}</li>
+    </ol>
+</nav>
+<h1 class="mb-4">Events tagged as <span class="badge text-bg-secondary">{{tag.name}}</span></h1>
+{{ list(events,True,True,True) }}
 {% endblock %}
