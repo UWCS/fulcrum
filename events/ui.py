@@ -1,4 +1,9 @@
+from datetime import datetime, timedelta
+
+import pytz
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Response as FlaskResponse
+from icalendar import Calendar, Event
 from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.wrappers import Response
 
@@ -16,6 +21,7 @@ from events.utils import (
     get_events_by_time,
     get_tag_by_name,
     get_timedelta_from_string,
+    get_upcoming_events,
     group_events,
     prepare_event,
     validate_colour,
@@ -348,3 +354,47 @@ def view_tag(tag: str) -> str:
     events = group_events(events)
 
     return render_template("events/tag.html", events=events, tag=tag_obj)
+
+
+@events_ui_bp.route("/uwcs.ics")
+def get_ical() -> Response:
+    events = get_upcoming_events()
+
+    calendar = Calendar()
+    calendar.add("prodid", "-//UWCS Fulcrum//EN")
+    calendar.add("version", "2.0")
+
+    for event in events:
+        ical_event = Event()
+        ical_event.add("summary", event.name)
+        # descriptions can be long (and markdown formatted) so do not include
+        # ical_event.add("description", event.description)
+        ical_event.add("location", event.location)
+        ical_event.add("uid", f"{event.id}@uwcs-fulcrum")
+        ical_event.add("dtstart", event.start_time)
+        ical_event.add(
+            "dtend",
+            event.end_time if event.end_time else event.start_time + timedelta(hours=1),
+        )
+        ical_event.add("dtstamp", datetime.now(tz=pytz.timezone("Europe/London")))
+        ical_event.add(
+            "url",
+            url_for(
+                "events_ui.view",
+                year=event.date.academic_year,
+                term=event.date.term,
+                week=event.date.week,
+                slug=event.slug,
+                _external=True,
+            ),
+        )
+        calendar.add_component(ical_event)
+
+    return FlaskResponse(
+        calendar.to_ical(),
+        mimetype="text/calendar",
+        headers={
+            "Content-Disposition": 'attachment; filename="uwcs.ics"',
+            "Cache-Control": "no-cache",
+        },
+    )

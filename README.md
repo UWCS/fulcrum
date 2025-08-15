@@ -4,7 +4,7 @@ An events website for UWCS
 Key features include:
 - [X] Event creation and management
 - [X] Integration with UWCS auth
-- [ ] iCal generation
+- [X] iCal generation
 - [ ] Automated publicity
 - [ ] Initial email generation
 - [X] API

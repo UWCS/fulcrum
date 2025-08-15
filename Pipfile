@@ -15,6 +15,7 @@ pytz = "*"
 flasgger = "*"
 parsedatetime = "*"
 markdown = "*"
+icalendar = "*"
 
 [dev-packages]
 
