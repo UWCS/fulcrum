@@ -9,7 +9,7 @@ from werkzeug.routing import IntegerConverter
 from werkzeug.wrappers import Response
 
 from auth.api import auth_api_bp, auth_ui_bp
-from auth.oauth import auth_bp, configure_oauth, is_exec, is_logged_in
+from auth.oauth import auth_bp, configure_oauth, is_exec, is_exec_wrapper, is_logged_in
 from config import colours
 from events.api import events_api_bp
 from events.ui import events_ui_bp
@@ -88,6 +88,13 @@ def previous() -> str:
 def redirect_to_docs() -> Response:
     """Redirect to the Swagger documentation"""
     return redirect("/apidocs/")
+
+
+@app.route("/exec/")
+@is_exec_wrapper
+def exec_panel() -> str:
+    """Exec link panel"""
+    return render_template("exec.html")
 
 
 @app.errorhandler(404)

@@ -93,8 +93,8 @@
         <nav class="navbar navbar-expand-lg bg-body-tertiary main-nav" {% if is_exec %}style="border-color: var(--bs-yellow);"{% endif %}>
             <div class="container-fluid">
                 <!-- uwcs logo -->
-                <a class="navbar-brand" href="https://uwcs.co.uk" aria-label="University of Warwick Computer Society">
-                    <svg height="32" viewBox="0 0 450 152" fill="none" xmlns="http://www.w3.org/2000/svg" class="dots-uwcs" style="overflow: visible;">
+                <a class="navbar-brand" href="https://uwcs.co.uk" aria-label="University of Warwick Computer Society" target="_blank">
+                    <svg height="32" viewBox="0 0 450 152" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M148.879 92.6014C150.101 93.8519 151.57 94.8334 153.192 95.4832C154.815 96.133 156.554 96.4367 158.3 96.375C159.978 96.4362 161.65 96.1334 163.2 95.4875C164.75 94.8416 166.143 93.8678 167.282 92.6329C169.686 89.8626 170.925 86.2668 170.737 82.6013V43.7329H187.978V82.6013C188.07 87.8494 186.792 93.0307 184.272 97.6329C181.886 101.915 178.277 105.386 173.908 107.602C169.031 110.013 163.644 111.21 158.206 111.092C152.707 111.212 147.26 110.015 142.316 107.602C137.896 105.39 134.226 101.923 131.764 97.6329C129.215 93.0416 127.936 87.8527 128.058 82.6013V43.7329H145.299V82.6013C145.202 84.4228 145.468 86.2456 146.083 87.9627C146.697 89.6798 147.648 91.2569 148.879 92.6014V92.6014Z" fill="var(--bs-body-color)"></path>
                         <path d="M290.01 43.7329H307.722L285.393 109.771H267.681L255.12 64.7709L242.558 109.771H224.72L202.486 43.7329H221.046L234.048 92.0353L247.08 43.7329H263.944L277.134 92.0353L290.01 43.7329Z" fill="var(--bs-body-color)"></path>
                         <path d="M362.46 59.7079C359.787 58.1846 356.773 57.3625 353.698 57.318C350.49 57.2783 347.335 58.1389 344.591 59.8023C341.919 61.4933 339.75 63.8718 338.31 66.6892C336.761 69.7104 335.954 73.0575 335.954 76.4534C335.954 79.8494 336.761 83.1965 338.31 86.2177C339.75 89.0351 341.919 91.4135 344.591 93.1046C347.333 94.7774 350.487 95.6488 353.698 95.6203C356.642 95.5619 359.538 94.8532 362.177 93.5448C365.137 92.1555 367.819 90.2373 370.091 87.8844L380.172 98.7335C376.537 102.536 372.195 105.592 367.39 107.727C362.296 110.128 356.703 111.275 351.076 111.073C345.449 110.871 339.953 109.325 335.044 106.564C329.817 103.658 325.475 99.3869 322.482 94.2052C319.436 88.8659 317.874 82.8065 317.96 76.6578C317.867 70.6248 319.428 64.6818 322.473 59.4754C325.518 54.269 329.932 49.9987 335.232 47.1292C340.211 44.4723 345.722 42.9687 351.358 42.7292C356.995 42.4898 362.613 43.5206 367.798 45.7456C372.383 47.6639 376.521 50.5119 379.952 54.1104L369.965 66.186C367.926 63.5409 365.373 61.3371 362.46 59.7079V59.7079Z" fill="var(--bs-body-color)"></path>
@@ -124,14 +124,21 @@
                         </li>
                         <!-- exec only links -->
                         {% if is_exec %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('events_ui.create') }}">Create Event</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="https://example.com">Generate Email</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="https://example.com">Create Publicity Post</a>
+                            <li class="nav-item dropdown">
+                                <div class="btn-group">
+                                    <a class="nav-link pe-0" href="{{ url_for('exec_panel') }}">
+                                        Exec Tools
+                                    </a>
+                                    <a class="nav-link dropdown-toggle dropdown-toggle-split" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span class="visually-hidden">Toggle Dropdown</span>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ url_for('events_ui.create') }}">Create Event</a></li>
+                                        <li><a class="dropdown-item" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Create Publicity</a></li>
+                                        <li><a class="dropdown-item" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Create Email</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('auth_ui.get_api_keys_ui') }}">Manage API Keys</a></li>
+                                    </ul>
+                                </div>
                             </li>
                         {% endif %}
                     </ul>
@@ -142,7 +149,7 @@
                             {% if is_logged_in %}
                                 <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
                             {% else %}
-                                <a class="nav-link" href="{{ url_for('auth.login') }}">Login with UWCS ID</a>
+                                <a class="nav-link" href="{{ url_for('auth.login') }}">Login with UWCS</a>
                             {% endif %}
                         </li>
                         <!-- dark-mode-toggle -->
@@ -167,9 +174,9 @@
 
     <!-- footer -->
     <footer class="d-flex flex-wrap justify-content-between align-items-center p-3 mt-4 border-top">
-        <p class="col-md-4 mb-0 text-muted">Made with <i class="ph-bold ph-heart text-danger"></i> by <a href="https://uwcs.co.uk/exec/" class="text-decoration-none">Tech Team</a></p>
-        <a href="https://uwcs.co.uk" class="col-md-4 d-flex align-items-center justify-content-center mb-0 text-muted">
-            <svg height="32" viewBox="0 0 450 152" fill="none" xmlns="http://www.w3.org/2000/svg" class="dots-uwcs" style="overflow: visible;">
+        <p class="col-md-4 mb-0 text-muted">Made with <i class="ph-bold ph-heart text-danger"></i> by <a href="https://uwcs.co.uk/exec/" target="_blank" class="text-decoration-none">Tech Team</a></p>
+        <a href="https://uwcs.co.uk" target="_blank" class="col-md-4 d-flex align-items-center justify-content-center mb-0 text-muted">
+            <svg height="32" viewBox="0 0 450 152" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M148.879 92.6014C150.101 93.8519 151.57 94.8334 153.192 95.4832C154.815 96.133 156.554 96.4367 158.3 96.375C159.978 96.4362 161.65 96.1334 163.2 95.4875C164.75 94.8416 166.143 93.8678 167.282 92.6329C169.686 89.8626 170.925 86.2668 170.737 82.6013V43.7329H187.978V82.6013C188.07 87.8494 186.792 93.0307 184.272 97.6329C181.886 101.915 178.277 105.386 173.908 107.602C169.031 110.013 163.644 111.21 158.206 111.092C152.707 111.212 147.26 110.015 142.316 107.602C137.896 105.39 134.226 101.923 131.764 97.6329C129.215 93.0416 127.936 87.8527 128.058 82.6013V43.7329H145.299V82.6013C145.202 84.4228 145.468 86.2456 146.083 87.9627C146.697 89.6798 147.648 91.2569 148.879 92.6014V92.6014Z" fill="var(--bs-body-color)"></path>
                 <path d="M290.01 43.7329H307.722L285.393 109.771H267.681L255.12 64.7709L242.558 109.771H224.72L202.486 43.7329H221.046L234.048 92.0353L247.08 43.7329H263.944L277.134 92.0353L290.01 43.7329Z" fill="var(--bs-body-color)"></path>
                 <path d="M362.46 59.7079C359.787 58.1846 356.773 57.3625 353.698 57.318C350.49 57.2783 347.335 58.1389 344.591 59.8023C341.919 61.4933 339.75 63.8718 338.31 66.6892C336.761 69.7104 335.954 73.0575 335.954 76.4534C335.954 79.8494 336.761 83.1965 338.31 86.2177C339.75 89.0351 341.919 91.4135 344.591 93.1046C347.333 94.7774 350.487 95.6488 353.698 95.6203C356.642 95.5619 359.538 94.8532 362.177 93.5448C365.137 92.1555 367.819 90.2373 370.091 87.8844L380.172 98.7335C376.537 102.536 372.195 105.592 367.39 107.727C362.296 110.128 356.703 111.275 351.076 111.073C345.449 110.871 339.953 109.325 335.044 106.564C329.817 103.658 325.475 99.3869 322.482 94.2052C319.436 88.8659 317.874 82.8065 317.96 76.6578C317.867 70.6248 319.428 64.6818 322.473 59.4754C325.518 54.269 329.932 49.9987 335.232 47.1292C340.211 44.4723 345.722 42.9687 351.358 42.7292C356.995 42.4898 362.613 43.5206 367.798 45.7456C372.383 47.6639 376.521 50.5119 379.952 54.1104L369.965 66.186C367.926 63.5409 365.373 61.3371 362.46 59.7079V59.7079Z" fill="var(--bs-body-color)"></path>
@@ -181,7 +188,7 @@
                 <circle fill="#3A7DFF" cx="93" cy="131" r="21"></circle>
             </svg>
         </a>
-        <p class="col-md-4 mb-0 text-muted text-end">You can see my source code on <a href="https://github.com/UWCS/fulcrum" class="text-decoration-none">GitHub</a></p>
+        <p class="col-md-4 mb-0 text-muted text-end">You can see my source code on <a href="https://github.com/UWCS/fulcrum" class="text-decoration-none" target="_blank">GitHub</a></p>
     </footer>
     {% endif %}
 </body>

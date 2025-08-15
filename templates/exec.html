@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Exec Panel{% endblock %}
+
+{% block content %}
+<h1>Exec Panel</h1>
+<p class="lead">Panel for exec resources</p>
+<div class="text-center">
+    <div class="row">
+        <div class="col mb-3">
+            <a class="btn btn-primary btn-lg text-white" href="{{ url_for('events_ui.create') }}">
+                <i class="ph-bold ph-pencil-simple-line"></i> Create Event
+            </a>
+        </div>
+        <div class="col mb-3">
+            <a class="btn btn-primary btn-lg text-white" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+                <i class="ph-bold ph-instagram-logo"></i> Create Publicity
+            </a>
+        </div>
+        <div class="col mb-3">
+            <a class="btn btn-primary btn-lg text-white" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+                <i class="ph-bold ph-microsoft-outlook-logo"></i> Create Email
+            </a>
+        </div>
+        <div class="col mb-3">
+            <a class="btn btn-primary btn-lg text-white" href="{{ url_for('auth_ui.get_api_keys_ui') }}">
+                <i class="ph-bold ph-key"></i> Manage API Keys
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
