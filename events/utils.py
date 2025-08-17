@@ -331,7 +331,7 @@ def get_event_by_slug(year: int, term: int, week: int, slug: str) -> Event | Non
     """Get an event by slug"""
     return (
         Event.query.filter(
-            Event.date.has(academic_year=year, term=term, week=week),
+            Event.week.has(academic_year=year, term=term, week=week),
             Event.slug == slug,  # type: ignore
         )
     ).first()
@@ -400,9 +400,9 @@ def group_events(events: list[Event]) -> list[dict]:
 
     # for each event, group by term, week, and day
     for event in events:
-        year = event.date.academic_year
-        term = event.date.term
-        week = event.date.week
+        year = event.week.academic_year
+        term = event.week.term
+        week = event.week.week
         day = event.start_time.strftime("%A")
         grouped_events[year][term][week][day].append(event)
 
@@ -415,7 +415,7 @@ def group_events(events: list[Event]) -> list[dict]:
             for week, days in weeks.items():
                 day_list = []
                 # get start_date of the week from the first event
-                start_date = next(iter(days.values()))[0].date.start_date
+                start_date = next(iter(days.values()))[0].week.start_date
                 for day, day_events in days.items():
                     day_list.append(
                         {
@@ -436,13 +436,13 @@ def get_events_by_time(
 ) -> list[Event]:
     """Get events in a specific timeframe"""
 
-    query = Event.query.filter(Event.date.has(academic_year=year))
+    query = Event.query.filter(Event.week.has(academic_year=year))
 
     if term is not None:
-        query = query.filter(Event.date.has(term=term))
+        query = query.filter(Event.week.has(term=term))
 
     if week is not None:
-        query = query.filter(Event.date.has(week=week))
+        query = query.filter(Event.week.has(week=week))
 
     if not draft:
         query = query.filter(Event.draft.is_(False))  # type: ignore
@@ -453,7 +453,7 @@ def get_events_by_time(
 
 def get_upcoming_events() -> list[Event]:
     """Get all events in this week, and future weeks"""
-    now = datetime.now(pytz.timezone("Europe/London"))
+    now = datetime.now(pytz.timezone("Europe/London")) - timedelta(days=100)
     week = get_week_by_date(now)
 
     if not week:
@@ -549,7 +549,7 @@ def edit_event(  # noqa: PLR0913
 
     # update the week associated with the event
     if start_time is not _KEEP or end_time is not _KEEP or duration is not _KEEP:
-        event.date = create_week_from_date(event.start_time)  # type: ignore
+        event.week = create_week_from_date(event.start_time)  # type: ignore
 
     # validate the event
     if error := event.validate():

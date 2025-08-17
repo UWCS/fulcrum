@@ -25,7 +25,7 @@
 <div class="y-4 border rounded p-4">
     <form 
         method="{{ method }}"
-        action="{{ url_for(action, year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) if action == 'events_ui.edit' else url_for(action) }}"
+        action="{{ url_for(action, year=event.week.academic_year, term=event.week.term, week=event.week.week, slug=event.slug) if action == 'events_ui.edit' else url_for(action) }}"
         class="row g-3 align-items-center needs-validation"
         novalidate
     >
@@ -280,7 +280,7 @@
 
     <div class="container w-50 y-4 mb-4">
         <div class="y-4 border rounded p-4">
-            <form id="deleteForm" method="POST" action="{{ url_for('events_ui.delete', year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) }}" class="row g-3 justify-content-center text-center">
+            <form id="deleteForm" method="POST" action="{{ url_for('events_ui.delete', year=event.week.academic_year, term=event.week.term, week=event.week.week, slug=event.slug) }}" class="row g-3 justify-content-center text-center">
                 <p class="text-danger">This action cannot be undone.</p>
                 <button type="button" class="btn btn-danger col-6" data-bs-toggle="modal" data-bs-target="#deleteModal">Delete Event</button>
             </form>

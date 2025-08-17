@@ -189,9 +189,9 @@ def create() -> str | Response:
     return redirect(
         url_for(
             "events_ui.view",
-            year=event.date.academic_year,
-            term=event.date.term,
-            week=event.date.week,
+            year=event.week.academic_year,
+            term=event.week.term,
+            week=event.week.week,
             slug=event.slug,
         )
     )
@@ -227,7 +227,7 @@ def edit(year: int, term: int, week: int, slug: str) -> str | Response:
 
     # parse form data
     user_event = get_event_from_form(request.form)
-    user_event["date"] = event.date.to_dict()
+    user_event["week"] = event.week.to_dict()
     data = parse_form_data(request.form)
     if isinstance(data, str):
         return render_template(
@@ -261,9 +261,9 @@ def edit(year: int, term: int, week: int, slug: str) -> str | Response:
     return redirect(
         url_for(
             "events_ui.view",
-            year=event.date.academic_year,
-            term=event.date.term,
-            week=event.date.week,
+            year=event.week.academic_year,
+            term=event.week.term,
+            week=event.week.week,
             slug=event.slug,
         )
     )
@@ -381,9 +381,9 @@ def get_ical() -> Response:
             "url",
             url_for(
                 "events_ui.view",
-                year=event.date.academic_year,
-                term=event.date.term,
-                week=event.date.week,
+                year=event.week.academic_year,
+                term=event.week.term,
+                week=event.week.week,
                 slug=event.slug,
                 _external=True,
             ),

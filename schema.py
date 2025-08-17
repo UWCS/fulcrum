@@ -112,7 +112,7 @@ class Event(db.Model):
     end_time = db.Column(db.DateTime, nullable=True)
 
     # week relationship
-    date = db.relationship(
+    week = db.relationship(
         "Week",
         primaryjoin=and_(
             foreign(func.date(start_time)) >= func.date(Week.start_date),
@@ -175,7 +175,7 @@ class Event(db.Model):
             "end_time": (
                 self.end_time.isoformat("T", "minutes") if self.end_time else None
             ),
-            "date": self.date.to_dict() if self.date else None,
+            "week": self.week.to_dict() if self.week else None,
             "tags": [tag.to_dict() for tag in self.tags],  # type: ignore
         }
 

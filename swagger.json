@@ -113,7 +113,7 @@
                     "format": "date-time",
                     "description": "End time of the event"
                 },
-                "date": {
+                "week": {
                     "$ref": "#/definitions/Week",
                     "description": "The week in which the event occurs"
                 },

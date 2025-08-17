@@ -8,13 +8,13 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ url_for('events_ui.view_list', year=event.date.academic_year) }}">{{ event.date.academic_year }}</a>
+            <a href="{{ url_for('events_ui.view_list', year=event.week.academic_year) }}">{{ event.week.academic_year }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ url_for('events_ui.view_list', year=event.date.academic_year, term=event.date.term) }}">Term {{ event.date.term }}</a>
+            <a href="{{ url_for('events_ui.view_list', year=event.week.academic_year, term=event.week.term) }}">Term {{ event.week.term }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ url_for('events_ui.view_list', year=event.date.academic_year, term=event.date.term, week=event.date.week) }}">Week {{ event.date.week }}</a>
+            <a href="{{ url_for('events_ui.view_list', year=event.week.academic_year, term=event.week.term, week=event.week.week) }}">Week {{ event.week.week }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ event.name }}</li>
     </ol>

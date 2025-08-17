@@ -2,7 +2,7 @@
 
 {% if not large %}
 <a 
-    href="{{ url_for('events_ui.view', year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) }}" 
+    href="{{ url_for('events_ui.view', year=event.week.academic_year, term=event.week.term, week=event.week.week, slug=event.slug) }}" 
     class="text-decoration-none text-emphasis event"
     {% if event.colour %}
         data-event-colour="{{ event.colour }}"
@@ -46,7 +46,7 @@
                 {% endif %}
 
                 {% if is_exec and large %}
-                    <a href="{{ url_for('events_ui.edit', year=event.date.academic_year, term=event.date.term, week=event.date.week, slug=event.slug) }}" class="btn btn-secondary">
+                    <a href="{{ url_for('events_ui.edit', year=event.week.academic_year, term=event.week.term, week=event.week.week, slug=event.slug) }}" class="btn btn-secondary">
                         <i class="ph-bold ph-pencil-simple"></i> Edit
                     </a>
                 {% endif %}
