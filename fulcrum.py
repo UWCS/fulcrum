@@ -15,6 +15,7 @@ from events.api import events_api_bp
 from events.ui import events_ui_bp
 from events.utils import get_previous_events, get_upcoming_events, group_events
 from schema import initialise_db
+from search.api import search_api_bp
 
 # if .env file exists, load it
 if Path(".env").exists():
@@ -43,6 +44,7 @@ app.register_blueprint(auth_ui_bp, url_prefix="/auth")
 # add api routes
 app.register_blueprint(events_api_bp, url_prefix="/api/events")
 app.register_blueprint(auth_api_bp, url_prefix="/api/auth")
+app.register_blueprint(search_api_bp, url_prefix="/api/search")
 
 # setup Swagger
 with Path("swagger.json").open("r") as f:
