@@ -72,7 +72,7 @@ def inject_globals() -> dict:
 @app.route("/upcoming/")
 @app.route("/")
 def index() -> str:
-    events = group_events(get_upcoming_events())
+    events = group_events(get_upcoming_events(is_exec()))
     return render_template("upcoming.html", events=events)
 
 
@@ -80,7 +80,7 @@ def index() -> str:
 @app.route("/past/")
 @app.route("/previous/")
 def previous() -> str:
-    events = group_events(get_previous_events())
+    events = group_events(get_previous_events(is_exec()))
     return render_template("previous.html", events=events)
 
 
