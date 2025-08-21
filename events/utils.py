@@ -451,7 +451,7 @@ def get_events_by_time(
     return query.order_by(Event.start_time, Event.end_time, Event.name).all()  # type: ignore
 
 
-def get_upcoming_events() -> list[Event]:
+def get_upcoming_events(include_drafts: bool = False) -> list[Event]:
     """Get all events in this week, and future weeks"""
     now = datetime.now(pytz.timezone("Europe/London")) - timedelta(days=100)
     week = get_week_by_date(now)
@@ -461,7 +461,7 @@ def get_upcoming_events() -> list[Event]:
 
     query = Event.query.filter(func.date(Event.start_time) >= week.start_date)  # type: ignore
 
-    if not is_exec():
+    if not include_drafts:
         query = query.filter(Event.draft.is_(False))  # type: ignore
 
     return query.order_by(
@@ -469,7 +469,7 @@ def get_upcoming_events() -> list[Event]:
     ).all()
 
 
-def get_previous_events() -> list[Event]:
+def get_previous_events(include_drafts: bool = False) -> list[Event]:
     now = datetime.now(pytz.timezone("Europe/London"))
     week = get_week_by_date(now)
 
@@ -478,7 +478,7 @@ def get_previous_events() -> list[Event]:
 
     query = Event.query.filter(func.date(Event.start_time) < week.start_date)  # type: ignore
 
-    if not is_exec():
+    if not include_drafts:
         query = query.filter(Event.draft.is_(False))  # type: ignore
 
     return query.order_by(

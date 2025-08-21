@@ -12,8 +12,10 @@ from events.utils import (
     get_event_by_id,
     get_event_by_slug,
     get_events_by_time,
+    get_previous_events,
     get_tags_by_string,
     get_timedelta_from_string,
+    get_upcoming_events,
     get_week_by_date,
 )
 from schema import Event, Tag
@@ -141,6 +143,68 @@ def get_events(
 
     if not events:
         return jsonify({"error": "No events found"}), 404
+    return jsonify([event.to_dict() for event in events]), 200
+
+
+@events_api_bp.route("/upcoming/", methods=["GET"])
+def get_upcoming_events_api() -> tuple[Response, int]:
+    """Get all upcoming events
+    ---
+    security: []
+    parameters:
+      - name: drafts
+        in: query
+        type: boolean
+        required: false
+        default: false
+        description: Whether to include draft events.
+    responses:
+        200:
+            description: A JSON array containing all upcoming events.
+            schema:
+                type: array
+                items:
+                    $ref: '#/definitions/Event'
+        404:
+            description: No upcoming events found.
+    """
+    include_drafts = request.args.get("drafts", "false").lower() == "true"
+
+    events = get_upcoming_events(include_drafts)
+
+    if not events:
+        return jsonify({"error": "No upcoming events found"}), 404
+    return jsonify([event.to_dict() for event in events]), 200
+
+
+@events_api_bp.route("/previous/", methods=["GET"])
+def get_previous_events_api() -> tuple[Response, int]:
+    """Get all previous events
+    ---
+    security: []
+    parameters:
+      - name: drafts
+        in: query
+        type: boolean
+        required: false
+        default: false
+        description: Whether to include draft events.
+    responses:
+        200:
+            description: A JSON array containing all previous events.
+            schema:
+                type: array
+                items:
+                    $ref: '#/definitions/Event'
+        404:
+            description: No previous events found.
+    """
+    include_drafts = request.args.get("drafts", "false").lower() == "true"
+
+    events = get_previous_events(include_drafts)
+
+    if not events:
+        return jsonify({"error": "No previous events found"}), 404
     return jsonify([event.to_dict() for event in events]), 200
 
 
