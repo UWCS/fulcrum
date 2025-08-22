@@ -56,3 +56,6 @@ room_mapping = {
     "junction hall 1": "jx003",
     "junction hall 2": "jx010",
 }
+
+# categories duplicated (+ other at templates/events/macros/filter.html)
+categories = ["gaming", "academic", "social", "inclusivity", "tech"]

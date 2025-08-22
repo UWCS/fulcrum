@@ -1,10 +1,13 @@
 from flask import Blueprint, Response, jsonify, request
 
+from schema import Event, Tag
+from search.utils import get_results, get_suggestions
+
 search_api_bp = Blueprint("search_api", __name__, url_prefix="/api/search")
 
 
-@search_api_bp.route("/complete/", methods=["GET"])
-def search_complete() -> tuple[Response, int]:
+@search_api_bp.route("/suggestions/", methods=["GET"])
+def search_suggestions() -> tuple[Response, int]:
     """Get search completion suggestions
     ---
     security: []
@@ -19,7 +22,7 @@ def search_complete() -> tuple[Response, int]:
         type: integer
         required: false
         default: 5
-        description: The maximum number of suggestions to return
+        description: The maximum number of suggestions to return (-1 for no limit)
     responses:
         200:
             description: a list of search suggestions (empty if no suggestions)
@@ -33,10 +36,10 @@ def search_complete() -> tuple[Response, int]:
     query = request.args.get("query", "").lower()
     limit = request.args.get("limit", 5, type=int)
 
-    if not query or limit <= 0:
+    if not query:
         return jsonify([]), 200
 
-    return jsonify(["Apple", "Banana", "Cherry", "Date"][:limit]), 200
+    return jsonify(get_suggestions(query, limit)), 200
 
 
 @search_api_bp.route("/", methods=["GET"])
@@ -55,7 +58,7 @@ def search() -> tuple[Response, int]:
         type: integer
         required: false
         default: 10
-        description: The maximum number of results to return
+        description: The maximum number of results to return (use -1 for no limit)
     responses:
       200:
         description: a list of search results
@@ -90,4 +93,21 @@ def search() -> tuple[Response, int]:
               data: "Sample Category"
     """
 
-    return jsonify([]), 200
+    query = request.args.get("query", "").lower()
+    limit = request.args.get("limit", 10, type=int)
+
+    if not query:
+        return jsonify([]), 200
+
+    results = get_results(query, limit)
+
+    json = []
+    for result in results:
+        if isinstance(result, str):
+            json.append({"type": "category", "data": result})
+        elif isinstance(result, Tag):
+            json.append({"type": "tag", "data": result.to_dict()})
+        elif isinstance(result, Event):
+            json.append({"type": "event", "data": result.to_dict()})
+
+    return jsonify(json), 200

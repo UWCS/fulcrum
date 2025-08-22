@@ -7,3 +7,10 @@
     top: 100%;
     left: 0;
 }
+
+.search-suggestions .dropdown-item {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}

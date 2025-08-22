@@ -1,4 +1,12 @@
-{% macro pill(event, large) %}
+{% macro ordinal(day) %}
+    {% set suffix = "th" %}
+    {% if day not in ["11","12","13"] %}
+        {% set suffix = {"1":"st","2":"nd","3":"rd"}.get(day[-1], suffix) %}
+    {% endif %}
+    {{ day }}{{ suffix }}
+{% endmacro %}
+
+{% macro pill(event, large, full_date) %}
 
 {% if not large %}
 <a 
@@ -69,9 +77,16 @@
                     {{ event.start_time.strftime('%H:%M %A') }}
                 {% else %}
                     {% if event.start_time.date() == event.end_time.date() %}
-                        {{ event.start_time.strftime('%H:%M') }} - {{ event.end_time.strftime('%H:%M') }} {% if large %} {{ event.start_time.strftime('%A') }}{% endif %}
+                        {{ event.start_time.strftime('%H:%M') }} - {{ event.end_time.strftime('%H:%M') }}
                     {% else %}
                         {{ event.start_time.strftime('%H:%M %A') }} - {{ event.end_time.strftime('%H:%M %A') }}
+                    {% endif %}
+                {% endif %}
+                {% if full_date %}
+                    {% if event.end_time %}
+                        {{ ordinal(event.end_time.day) }} {{ event.start_time.strftime('%B %Y') }}
+                    {% else %}
+                        {{ ordinal(event.start_time.day) }} {{ event.start_time.strftime('%B %Y') }}
                     {% endif %}
                 {% endif %}
             {% if large %}

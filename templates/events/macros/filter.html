@@ -8,12 +8,32 @@
     </select>
     <button class="btn btn-secondary text-nowrap" id="reset-filters">Reset Filters</button>
 </div>
+
+<div class="modal fade" id="noEventsModal" tabindex="-1" aria-labelledby="noEventsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="noEventsModalLabel">No Events Found</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>No upcoming events were found with the selected filters</p>
+                <p>Would you like to search for past events instead?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a id="prvious-link" href="#" class="btn btn-primary text-white">Search Past Events</a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endmacro %}
 
 {% macro filterjs() %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     // allowed categories and their display names
+    // (duplicated in /config.py)
     const ALLOWED_CATEGORIES = [
         "gaming", "academic", "social", "inclusivity", "tech", "other"
     ];
@@ -204,9 +224,36 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // initially parse to hide stuff if necessary
+    // check query params for preselected filters
+    const params = new URLSearchParams(window.location.search);
+
+    // handle category
+    const categoryParam = params.get("category");
+    if (categoryParam && usedCategories.has(categoryParam)) {
+        selectedCategory = categoryParam;
+        categorySelect.value = categoryParam;
+    }
+
     updateAvailableTags();
+
+    // handle tag
+    const tagParam = params.get("tag");
+    if (tagParam && usedTags.has(tagParam)) {
+        selectedTag = tagParam;
+        tagSelect.value = tagParam;
+    }
+
+    // initially parse to hide stuff if necessary
     updateEventView();
+
+    // if neither category nor tag gets event, show modal
+    if (!(selectedCategory || selectedTag)) {
+        const modalLink = document.getElementById("prvious-link");
+        modalLink.href = "{{ url_for('previous') }}?" + params.toString();
+
+        modal = new bootstrap.Modal(document.getElementById('noEventsModal'));
+        modal.show();
+    }
 });
 </script>
 {% endmacro %}

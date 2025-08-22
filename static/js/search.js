@@ -1,23 +1,23 @@
 document.addEventListener("DOMContentLoaded", () => {
     // load base elements
-    const searchInput = document.getElementById("search-input");
+    const searchInput = Array.from(document.querySelectorAll("input[name='query']"));
     const searchSuggestions = document.getElementById("search-suggestions");
-    const searchForm = document.getElementById("search-form");
 
     // initalise variables
     let suggestions = [];
     let highlightedIndex = -1;
     const SUGGESTION_LIMIT = 5;
     let currentAbortController = null; // for aborting fetch requests
+    let activeInput = null; // which of the search bars is currently in use
 
     function showSuggestions() {
         // show or hide the suggestions dropdown
         if (suggestions.length) {
             searchSuggestions.classList.add("show");
-            searchInput.setAttribute("aria-expanded", "true");
+            if (activeInput) activeInput.setAttribute("aria-expanded", "true")
         } else {
             searchSuggestions.classList.remove("show");
-            searchInput.setAttribute("aria-expanded", "false");
+            if (activeInput) activeInput.setAttribute("aria-expanded", "false")
         }
     }
 
@@ -27,6 +27,16 @@ document.addEventListener("DOMContentLoaded", () => {
         highlightedIndex = -1;
         searchSuggestions.innerHTML = "";
         showSuggestions();
+    }
+
+    function moveDropdownToInput(input) {
+        // move the suggestions dropdown to the specified input element
+        const group = input.closest(".input-group") || input.parentElement;
+        if (group && group !== searchSuggestions.parentElement) {
+            group.appendChild(searchSuggestions);
+        }
+        searchSuggestions.setAttribute("role", "listbox");
+        input.setAttribute("aria-haspopup", "listbox");
     }
 
     function renderSuggestions(items) {
@@ -45,13 +55,14 @@ document.addEventListener("DOMContentLoaded", () => {
             a.className = "dropdown-item";
             a.href = `#`;
             a.textContent = item;
+            a.title = item; // show on hover
             a.setAttribute("role", "option");
 
             a.addEventListener("click", (event) => {
                 // if clicked, prevent following hyperlink and search for the suggestion
                 event.preventDefault();
-                chooseSuggestion(index);
-                searchForm.submit();
+                chooseSuggestion(index, activeInput);
+                if (activeInput && activeInput.form) activeInput.form.submit();
             });
 
             searchSuggestions.appendChild(a);
@@ -70,12 +81,12 @@ document.addEventListener("DOMContentLoaded", () => {
         highlightedIndex = index;
     }
 
-    function chooseSuggestion(item) {
+    function chooseSuggestion(index, input) {
         // set the search input to the chosen suggestion and clear suggestions
-        if (item < 0 || item >= suggestions.length) return;
-        searchInput.value = suggestions[item];
+        if (!input || index < 0 || index >= suggestions.length) return;
+        input.value = suggestions[index];
         clearSuggestions();
-        searchInput.focus();
+        input.focus();
     }
 
     function fetchSuggestions(query) {
@@ -89,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
             query: query,
             limit: SUGGESTION_LIMIT
         });
-        const url = `/api/search/complete/?${params.toString()}`;
+        const url = `/api/search/suggestions/?${params.toString()}`;
 
         fetch(url, { signal }) // fetch suggestions and render
             .then(response => response.ok ? response.json() : [])
@@ -101,8 +112,12 @@ document.addEventListener("DOMContentLoaded", () => {
             })
     }
 
-    function onInput() {
-        const query = searchInput.value.trim();
+    function onInput(event) {
+        const input = event.currentTarget;
+        activeInput = input; // set the currently active input
+        moveDropdownToInput(input); // ensure dropdown is under the correct input
+
+        const query = input.value.trim();
 
         if (query.length < 3) { // only suggest after 3 chars, as we can only now suggest anything meaningful
             clearSuggestions();
@@ -113,7 +128,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function onKeyDown(event) {
-        if (!suggestions.length) return;
+        const input = event.currentTarget;
+        if (input !== activeInput || !suggestions.length) return;
 
         switch (event.key) {
             case "ArrowDown": // move down the suggestions
@@ -127,14 +143,14 @@ document.addEventListener("DOMContentLoaded", () => {
             case "Enter": // select the highlighted suggestion and search for it
                 if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
                     event.preventDefault();
-                    chooseSuggestion(highlightedIndex);
-                    searchForm.submit();
+                    chooseSuggestion(highlightedIndex, activeInput);
+                    if (activeInput && activeInput.form) activeInput.form.submit();
                 }
                 break;
             case "Tab": // tab fills in the highlighted suggestion (but does not submit the form)
                 if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
                     event.preventDefault();
-                    chooseSuggestion(highlightedIndex);
+                    chooseSuggestion(highlightedIndex, activeInput);
                 }
                 break;
             case "Escape": // hide suggestions
@@ -143,17 +159,31 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // add listeners
-    searchInput.addEventListener("input", onInput);
-    searchInput.addEventListener("keydown", onKeyDown);
+    searchInput.forEach((input) => {
+        input.setAttribute("role", "combobox");
+        input.setAttribute("aria-autocomplete", "list");
+        input.setAttribute("aria-expanded", "false");
 
-    // if blur, clear suggestions after a short delay to allow click events to register
-    searchInput.addEventListener("blur", () => setTimeout(clearSuggestions, 100));
+        input.addEventListener("input", onInput);
+        input.addEventListener("keydown", onKeyDown);
 
-    // clear if clicked outside the search form or suggestions
-    document.addEventListener("click", (event) => {
-        if (!searchForm.contains(event.target) && !searchSuggestions.contains(event.target)) {
+        input.addEventListener("focus", () => {
+            activeInput = input;
+            moveDropdownToInput(input);
+        });
+
+        input.addEventListener("blur", () => setTimeout(() => {
+            const active = document.activeElement;
+            if (searchSuggestions.contains(active)) return;
             clearSuggestions();
-        }
+            if (input) input.setAttribute("aria-expanded", "false");
+        }, 100))
+    });
+
+    document.addEventListener("click", (event) => {
+        const clickedInside = searchInput.some(input => input.contains(event.target)) ||
+            searchInput.some(input => input === event.target) ||
+            searchSuggestions.contains(event.target);
+        if (!clickedInside) clearSuggestions();
     });
 });

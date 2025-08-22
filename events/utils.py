@@ -14,7 +14,6 @@ from markdown.treeprocessors import Treeprocessor
 from markupsafe import escape
 from sqlalchemy import func
 
-from auth.oauth import is_exec
 from config import colours, phosphor_icons, room_mapping
 from schema import Event, Tag, Week, db
 

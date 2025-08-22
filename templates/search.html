@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "events/macros/pill.html" import pill with context %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-center my-4">
+  <form method="get" action="{{ url_for('search_ui.search') }}" class="w-50">
+      <div class="input-group">
+          <input type="text" name="query" class="form-control-lg form-control" placeholder="Search events..." value="{{ original_query }}" aria-label="Search events" autocomplete="off">
+          <button class="btn btn-outline-success rounded-end" type="submit">
+              <i class="ph-bold ph-magnifying-glass"></i>
+          </button>
+      </div>
+  </form>
+</div>
+
+{% if categories %}
+    <h1 class="mt-4">Categories</h1>
+    <hr>
+    <div class="d-flex flex-wrap gap-2">
+        {% for category in categories %}
+            <h2 class="grow-05">
+                <a href="{{ url_for('index') }}?category={{ category }}" class="text-decoration-none link-light link-opacity-50-hover">
+                    {{ category | title }}
+                </a>
+            </h2>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if tags %}
+    <h1 class="mt-4">Tags</h1>
+    <hr>
+    <div class="d-flex flex-wrap gap-2">
+        {% for tag in tags %}
+            <h2 class="grow-05">
+                <span class="badge bg-secondary">
+                    <a href="{{ url_for('events_ui.view_tag', tag=tag.name) }}" class="text-decoration-none text-white">
+                        {{ tag.name }}
+                    </a>
+                </span>
+            </h2>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if events %}
+    <h1 class="mt-4">Events</h1>
+    <hr>
+    {% for event in events %}
+        {{ pill(event, False, True) }}
+    {% endfor %}
+{% endif %}
+
+{% if not (categories or tags or events) %}
+    <h1 class="h3 text-center">No results found :(</h1>
+{% endif %}
+
+{% endblock %}
