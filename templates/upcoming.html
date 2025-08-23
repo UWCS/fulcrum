@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% from "events/macros/list.html" import list with context %}
 
-{% block title %}Upcoming Events{% endblock %}
+{% block title %}Upcoming{% endblock %}
+{% block description %}Upcoming events for UWCS{% endblock %}
+{% block keywords %}upcoming, events, future{% endblock %}
 
 {% block content %}
 {% if not stardust %}

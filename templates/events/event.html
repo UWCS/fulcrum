@@ -2,6 +2,8 @@
 {% from "events/macros/pill.html" import pill with context %}
 
 {% block title %}{{ event.name }}{% endblock %}
+{% block description %}{{ event.description | striptags | truncate(160) }}{% endblock %}
+{% block keywords %}{{ event.tags | map(attribute='name') | join(', ') }}{% endblock %}
 
 {% block content %}
 

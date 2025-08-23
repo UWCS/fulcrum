@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %}</title>
 
-    <!--load theme switcher script -->
+    <!-- load theme switcher js -->
     <script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
 
-    <!--load bootstrap css and js-->
+    <!-- load bootstrap css and js-->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 
-    <!--load icons -->
+    <!-- search js -->
+    <script src="{{ url_for('static', filename='js/search.js') }}"></script>
+
+    <!-- load icons -->
     <link rel="stylesheet" href="{{ url_for('static', filename='icons/phosphor-bold.css')}}">
 
-    <!--load font css -->
+    <!-- load font css -->
     <style>
         @font-face {
             font-display: swap;
@@ -85,8 +87,17 @@
     <!-- favicon -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='icons/favicon.png') }}">
 
-    <!-- search js -->
-    <script src="{{ url_for('static', filename='js/search.js') }}"></script>
+    <!-- SEO -->
+    <title>{% block title %}UWCS Events{% endblock %}</title>
+    <meta property="og:title" content="{{ self.title() }}">
+    <meta property="description" content="UWCS Events - {% block description %}UWCS Events{% endblock %}">
+    <meta property="og:description" content="{{ self.description() if self.description() else 'UWCS Events' }}">
+    <meta property="og:type" content="website">
+    <meta name="keywords" content="UWCS, University of Warwick Computing Society, {% block keywords %}Events, Talks, Academic{% endblock %}">
+    <meta property="og:locale" content="en_GB">
+    <meta property="og:image" content="https://uwcs.co.uk/bg-16-9.png">
+    <meta property="og:url" content="{{ request.url }}">
+    <link rel="canonical" href="{{ request.url }}">
     
     {% block header %}
     {% endblock %}
@@ -204,7 +215,7 @@
                 <circle fill="#3A7DFF" cx="93" cy="131" r="21"></circle>
             </svg>
         </a>
-        <p class="col-md-4 mb-0 text-muted text-end">You can see my source code on <a href="https://github.com/UWCS/fulcrum" class="text-decoration-none" target="_blank">GitHub</a></p>
+        <p class="col-md-4 mb-0 text-muted text-end">You can see my source code at <a href="https://github.com/UWCS/fulcrum" class="text-decoration-none" target="_blank">GitHub</a></p>
     </footer>
     {% endif %}
 </body>

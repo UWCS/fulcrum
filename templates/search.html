@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% from "events/macros/pill.html" import pill with context %}
 
-{% block title %}Search Results{% endblock %}
+{% block title %}{{ original_query }}{% endblock %}
+{% block description %}Search results for "{{ original_query }}"{% endblock %}
+{% block keywords %}Search, {{ original_query }}{% endblock %}
 
 {% block content %}
 

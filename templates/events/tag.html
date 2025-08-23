@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% from "events/macros/list.html" import list with context %}
 
-{% block title %}UWCS Tags{% endblock %}
+{% block title %}Tag {{ tag.name }}{% endblock %}
+{% block description %}Events tagged with {{ tag.name }}{% endblock %}
+{% block keywords %}{{ tag.name }}{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">

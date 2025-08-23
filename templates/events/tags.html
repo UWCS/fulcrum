@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}UWCS Tags{% endblock %}
+{% block title %}Tags{% endblock %}
+{% block description %}All tags for UWCS events{% endblock %}
+{% block keywords %}
+    tags,
+    {% for tag in tags %}
+        {{ tag.name }}
+        {% if not loop.last %}, {% endif %}
+    {% endfor %}
+{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb">
