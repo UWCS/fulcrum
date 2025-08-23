@@ -247,7 +247,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateEventView();
 
     // if neither category nor tag gets event, show modal
-    if (!(selectedCategory || selectedTag)) {
+    if (!(selectedCategory || selectedTag) && (params.has("category") || params.has("tag"))) {
         const modalLink = document.getElementById("prvious-link");
         modalLink.href = "{{ url_for('previous') }}?" + params.toString();
 
