@@ -14,7 +14,7 @@ from markdown.treeprocessors import Treeprocessor
 from markupsafe import escape
 from sqlalchemy import func
 
-from config import colours, phosphor_icons, room_mapping
+from config import colours, phosphor_icons, room_mapping, warwick_weeks
 from schema import Event, Tag, Week, db
 
 
@@ -162,16 +162,8 @@ def get_week_by_date(date: datetime) -> Week | None:  # noqa: PLR0911, PLR0912
 
     api_cutoff = 2006
     if year >= api_cutoff:
-        # if before cutoff, use the API
-        try:
-            warwick_week = requests.get(
-                f"https://tabula.warwick.ac.uk/api/v1/termdates/{year}/weeks?numberingSystem=term",
-                timeout=5,
-            )
-        except requests.exceptions.SSLError:
-            return None
+        warwick_week = warwick_weeks[year - api_cutoff]
 
-        warwick_week = warwick_week.json()
         week_delta = 0  # the number of weeks in a holiday we are
 
         for w in warwick_week["weeks"]:
@@ -452,7 +444,7 @@ def get_events_by_time(
 
 def get_upcoming_events(include_drafts: bool = False) -> list[Event]:
     """Get all events in this week, and future weeks"""
-    now = datetime.now(pytz.timezone("Europe/London")) - timedelta(days=100)
+    now = datetime.now(pytz.timezone("Europe/London"))
     week = get_week_by_date(now)
 
     if not week:

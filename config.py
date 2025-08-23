@@ -1,5 +1,9 @@
 import re
+from datetime import datetime
 from pathlib import Path
+
+import pytz
+import requests
 
 # custom colours
 colours = {
@@ -59,3 +63,20 @@ room_mapping = {
 
 # categories duplicated (+ other at templates/events/macros/filter.html)
 categories = ["gaming", "academic", "social", "inclusivity", "tech"]
+
+# get warwick weeks from API and cache for later use
+# +5 years for future proofing
+# note, this requires the app to be restarted every 5 years
+# (however given the current state of UWCS uptime, this is guaranteed to happen)
+_now = datetime.now(tz=pytz.timezone("Europe/London"))
+_academic_year = _now.year if _now.month <= 9 else _now.year + 1  # noqa: PLR2004
+try:
+    warwick_weeks = [
+        requests.get(
+            f"https://tabula.warwick.ac.uk/api/v1/termdates/{year}/weeks?numberingSystem=term",
+            timeout=5,
+        ).json()
+        for year in range(2006, _academic_year + 5)
+    ]
+except requests.RequestException as error:
+    raise SystemExit("Could not connect to warwick API aborting") from error

@@ -10,6 +10,8 @@ import pytz
 import requests
 import tomllib
 
+from config import warwick_weeks
+
 api_key = os.getenv("API_KEY")
 base_url = "http://127.0.0.1:5000/api/events/"
 events_folder = Path("archive")
@@ -27,14 +29,8 @@ def get_date_from_week(year: str, term: str, week: str) -> date | None:
     parsed_term = int(term[1])
     parsed_week = int(week[1:])
 
-    # make request to api
-    try:
-        weeks = requests.get(
-            f"https://tabula.warwick.ac.uk/api/v1/termdates/{parsed_year}/weeks?numberingSystem=term",
-            timeout=50,  # api can be tempremental
-        ).json()["weeks"]
-    except Exception as e:
-        raise ValueError("Unable to get dates from API") from e
+    # get week from cache
+    weeks = warwick_weeks[parsed_year - 2006]["weeks"]
 
     # find week
     inferred_weeks = []  # list of intermediary weeks
