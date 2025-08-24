@@ -2,8 +2,8 @@ from pathlib import Path
 
 import sass
 
-scss_path = "sass/main.scss"
-css_path = "static/css/main.css"
+scss_path = "../sass/main.scss"
+css_path = "../static/css/main.css"
 
 print("compiling scss")
 css = sass.compile(
