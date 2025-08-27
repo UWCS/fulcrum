@@ -8,7 +8,7 @@ Key features include:
 - [ ] Automated publicity
 - [ ] Initial email generation
 - [X] API
-- [ ] Search
+- [X] Search
 - more soonTM
 
 Note the site uses the same stack (Flask, SQLAlchemy) as [CS139](https://warwick.ac.uk/fac/sci/dcs/teaching/modules/cs139/), to enable easy maintenance and development by most DCS students. As a result, it is reccomended that no frameworks should be used (so no React, Vue, etc), small amounts of JS are acceptable (for example, form validation and reccomentations), but the site should be primarily server-rendered.
@@ -28,7 +28,7 @@ For production, use a gunicorn server:
 
 ```bash
 ...
-pipenv run gunicorn fulcrum:app -b 0.0.0.0:5000
+pipenv run gunicorn fulcrum:fulcrum -b 0.0.0.0:5000
 ```
 
 Alternarively, you can run the site in a docker container:
