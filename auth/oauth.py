@@ -8,6 +8,8 @@ from werkzeug.wrappers import Response
 
 oauth = OAuth()
 
+scheme = "https"
+
 
 def configure_oauth(app: Flask) -> None:
     """initialise oauth"""
@@ -22,6 +24,9 @@ def configure_oauth(app: Flask) -> None:
             "token_endpoint_auth_method": "client_secret_post",
         },
     )
+
+    global scheme  # noqa: PLW0603
+    scheme = "http" if app.debug else "https"
 
 
 def is_exec_wrapper(f: Callable) -> Callable:
@@ -59,7 +64,7 @@ def login() -> Response:
     # save next url to session for redirect after login
     session["next"] = request.args.get("next") or request.referrer or url_for("index")
     # redirect to keycloack for login
-    redirect_uri = url_for("auth.auth", _external=True)
+    redirect_uri = url_for("auth.auth", _external=True, _scheme=scheme)
     return oauth.keycloak.authorize_redirect(redirect_uri)  # type: ignore
 
 
@@ -85,7 +90,7 @@ def logout() -> Response:
         session.clear()
         return redirect(
             "https://auth.uwcs.co.uk/realms/uwcs/protocol/openid-connect/logout"
-            + f"?post_logout_redirect_uri={url_for('index', _external=True)}"
+            + f"?post_logout_redirect_uri={url_for('index', _external=True, _scheme=scheme)}"  # noqa: E501
             + f"&id_token_hint={id_token}"
         )
     # if no id token, just clear session and redirect to index

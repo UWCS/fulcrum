@@ -25,7 +25,6 @@ if Path(".env").exists():
 # initialise flask app
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
-app.config["PREFERRED_URL_SCHEME"] = "http" if app.debug else "https"
 
 
 # allow for use of signed ints in routes
