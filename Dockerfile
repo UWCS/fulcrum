@@ -10,4 +10,4 @@ RUN pipenv install --system
 RUN python ./scripts/build_scss.py
 
 # run app using gunicorn
-CMD gunicorn fulcrum:fulcrum -b 0.0.0.0:5000
+CMD gunicorn fulcrum:app -b 0.0.0.0:5000

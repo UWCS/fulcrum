@@ -28,7 +28,7 @@ For production, use a gunicorn server:
 
 ```bash
 ...
-pipenv run gunicorn fulcrum:fulcrum -b 0.0.0.0:5000
+pipenv run gunicorn fulcrum:app -b 0.0.0.0:5000
 ```
 
 Alternarively, you can run the site in a docker container:
