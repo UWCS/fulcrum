@@ -18,8 +18,8 @@ Note the site uses the same stack (Flask, SQLAlchemy) as [CS139](https://warwick
 ```bash
 pip install pipenv
 pipenv install
-pipenv run python build_scss.py
-pipenv run flask --app fulcrum run
+pipenv run python ./scripts/build_scss.py
+pipenv run flask --app fulcrum run --debug
 ```
 
 Note some computers may require `python -m pipvenv ...` instead of pipenv
@@ -37,6 +37,10 @@ Alternarively, you can run the site in a docker container:
 docker build -t fulcrum .
 docker run -p 5000:5000 fulcrum
 ```
+
+### SSL Note
+
+The app uses UWCS's keycloak server for authentication. This is set to enable both http and https as redirect URIs ONLY WHEN RUNNING LOCALLY (127.0.0.1). The app is configured such that if `app.debug` is true, http is used, otherwise https is used. As a result when running locally out of debug mode, https must be used. This can be done by running `pipenv run flask --app fulcrum run --cert=adhoc`
 
 ## API
 
