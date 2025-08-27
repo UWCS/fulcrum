@@ -3,7 +3,7 @@ from functools import wraps
 from typing import Callable
 
 from authlib.integrations.flask_client import OAuth
-from flask import Blueprint, Flask, abort, redirect, session, url_for
+from flask import Blueprint, Flask, abort, redirect, request, session, url_for
 from werkzeug.wrappers import Response
 
 oauth = OAuth()
@@ -56,6 +56,8 @@ auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.route("/login/")
 def login() -> Response:
+    # save next url to session for redirect after login
+    session["next"] = request.args.get("next") or request.referrer or url_for("index")
     # redirect to keycloack for login
     redirect_uri = url_for("auth.auth", _external=True)
     return oauth.keycloak.authorize_redirect(redirect_uri)  # type: ignore
@@ -65,11 +67,14 @@ def login() -> Response:
 @auth_bp.route("/auth/")
 def auth() -> Response:
     token = oauth.keycloak.authorize_access_token()  # type: ignore
+
     # save id token for logout
     session["id_token"] = token["id_token"]
     user = token["userinfo"]
     session["groups"] = user.get("groups", [])
-    return redirect(url_for("index"))
+
+    # redirect to next url or index
+    return redirect(session.pop("next", url_for("index")))
 
 
 @auth_bp.route("/logout/")
@@ -80,7 +85,7 @@ def logout() -> Response:
         session.clear()
         return redirect(
             "https://auth.uwcs.co.uk/realms/uwcs/protocol/openid-connect/logout"
-            + f"?post_logout_redirect_uri{url_for('index', _external=True)}"
+            + f"?post_logout_redirect_uri={url_for('index', _external=True)}"
             + f"&id_token_hint={id_token}"
         )
     # if no id token, just clear session and redirect to index
