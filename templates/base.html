@@ -98,6 +98,13 @@
     <meta property="og:image" content="https://uwcs.co.uk/bg-16-9.png">
     <meta property="og:url" content="{{ request.url }}">
     <link rel="canonical" href="{{ request.url }}">
+
+    {% if stardust %}
+        <!-- resize info for stardust URLs-->
+        <script src="{{ url_for('static', filename='js/iframe.js') }}"></script>
+        <!-- ensure links open in parent -->
+        <base target="_parent">
+    {% endif %}
     
     {% block header %}
     {% endblock %}

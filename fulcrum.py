@@ -80,7 +80,6 @@ def index() -> str:
     return render_template("upcoming.html", events=events)
 
 
-@app.route("/stardust/previous/")
 @app.route("/past/")
 @app.route("/previous/")
 def previous() -> str:
