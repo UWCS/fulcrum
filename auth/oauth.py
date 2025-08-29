@@ -48,12 +48,15 @@ def is_exec_wrapper(f: Callable) -> Callable:
 
 def is_exec() -> bool:
     """check if the user is in the exec or sysadmin group"""
-    return any(role in session.get("groups", []) for role in ["exec", "sysadmin"])
+    return (
+        any(role in session.get("groups", []) for role in ["exec", "sysadmin"])
+        or os.getenv("DEV") == "1"
+    )
 
 
 def is_logged_in() -> bool:
     """Check if the user is logged in"""
-    return "groups" in session and "id_token" in session
+    return ("groups" in session and "id_token" in session) or os.getenv("DEV") == "1"
 
 
 auth_bp = Blueprint("auth", __name__)
