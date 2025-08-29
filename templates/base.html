@@ -196,16 +196,14 @@
                 </div>
             </div>
         </nav>
-
-    <main class="container-lg mt-2">
     {% endif %}
 
-    {% block content %}
-    {% endblock %}
-
-    {% if not stardust %}
+    <main {% if stardust %}class="px-4"{% else %}class="container-lg mt-2"{% endif %}>
+        {% block content %}
+        {% endblock %}
     </main>
 
+    {% if not stardust %}
     <!-- footer -->
     <footer class="d-flex flex-wrap justify-content-between align-items-center p-3 mt-4 border-top">
         <p class="col-md-4 mb-0 text-muted">Made with <i class="ph-bold ph-heart text-danger"></i> by <a href="https://uwcs.co.uk/exec/" target="_blank" class="text-decoration-none">Tech Team</a></p>
