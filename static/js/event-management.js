@@ -413,7 +413,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // MARK: form validation
 
     // form validation
-    const form = document.querySelector("form");
+    const form = document.getElementById("eventForm");
     form.addEventListener("submit", (event) => {
         if (!form.checkValidity()) {
             event.preventDefault();

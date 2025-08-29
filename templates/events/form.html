@@ -24,7 +24,8 @@
 </div>
 
 <div class="y-4 border rounded p-4">
-    <form 
+    <form
+        id="eventForm"
         method="{{ method }}"
         action="{{ url_for(action, year=event.week.academic_year, term=event.week.term, week=event.week.week, slug=event.slug) if action == 'events_ui.edit' else url_for(action) }}"
         class="row g-3 align-items-center needs-validation"
