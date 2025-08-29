@@ -88,9 +88,9 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='icons/favicon.png') }}">
 
     <!-- SEO -->
-    <title>{% block title %}UWCS Events{% endblock %}</title>
-    <meta property="og:title" content="{{ self.title() }}">
-    <meta property="description" content="UWCS Events - {% block description %}UWCS Events{% endblock %}">
+    <title>UWCS Events - {% block title %}UWCS Events{% endblock %}</title>
+    <meta property="og:title" content="UWCS Events - {{ self.title() }}">
+    <meta property="description" content="{% block description %}UWCS Events{% endblock %}">
     <meta property="og:description" content="{{ self.description() if self.description() else 'UWCS Events' }}">
     <meta property="og:type" content="website">
     <meta name="keywords" content="UWCS, University of Warwick Computing Society, {% block keywords %}Events, Talks, Academic{% endblock %}">
