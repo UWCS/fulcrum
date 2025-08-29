@@ -10,21 +10,23 @@
 {% endmacro %}
 
 {% macro list(events, year_display, term_display, reverse) %}
-    <div class="d-flex justify-content-start align-items-center gap-2 mb-3">
-        {% if events|length > 1 %}
-            <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Jump to Year
-                </button>
-                <ul class="dropdown-menu p-2" style="max-height: 20vh; overflow-y: auto;">
-                    {% for year in events|reverse %}
-                        <li><a class="dropdown-item" href="#{{ year.year }}">{{ year.year }}</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-        {{ filter() }}
-    </div>
+    {% if not current_week %}
+        <div class="d-flex justify-content-start align-items-center gap-2 mb-3">
+            {% if events|length > 1 %}
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Jump to Year
+                    </button>
+                    <ul class="dropdown-menu p-2" style="max-height: 20vh; overflow-y: auto;">
+                        {% for year in events|reverse %}
+                            <li><a class="dropdown-item" href="#{{ year.year }}">{{ year.year }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            {{ filter() }}
+        </div>
+    {% endif %}
 
     {% if reverse %}
         {% set events = events|reverse %}

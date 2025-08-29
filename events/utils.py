@@ -477,6 +477,23 @@ def get_previous_events(include_drafts: bool = False) -> list[Event]:
     ).all()
 
 
+def get_week_events() -> list[Event]:
+    """Get all events in the current week"""
+    now = datetime.now(pytz.timezone("Europe/London"))
+    week = get_week_by_date(now)
+
+    if not week:
+        return []
+
+    return (
+        Event.query.filter(func.date(Event.start_time) >= week.start_date)  # type: ignore
+        .filter(func.date(Event.start_time) <= week.end_date)  # type: ignore
+        .filter(Event.draft.is_(False))  # type: ignore
+        .order_by(Event.start_time, Event.end_time, Event.name)  # type: ignore
+        .all()
+    )
+
+
 _KEEP = object()  # placeholder to leave the field unchanged
 
 

@@ -22,6 +22,7 @@ from events.utils import (
     get_tag_by_name,
     get_timedelta_from_string,
     get_upcoming_events,
+    get_week_events,
     group_events,
     prepare_event,
     validate_colour,
@@ -288,7 +289,6 @@ def delete(year: int, term: int, week: int, slug: str) -> Response:
     return redirect("/")
 
 
-# /stardust/ needs to be ontop otherwise url_for will redirect to stardust view
 @events_ui_bp.route("/<int:year>/<int:term>/<sint:week>/<string:slug>/")
 def view(year: int, term: int, week: int, slug: str) -> str:
     """View an event by its year, term, week, and slug."""
@@ -322,6 +322,15 @@ def view_list(year: int, term: int | None = None, week: int | None = None) -> st
     return render_template(
         "events/list.html", events=events, year=year, term=term, week=week
     )
+
+
+@events_ui_bp.route("/stardust/front/")
+def view_current_week() -> str:
+    """View the events for the current week"""
+
+    events = group_events(get_week_events())
+
+    return render_template("events/list.html", events=events, current_week=True)
 
 
 @events_ui_bp.route("/tags/")
