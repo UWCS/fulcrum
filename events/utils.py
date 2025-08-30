@@ -6,7 +6,6 @@ from typing import Match
 from xml.etree import ElementTree as ET
 
 import pytz
-import requests
 from markdown import Markdown, markdown
 from markdown.extensions import Extension
 from markdown.inlinepatterns import InlineProcessor
@@ -14,7 +13,7 @@ from markdown.treeprocessors import Treeprocessor
 from markupsafe import escape
 from sqlalchemy import func
 
-from config import colours, phosphor_icons, room_mapping, warwick_weeks
+from config import colours, phosphor_icons, warwick_weeks  # , room_mapping
 from schema import Event, Tag, Week, db
 
 
@@ -47,7 +46,7 @@ def get_date_from_string(date_str: str) -> datetime | str:
         return "Invalid date format, expected 'YYYY-MM-DD'"
 
 
-def create_event(  # noqa: PLR0912, PLR0913
+def create_event(  # noqa: PLR0913
     name: str,
     description: str,
     draft: bool,
@@ -79,20 +78,22 @@ def create_event(  # noqa: PLR0912, PLR0913
     if icon in phosphor_icons:
         icon = f"ph-{icon}"
 
-    if location is not None and location_url is None:
-        temp_location = location.lower()
-        if temp_location in room_mapping:
-            # if location is in the mapping, use the canonical name
-            temp_location = room_mapping[temp_location]
+    # the new campus map API requires auth so commenting this out for now
+    # logic remains for future use
+    # if location is not None and location_url is None:
+    #     temp_location = location.lower()
+    #     if temp_location in room_mapping:
+    #         # if location is in the mapping, use the canonical name
+    #         temp_location = room_mapping[temp_location]
 
-        url = f"https://hub.smartne.com/api/store/projects/warwick/live/locations/search/{temp_location}?limit=1"
+    #     url = f"https://hub.smartne.com/api/store/projects/warwick/live/locations/search/{temp_location}?limit=1"
 
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:  # noqa: PLR2004
-            data = response.json()
-            if len(data) > 0:
-                id = data[0]["_id"]
-                location_url = f"https://campus.warwick.ac.uk/search/{id}"
+    #     response = requests.get(url, timeout=5)
+    #     if response.status_code == 200:
+    #         data = response.json()
+    #         if len(data) > 0:
+    #             id = data[0]["_id"]
+    #             location_url = f"https://campus.warwick.ac.uk/search/{id}"
 
     # create the event object
     event = Event(

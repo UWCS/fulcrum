@@ -3,63 +3,64 @@
 document.addEventListener("DOMContentLoaded", () => {
 
     // MARK: location url
+    // commented our due to warwick campus map migrating to a new service (now requires auth)
 
-    const locationInput = document.getElementById("location");
-    const locationUrlInput = document.getElementById("location_url");
+    // const locationInput = document.getElementById("location");
+    // const locationUrlInput = document.getElementById("location_url");
 
-    let locationUrlSetByUser = false; // flag to check if the user has set URL manually
+    // let locationUrlSetByUser = false; // flag to check if the user has set URL manually
 
     // map of common location names and their canonical names
     // list also in config.py if updating
-    const location_map = {
-        "mb001": "Computer Science Teaching Room",
-        "sports hub": "Sports and Wellbeing Hub",
-        "dcs": "Computer Science",
-        "cs dept": "Computer Science",
-        "dcs atrium": "Computer Science",
-        "computer science dept": "Computer Science",
-        "computer science department": "Computer Science",
-        "department of computer science": "Computer Science",
-        "junction hall 1": "jx003",
-        "junction hall 2": "jx010"
-    };
+    // const location_map = {
+    //     "mb001": "Computer Science Teaching Room",
+    //     "sports hub": "Sports and Wellbeing Hub",
+    //     "dcs": "Computer Science",
+    //     "cs dept": "Computer Science",
+    //     "dcs atrium": "Computer Science",
+    //     "computer science dept": "Computer Science",
+    //     "computer science department": "Computer Science",
+    //     "department of computer science": "Computer Science",
+    //     "junction hall 1": "jx003",
+    //     "junction hall 2": "jx010"
+    // };
 
-    let debounceTimeout; // timeout for debouncing
+    // let debounceTimeout; // timeout for debouncing
     // debounce is waiting for the user to stop typing (havent typed for 500ms) before making the API call
     // this prevents too many API calls while the user is typing
-    locationInput.addEventListener("input", () => {
-        clearTimeout(debounceTimeout); // clear the previous timeout if it exists
+    // locationInput.addEventListener("input", () => {
+    //     clearTimeout(debounceTimeout); // clear the previous timeout if it exists
 
-        debounceTimeout = setTimeout(() => {
-            // get room from location
-            let locationValue = locationInput.value.trim().toLowerCase();
-            if (locationValue in location_map) locationValue = location_map[locationValue];
+    //     debounceTimeout = setTimeout(() => {
+    //         // get room from location
+    //         let locationValue = locationInput.value.trim().toLowerCase();
+    //         if (locationValue in location_map) locationValue = location_map[locationValue];
 
-            // get maps URL from location
-            const url = `https://hub.smartne.com/api/store/projects/warwick/live/locations/search/${locationValue}?limit=1`;
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.length > 0) {
-                        const id = data[0]["_id"]; // id is used by the campus lookupp
-                        if (id) {
-                            const autoUrl = `https://campus.warwick.ac.uk/search/${id}`;
-                            // only auto-fill if not set manually
-                            if (!locationUrlSetByUser || locationUrlInput.value.trim() === "") {
-                                locationUrlInput.value = autoUrl;
-                                locationUrlSetByUser = false;
-                            }
-                        }
-                    } else if (!locationUrlSetByUser || locationUrlInput.value.trim() === "") {
-                        // if no results, clear the URL input
-                        locationUrlInput.value = "";
-                        locationUrlSetByUser = false;
-                    }
-                });
-        }, 500);
-    });
+    //         // get maps URL from location
+    //         const url = `https://hub.smartne.com/api/store/projects/warwick/live/locations/search/${locationValue}?limit=1`;
+    //         fetch(url)
+    //             .then(response => response.json())
+    //             .then(data => {
+    //                 if (data && data.length > 0) {
+    //                     const id = data[0]["_id"]; // id is used by the campus lookupp
+    //                     if (id) {
+    //                         const autoUrl = `https://campus.warwick.ac.uk/search/${id}`;
+    //                         // only auto-fill if not set manually
+    //                         if (!locationUrlSetByUser || locationUrlInput.value.trim() === "") {
+    //                             locationUrlInput.value = autoUrl;
+    //                             locationUrlSetByUser = false;
+    //                         }
+    //                     }
+    //                 } else if (!locationUrlSetByUser || locationUrlInput.value.trim() === "") {
+    //                     // if no results, clear the URL input
+    //                     locationUrlInput.value = "";
+    //                     locationUrlSetByUser = false;
+    //                 }
+    //             });
+    //     }, 500);
+    // });
 
-    locationUrlInput.addEventListener("input", () => locationUrlSetByUser = true);
+    // locationUrlInput.addEventListener("input", () => locationUrlSetByUser = true);
 
     // MARK: icons
 
