@@ -498,7 +498,7 @@ def get_week_events() -> list[Event]:
 _KEEP = object()  # placeholder to leave the field unchanged
 
 
-def edit_event(  # noqa: PLR0913
+def edit_event(  # noqa: PLR0912, PLR0913
     id: int,
     name: str | object = _KEEP,
     description: str | object = _KEEP,
@@ -542,12 +542,12 @@ def edit_event(  # noqa: PLR0913
         if start_time is not _KEEP
         else event.start_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
     )
-    if end_time is not _KEEP:
-        event.end_time = (
-            end_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
-            if end_time is not None
-            else event.end_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
-        )
+    if end_time is not None and end_time is not _KEEP:
+        event.end_time = end_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
+    elif event.end_time is not None:
+        event.end_time = event.end_time.astimezone(pytz.timezone("Europe/London"))
+    else:
+        event.end_time = None
 
     # if duration is provided, calculate end_time and verify it
     if duration is not _KEEP and duration is not None:
