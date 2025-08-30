@@ -14,11 +14,11 @@ from config import warwick_weeks
 
 api_key = os.getenv("API_KEY")
 base_url = "http://127.0.0.1:5000/api/events/"
-events_folder = Path("archive")
-tags_file = "tags.txt"
+events_folder = Path("scripts/archive")
+tags_file = "scripts/tags.txt"
 tags = {}
 error_files = []
-error_file = "errors.txt"
+error_file = "scripts/errors.txt"
 
 
 def get_date_from_week(year: str, term: str, week: str) -> date | None:
@@ -84,8 +84,20 @@ def get_date_from_week(year: str, term: str, week: str) -> date | None:
                     weeks=j
                 )
 
-    # return the date for the requested week
-    return inferred_timeline.get((parsed_term, parsed_week), None)
+    if (parsed_term, parsed_week) in inferred_timeline:
+        return inferred_timeline[(parsed_term, parsed_week)]
+
+    known_weeks = [week for (term, week) in inferred_timeline if term == parsed_term]
+
+    closest_week = max(
+        [week for week in known_weeks if week < parsed_week], default=None
+    )
+    if closest_week is not None:
+        base_date = inferred_timeline[(parsed_term, closest_week)]
+        delta = parsed_week - closest_week
+        return base_date + timedelta(weeks=delta)
+
+    return None
 
 
 def get_date_time(date_str: str, path: Path) -> datetime:
@@ -97,14 +109,14 @@ def get_date_time(date_str: str, path: Path) -> datetime:
         )
     except ValueError:
         # if that fails, use custom parsing
-        base_date = get_date_from_week(path.parts[1], path.parts[2], path.parts[3])
+        base_date = get_date_from_week(path.parts[2], path.parts[3], path.parts[4])
         time, _ = parsedatetime.Calendar().parseDT(
             date_str, base_date, pytz.timezone("Europe/London")
         )
         # if time is a week ahead of the base date (on mon), subtract a week from time
         # yes i know this is a hack, cope
         if time.date() >= base_date + timedelta(weeks=1):  # type: ignore
-            print(f"Time is adjusted for {path} in {path.parts[3]}")
+            print(f"Time is adjusted for {path} in {path.parts[4]}")
             time -= timedelta(weeks=1)
         return time
 
@@ -254,7 +266,7 @@ def import_events() -> None:
             for week in event["weeks"]:
                 event_copy = event.copy()
                 # date parsing
-                event_date = get_date_from_week(file.parts[1], file.parts[2], week)
+                event_date = get_date_from_week(file.parts[2], file.parts[3], week)
                 time, _ = parsedatetime.Calendar().parseDT(
                     event["date"], event_date, pytz.timezone("Europe/London")
                 )
