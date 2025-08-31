@@ -109,7 +109,7 @@ class Event(db.Model):
 
     # time stuff
     start_time = db.Column(db.DateTime, nullable=False)
-    end_time = db.Column(db.DateTime, nullable=True)
+    end_time = db.Column(db.DateTime, nullable=False)
 
     # week relationship
     week = db.relationship(
@@ -138,7 +138,7 @@ class Event(db.Model):
         icon: str | None,
         colour: str | None,
         start_time: datetime,
-        end_time: datetime | None,
+        end_time: datetime,
     ) -> None:
         self.name = name
         self.slug = name.lower().replace(" ", "-")
@@ -150,9 +150,7 @@ class Event(db.Model):
         self.colour = colour if colour else "blue"
         # ensure times are london-time
         self.start_time = start_time.astimezone(pytz.timezone("Europe/London"))
-        self.end_time = (
-            end_time.astimezone(pytz.timezone("Europe/London")) if end_time else None
-        )
+        self.end_time = end_time.astimezone(pytz.timezone("Europe/London"))
 
     def __repr__(self) -> str:
         return (
@@ -172,9 +170,7 @@ class Event(db.Model):
             "icon": self.icon,
             "colour": self.colour,
             "start_time": self.start_time.isoformat("T", "minutes"),
-            "end_time": (
-                self.end_time.isoformat("T", "minutes") if self.end_time else None
-            ),
+            "end_time": self.end_time.isoformat("T", "minutes"),
             "week": self.week.to_dict() if self.week else None,
             "tags": [tag.to_dict() for tag in self.tags],  # type: ignore
         }
@@ -187,7 +183,7 @@ class Event(db.Model):
             if getattr(self, field) == "":
                 return f"{field.capitalize()} is required"
 
-        if self.end_time and self.end_time < self.start_time:
+        if self.end_time < self.start_time:
             return "End time cannot be before start time"
 
         # check if colour is valid

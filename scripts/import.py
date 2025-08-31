@@ -166,6 +166,8 @@ def parse_event(path: Path, repeat: bool) -> dict:
                 raise ValueError(
                     f"End ({event["end_time"]}) is before start ({event["start_time"]})"
                 )
+        else:
+            event["end_time"] = event["start_time"] + timedelta(hours=1)
 
     # process icon to convert icons/<icon>.svg to <icon>
     if "icon" in event:
@@ -194,6 +196,7 @@ def add_event(file: Path, event: dict) -> None:  # noqa: PLR0912
         "description": event["description"],
         "location": event["location"],
         "start_time": event["start_time"].strftime("%Y-%m-%dT%H:%M"),
+        "end_time": event["end_time"].strftime("%Y-%m-%dT%H:%M"),
     }
     if "draft" in event:
         event_json["draft"] = event["draft"]
@@ -203,8 +206,6 @@ def add_event(file: Path, event: dict) -> None:  # noqa: PLR0912
         event_json["icon"] = event["icon"]
     if "colour" in event:
         event_json["colour"] = event["colour"]
-    if "end_time" in event:
-        event_json["end_time"] = event["end_time"].strftime("%Y-%m-%dT%H:%M")
 
     response = requests.post(
         base_url + "create/",
@@ -282,6 +283,10 @@ def import_events() -> None:
                         pytz.timezone("Europe/London"),
                     )
                     event_copy["end_time"] = time
+                else:
+                    event_copy["end_time"] = event_copy["start_time"] + timedelta(
+                        hours=1
+                    )
                 add_event(file, event_copy)
         else:
             add_event(file, event)

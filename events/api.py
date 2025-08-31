@@ -14,7 +14,6 @@ from events.utils import (
     get_events_by_time,
     get_previous_events,
     get_tags_by_string,
-    get_timedelta_from_string,
     get_upcoming_events,
     get_week_by_date,
 )
@@ -237,13 +236,8 @@ def create_event_api() -> tuple[Response, int]:  # noqa: PLR0911
       - name: end_time
         in: body
         type: string
-        required: false
-        description: The end time of the event in 'YYYY-MM-DDTHH:MM' format (if duration also provided must match the duration).
-      - name: duration
-        in: body
-        type: string
-        required: false
-        description: The duration of the event in 'days:hours:minutes' format (if end_time also provided must match the end_time).
+        required: true
+        description: The end time of the event in 'YYYY-MM-DDTHH:MM' format.
       - name: draft
         in: body
         type: boolean
@@ -293,6 +287,7 @@ def create_event_api() -> tuple[Response, int]:  # noqa: PLR0911
         "description",
         "location",
         "start_time",
+        "end_time",
     ]
 
     for field in required_fields:
@@ -303,18 +298,9 @@ def create_event_api() -> tuple[Response, int]:  # noqa: PLR0911
     if isinstance(start_time, str):
         return jsonify({"error": start_time}), 400
 
-    end_time = (
-        get_datetime_from_string(data.get("end_time")) if data.get("end_time") else None
-    )
+    end_time = get_datetime_from_string(data.get("end_time"))
     if isinstance(end_time, str):
         return jsonify({"error": end_time}), 400
-
-    if "duration" in data:
-        duration = get_timedelta_from_string(data["duration"])
-        if isinstance(duration, str):
-            return jsonify({"error": duration}), 400
-    else:
-        duration = None
 
     try:
         event = create_event(
@@ -326,7 +312,6 @@ def create_event_api() -> tuple[Response, int]:  # noqa: PLR0911
             data.get("icon"),
             data.get("colour"),
             start_time,
-            duration,
             end_time,
             data.get("tags", []),
         )
@@ -374,13 +359,8 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
           type : string
           example : "2025-06-24T23:05"
           example : "2025-06-25T13:05"
-        required: false
-        description: A list of end times for the events in 'YYYY-MM-DD' format (if duration also provided must match the duration).
-      - name: duration
-        in: body
-        type: string
-        required: false
-        description: The duration of the events in 'days:hours:minutes' format (if end_times also provided must match the end_times).
+        required: true
+        description: A list of end times for the events in 'YYYY-MM-DD' format.
       - name: draft
         in: body
         type: boolean
@@ -432,18 +412,12 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
         "description",
         "location",
         "start_times",
+        "end_times",
     ]
 
     for field in required_fields:
         if field not in data:
             return jsonify({"error": f"Missing required field: {field}"}), 400
-
-    if "duration" in data:
-        duration = get_timedelta_from_string(data["duration"])
-        if isinstance(duration, str):
-            return jsonify({"error": duration}), 400
-    else:
-        duration = None
 
     start_times = []
     for start_time_str in data["start_times"]:
@@ -453,7 +427,7 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
         start_times.append(start_time)
 
     end_times = []
-    for end_time_str in data.get("end_times", []):
+    for end_time_str in data["end_times"]:
         end_time = get_datetime_from_string(end_time_str)
         if isinstance(end_time, str):
             return jsonify({"error": end_time}), 400
@@ -469,7 +443,6 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
             data.get("icon"),
             data.get("colour"),
             start_times,
-            duration,  # type: ignore
             end_times,
             data.get("tags", []),
         )
@@ -514,13 +487,8 @@ def edit_event_api(event_id: int) -> tuple[Response, int]:  # noqa: PLR0911, PLR
       - name: end_time
         in: body
         type: string
-        required: false
-        description: The new end time of the event in 'YYYY-MM-DDTHH:MM' format (if duration also provided must match the duration).
-      - name: duration
-        in: body
-        type: string
-        required: false
-        description: The new duration of the event in 'days:hours:minutes' format (if end_time also provided must match the end_time).
+        required: true
+        description: The new end time of the event in 'YYYY-MM-DDTHH:MM' format.
       - name: draft
         in: body
         type: boolean
@@ -609,19 +577,10 @@ def edit_event_api(event_id: int) -> tuple[Response, int]:  # noqa: PLR0911, PLR
 
     if "end_time" in data:
         if data["end_time"] == "":
-            event["end_time"] = None
-        else:
-            event["end_time"] = get_datetime_from_string(data["end_time"])
-            if isinstance(event["end_time"], str):
-                return jsonify({"error": event["end_time"]}), 400
-
-    if "duration" in data:
-        if data["duration"] == "":
-            event["duration"] = None
-        else:
-            event["duration"] = get_timedelta_from_string(data["duration"])
-            if isinstance(event["duration"], str):
-                return jsonify({"error": event["duration"]}), 400
+            return jsonify({"error": "End time cannot be empty"}), 400
+        event["end_time"] = get_datetime_from_string(data["end_time"])
+        if isinstance(event["end_time"], str):
+            return jsonify({"error": event["end_time"]}), 400
 
     if "tags" in data:
         if not isinstance(data["tags"], list):

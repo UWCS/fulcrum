@@ -20,7 +20,6 @@ from events.utils import (
     get_events_by_tag,
     get_events_by_time,
     get_tag_by_name,
-    get_timedelta_from_string,
     get_upcoming_events,
     get_week_events,
     group_events,
@@ -76,7 +75,7 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
     # prefer text_colour if both are provided (in case these colours change)
     colour = text_colour if text_colour else color_colour
 
-    # parse dates and duration
+    # parse start and end times
     start_times = [
         get_datetime_from_string(t) for t in form_data.getlist("start_time[]")
     ]
@@ -84,22 +83,10 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
         if isinstance(start_time, str):
             return start_time
 
-    duration = (
-        get_timedelta_from_string(form_data["duration"])
-        if form_data["duration"] != ""
-        else None
-    )
-    if isinstance(duration, str):
-        return duration
-
-    end_times = None
-    if form_data.get("end_time[]") is not None:
-        end_times = [
-            get_datetime_from_string(t) for t in form_data.getlist("end_time[]")
-        ]
-        for end_time in end_times:
-            if isinstance(end_time, str):
-                return end_time
+    end_times = [get_datetime_from_string(t) for t in form_data.getlist("end_time[]")]
+    for end_time in end_times:
+        if isinstance(end_time, str):
+            return end_time
 
     # parse tags
     tags = form_data.getlist("tags[]")
@@ -115,7 +102,6 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
         ),
         "icon": form_data["icon"] if form_data["icon"] != "" else None,
         "colour": colour,
-        "duration": duration,
         "tags": tags,
     }
 

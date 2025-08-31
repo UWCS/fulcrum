@@ -200,15 +200,12 @@
             <div class="valid-feedback invalid-feedback validation-spacer">&nbsp;</div>
         </div>
 
+        <!-- times -->
         <div id="time-fields">
             {% if event and event.times %}
                 {% set times = event.times %}
             {% elif event and event.start_time %}
-                {% if event.end_time %}
-                    {% set times = [(event.start_time.strftime('%Y-%m-%dT%H:%M'), event.end_time.strftime('%Y-%m-%dT%H:%M'))] %}
-                {% else %}
-                    {% set times = [(event.start_time.strftime('%Y-%m-%dT%H:%M'), '')] %}
-                {% endif %}
+                {% set times = [(event.start_time.strftime('%Y-%m-%dT%H:%M'), event.end_time.strftime('%Y-%m-%dT%H:%M'))] %}
             {% else %}
                 {% set times = [(None, None)] %}
             {% endif %}
@@ -224,9 +221,9 @@
 
                     <!-- end -->
                     <div class="form-floating col-md-4">
-                        <input type="datetime-local" name="end_time[]" id="end_time" class="form-control" value="{{ end_time }}">
+                        <input type="datetime-local" name="end_time[]" id="end_time" class="form-control" value="{{ end_time }}" required>
                         <label for="end_time">End Time</label>
-                        <div class="invalid-feedback">Endtime must be after start time and match the duration</div>
+                        <div class="invalid-feedback">Endtime must be provided and be after start time and match the duration</div>
                         <div class="valid-feedback">Looks good!</div>
                     </div>
 
