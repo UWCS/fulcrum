@@ -82,3 +82,21 @@ try:
     ]
 except requests.RequestException as error:
     raise SystemExit("Could not connect to warwick API aborting") from error
+
+old_dates = [
+    {"academicYear": 2001, "term": 1, "date": "2001-09-24"},
+    {"academicYear": 2001, "term": 2, "date": "2002-01-07"},
+    {"academicYear": 2001, "term": 3, "date": "2002-04-22"},
+    {"academicYear": 2002, "term": 1, "date": "2002-09-23"},
+    {"academicYear": 2002, "term": 2, "date": "2003-01-06"},
+    {"academicYear": 2002, "term": 3, "date": "2003-04-21"},
+    {"academicYear": 2003, "term": 1, "date": "2003-09-22"},
+    {"academicYear": 2003, "term": 2, "date": "2004-01-05"},
+    {"academicYear": 2003, "term": 3, "date": "2004-04-19"},
+    {"academicYear": 2004, "term": 1, "date": "2004-09-20"},
+    {"academicYear": 2004, "term": 2, "date": "2005-01-03"},
+    {"academicYear": 2004, "term": 3, "date": "2005-04-18"},
+    {"academicYear": 2005, "term": 1, "date": "2005-09-19"},
+    {"academicYear": 2005, "term": 2, "date": "2006-01-02"},
+    {"academicYear": 2005, "term": 3, "date": "2006-04-17"},
+]

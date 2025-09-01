@@ -1,7 +1,5 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
-from json import load
-from pathlib import Path
 from typing import Match
 from xml.etree import ElementTree as ET
 
@@ -13,7 +11,7 @@ from markdown.treeprocessors import Treeprocessor
 from markupsafe import escape
 from sqlalchemy import func
 
-from config import colours, phosphor_icons, warwick_weeks  # , room_mapping
+from config import colours, old_dates, phosphor_icons, warwick_weeks  # , room_mapping
 from schema import Event, Tag, Week, db
 
 
@@ -191,9 +189,7 @@ def get_week_by_date(date: datetime) -> Week | None:  # noqa: PLR0911, PLR0912
             start_date=week_start_date,  # type: ignore
         )
 
-    # otherwise use the old dates file
-    with Path("events/olddates.json").open("r") as f:
-        old_dates = load(f)
+    # otherwise use the old dates
     for w in reversed(old_dates):
         week_start_date = get_date_from_string(w["date"])
         if isinstance(week_start_date, str):
