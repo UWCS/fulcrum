@@ -10,3 +10,5 @@ instance/
 archive/
 errors.txt
 *tags.txt
+# ignore entire phosphor icons when importing
+phosphor-icons/
