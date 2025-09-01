@@ -1,3 +1,4 @@
+import json
 import re
 from datetime import datetime
 from pathlib import Path
@@ -100,3 +101,6 @@ old_dates = [
     {"academicYear": 2005, "term": 2, "date": "2006-01-02"},
     {"academicYear": 2005, "term": 3, "date": "2006-04-17"},
 ]
+
+# icon paths for phosphor icons (used when creating SVGs)
+phosphor_icon_paths = json.loads(Path("icons.json").read_text())

@@ -473,6 +473,17 @@ def get_week_events() -> list[Event]:
     )
 
 
+def get_events_in_week_range(start: Week, end: Week) -> list[Event]:
+    """Get events between two weeks (inclusive)"""
+    return (
+        Event.query.filter(func.date(Event.start_time) >= start.start_date)  # type: ignore
+        .filter(func.date(Event.start_time) <= end.end_date)  # type: ignore
+        .filter(Event.draft.is_(False))  # type: ignore
+        .order_by(Event.start_time, Event.end_time, Event.name)  # type: ignore
+        .all()
+    )
+
+
 _KEEP = object()  # placeholder to leave the field unchanged
 
 
