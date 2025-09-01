@@ -24,7 +24,7 @@ def update_fonts() -> None:
             out_f = out / "phosphor-bold.css"
             css_file = f.read_text()
             css_file = re.sub(r"@font-face\s*{[^}]*}", "", css_file, flags=re.DOTALL)
-            out_f.write_text(css_file)
+            out_f.write_text(css_file.strip())
 
 
 def update_svgs() -> None:
