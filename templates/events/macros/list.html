@@ -34,15 +34,15 @@
     <div id="events">
         {% for year in events %}
             {% if year_display %}
-                <h1 id="{{ year.year }}"><a href="{{ url_for('events_ui.view_list', year=year.year) }}" class="text-decoration-none link-light link-opacity-50-hover">{{ year.year }}</a></h1>
+                <h1 id="{{ year.year }}"><a href="{{ url_for('events_ui.view_list', year=year.year) }}" class="link-body-emphasis text-decoration-none">{{ year.year }}</a></h1>
             {% endif %}
             {% for term in year.terms %}
                 {% if term_display %}
-                    <h2><a href="{{ url_for('events_ui.view_list', year=year.year, term=term.term) }}" class="text-decoration-none link-light link-opacity-50-hover">Term {{ term.term }}</a></h2>
+                    <h2><a href="{{ url_for('events_ui.view_list', year=year.year, term=term.term) }}" class="link-body-emphasis text-decoration-none">Term {{ term.term }}</a></h2>
                 {% endif %}
                 {% for week in term.weeks %}
                     <h3>
-                        <a href="{{ url_for('events_ui.view_list', year=year.year, term=term.term, week=week.week) }}" class="fw-semibold text-decoration-none link-light link-opacity-50-hover">Week {{ week.week }}</a>
+                        <a href="{{ url_for('events_ui.view_list', year=year.year, term=term.term, week=week.week) }}" class="fw-semibold link-body-emphasis text-decoration-none">Week {{ week.week }}</a>
                         <span class="fs-5 text-muted">(w/c {{ ordinal(week.start_date.day) }} {{ week.start_date.strftime('%b') }})</span>
                     </h3>
                     {% for day in week.days %}
