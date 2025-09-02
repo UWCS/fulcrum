@@ -1,4 +1,5 @@
 import base64
+import contextlib
 
 from flask import Blueprint, Response, flash, render_template, request
 
@@ -6,11 +7,18 @@ from auth.oauth import is_exec_wrapper
 from events.utils import get_week_by_year_term_week
 from exec.publicity import create_svg
 
-# uncomment the below line to enable cairosvg on windows
-# you need to change the path to where you installed cairo
-# (normally in C:\Program Files\UniConvertor-2.0rc5\dlls)
-# import os
-# os.environ["path"] += r"C:\Program Files\UniConvertor-2.0rc5\dlls;"
+# TODO: find a better way to convert SVG to PNG
+try:
+    from cairosvg import svg2png
+except OSError:
+    import os
+
+    # replace path with the folder where libcairo-2.dll is located
+    path = r"C:\Program Files\UniConvertor-2.0rc5\dlls"
+    os.environ["path"] += ";" + path  # noqa: SIM112
+
+    with contextlib.suppress(OSError):
+        from cairosvg import svg2png
 
 exec_ui_bp = Blueprint("exec_ui", __name__, url_prefix="/exec")
 
@@ -81,15 +89,13 @@ def publicity_png() -> str | Response:
         return "Invalid base64 SVG"
 
     try:
-        import cairosvg  # noqa: PLC0415
-
-        png = cairosvg.svg2png(bytestring=svg)
-    except OSError:
+        png = svg2png(bytestring=svg)  # type: ignore
+    except NameError:
         return """
                 <p>Congratulations, you're running windows!</p>
                 <p>This means cairosvg can't find libcairo-2.dll</p>
                 <p>To install, follow instructions at <a href="https://stackoverflow.com/a/60220855">this stackoverflow answer</a></p>
-                <p>then uncomment the line at exec/ui.py</p>
+                <p>then add path to exec/ui.py</p>
             """  # noqa: E501
 
     return Response(png, mimetype="image/png")
