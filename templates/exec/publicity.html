@@ -29,7 +29,7 @@
                     {% endwith %}
                 </div>
 
-                <form method="get" action="{{ url_for('exec_ui.publicity_png' )}}" class="mt-3 d-flex gap-2">
+                <form method="post" action="{{ url_for('exec_ui.publicity_png' )}}" class="mt-3 d-flex gap-2">
                     <input type="hidden" name="svg" id="svg" value="{{ svg_64 }}">
                     <button class="btn btn-outline-primary">Copy SVG</button>
                     <input type="submit" class="btn btn-outline-success" value="Save PNG">

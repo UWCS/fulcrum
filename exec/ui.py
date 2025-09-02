@@ -74,12 +74,11 @@ def publicity() -> str:
     )
 
 
-@exec_ui_bp.route("/publicity/png/")
+@exec_ui_bp.route("/publicity/png/", methods=["POST"])
 def publicity_png() -> str | Response:
     """Convert publicity SVG to PNG"""
 
-    svg_64 = request.args.get("svg", "")
-
+    svg_64 = request.form.get("svg")
     if not svg_64:
         return "No SVG provided"
 
