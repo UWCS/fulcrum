@@ -17,6 +17,7 @@ parsedatetime = "*"
 markdown = "*"
 icalendar = "*"
 cairosvg = "*"
+"svg.py" = "*"
 
 [dev-packages]
 

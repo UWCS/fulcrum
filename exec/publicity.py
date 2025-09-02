@@ -1,6 +1,8 @@
 import base64
 from pathlib import Path
 
+import svg
+
 from config import phosphor_icon_paths
 from events.utils import get_events_in_week_range, group_events
 from schema import Week
@@ -21,6 +23,68 @@ def get_events(start: Week, end: Week) -> list[dict]:
     return group_events(events)
 
 
+def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
+    elements = []
+    elements.append(
+        svg.Path(
+            d=phosphor_icon_paths["calendar"],
+            transform=[svg.Scale(0.5), svg.Translate(500, 500)],
+        )
+    )
+    elements.append(
+        svg.Text(
+            text=f"Week {week.week}",
+            x=500,
+            y=100,
+            class_=["title"],
+            font_size=50,
+            text_anchor="middle",
+        )
+    )
+    elements.append(
+        svg.Text(
+            text=f"Term {week.term}, Academic Year {week.academic_year}",
+            x=500,
+            y=160,
+            class_=["text"],
+            font_size=30,
+            text_anchor="middle",
+        )
+    )
+    return elements
+
+
+def create_multi_week(events: list[dict], start: Week, end: Week) -> list[svg.Element]:
+    elements = []
+    elements.append(
+        svg.Path(
+            d=phosphor_icon_paths["calendar-dots"],
+            transform=[svg.Scale(0.5), svg.Translate(500, 500)],
+        )
+    )
+    elements.append(
+        svg.Text(
+            text=f"Weeks {start.week} - {end.week}",
+            x=500,
+            y=100,
+            class_=["title"],
+            font_size=50,
+            text_anchor="middle",
+        )
+    )
+    elements.append(
+        svg.Text(
+            text=f"Term {start.term}, Academic Year {start.academic_year}",
+            x=500,
+            y=160,
+            class_=["text"],
+            font_size=30,
+            text_anchor="middle",
+        )
+    )
+    return elements
+
+
 def get_b64_font(path: str) -> str:
     with Path(path).open("rb") as f:
         bytes = f.read()
@@ -28,57 +92,42 @@ def get_b64_font(path: str) -> str:
     return f"data:font/woff2;base64,{encoded}"
 
 
-montserrat_500 = get_b64_font("static/fonts/montserrat-v26-latin-500.woff2")
-montserrat_600 = get_b64_font("static/fonts/montserrat-v26-latin-600.woff2")
-
-
-base_svg = [
-    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000'>",
-    "<style>",
-    f"@font-face {{ font-family: 'monsterrat-bold'; src: url({montserrat_600}) format('woff2'); }}",  # noqa: E501
-    ".title { font-family: 'monsterrat-bold'; font-weight: 600; }",
-    f"@font-face {{ font-family: 'monsterrat-semibold'; src: url({montserrat_500}) format('woff2'); }}",  # noqa: E501
-    ".text { font-family: 'monsterrat-semibold'; font-weight: 500; }",
-    "</style>",
-]
-
-
-def create_single_week(events: list[dict], week: Week) -> list[str]:
-    svg = base_svg.copy()
-    svg.append(
-        f"<path d='{phosphor_icon_paths["calendar"]}' transform='scale(0.5) translate(500, 500)'/>"  # noqa: E501
-    )
-    svg.append(
-        f"<text x='500' y='100' text-anchor='middle' class='title' font-size='50'>Week {week.week}</text>"  # noqa: E501
-    )
-    svg.append(
-        f"<text x='500' y='160' text-anchor='middle' class='text' font-size='30'>Term {week.term}, Academic Year {week.academic_year}</text>"  # noqa: E501
-    )
-    return svg
-
-
-def create_multi_week(events: list[dict], start: Week, end: Week) -> list[str]:
-    svg = base_svg.copy()
-    svg.append(
-        f"<path d='{phosphor_icon_paths["calendar-dots"]}' transform='scale(0.5) translate(500, 500)'/>"  # noqa: E501
-    )
-    svg.append(
-        f"<text x='500' y='100' text-anchor='middle' class='title' font-size='50'>Weeks {start.week} - {end.week}</text>"  # noqa: E501
-    )
-    svg.append(
-        f"<text x='500' y='160' text-anchor='middle' class='text' font-size='30'>Term {start.term}, Academic Year {start.academic_year}</text>"  # noqa: E501
-    )
-    return svg
-
-
 def create_svg(start: Week, end: Week) -> str:
     """Create publicity SVG calenndar for events between two weeks (inclusive)"""
 
+    montserrat_500 = get_b64_font("static/fonts/montserrat-v26-latin-500.woff2")
+    montserrat_600 = get_b64_font("static/fonts/montserrat-v26-latin-600.woff2")
+
+    elements: list[svg.Element] = [
+        svg.Style(
+            text=f"""
+                @font-face {{
+                    font-family: 'montserrat-bold';
+                    src: url({montserrat_600}) format('woff2');
+                }}
+
+                .title {{
+                    font-family: 'montserrat-bold';
+                    font-weight: 600;
+                }}
+
+                @font-face {{
+                    font-family: 'montserrat-semibold';
+                    src: url({montserrat_500}) format('woff2');
+                }}
+
+                .text {{
+                    font-family: 'montserrat-semibold';
+                    font-weight: 500;
+                }}
+            """
+        )
+    ]
+
     events = get_events(start, end)
-
     if start == end:
-        svg = create_single_week(events, start)
+        elements.extend(create_single_week(events, start))
     else:
-        svg = create_multi_week(events, start, end)
+        elements.extend(create_multi_week(events, start, end))
 
-    return "\n".join([*svg, "</svg>"])
+    return str(svg.SVG(elements=elements, viewBox=svg.ViewBoxSpec(0, 0, 1000, 1000)))
