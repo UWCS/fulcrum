@@ -16,6 +16,7 @@ flasgger = "*"
 parsedatetime = "*"
 markdown = "*"
 icalendar = "*"
+cairosvg = "*"
 
 [dev-packages]
 

@@ -129,6 +129,11 @@ def create_event(  # noqa: PLR0913
     return event
 
 
+def get_week_by_year_term_week(year: int, term: int, week: int) -> Week | None:
+    """Get a week by its year, term, and week number"""
+    return Week.query.filter_by(academic_year=year, term=term, week=week).first()
+
+
 def get_week_by_date(date: datetime) -> Week | None:  # noqa: PLR0911, PLR0912
     """Get the week from a given date"""
 

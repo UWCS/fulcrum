@@ -63,4 +63,4 @@ def create_svg(start: Week, end: Week) -> str:
     else:
         svg = create_multi_week(events, start, end)
 
-    return "\n".join(base_svg + svg + ["</svg>"])
+    return "\n".join([*svg, "</svg>"])
