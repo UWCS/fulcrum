@@ -180,6 +180,7 @@ class Event(db.Model):
                     term=self.week.term,
                     week=self.week.week,
                     slug=self.slug,
+                    _external=True,
                 )
                 if self.week
                 else None

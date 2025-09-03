@@ -212,6 +212,7 @@ def get_previous_events_api() -> tuple[Response, int]:
 def get_days() -> tuple[Response, int]:
     """Get all events from the next <days> days
     ---
+    security: []
     parameters:
       - name: days
         in: query
