@@ -473,6 +473,20 @@ def get_week_events() -> list[Event]:
     )
 
 
+def get_days_events(days: int) -> list[Event]:
+    """Get all events in the next <days> days"""
+    now = datetime.now(pytz.timezone("Europe/London"))
+    end_date = now + timedelta(days=days)
+
+    return (
+        Event.query.filter(func.date(Event.start_time) >= now.date())  # type: ignore
+        .filter(func.date(Event.start_time) <= end_date.date())  # type: ignore
+        .filter(Event.draft.is_(False))  # type: ignore
+        .order_by(Event.start_time, Event.end_time, Event.name)  # type: ignore
+        .all()
+    )
+
+
 _KEEP = object()  # placeholder to leave the field unchanged
 
 

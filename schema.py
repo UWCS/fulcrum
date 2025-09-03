@@ -2,7 +2,7 @@ import re
 from datetime import date, datetime, timedelta
 
 import pytz
-from flask import Flask
+from flask import Flask, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_, func
 from sqlalchemy.orm import foreign
@@ -173,6 +173,17 @@ class Event(db.Model):
             "end_time": self.end_time.isoformat("T", "minutes"),
             "week": self.week.to_dict() if self.week else None,
             "tags": [tag.to_dict() for tag in self.tags],  # type: ignore
+            "url": (
+                url_for(
+                    "events_ui.view",
+                    year=self.week.academic_year,
+                    term=self.week.term,
+                    week=self.week.week,
+                    slug=self.slug,
+                )
+                if self.week
+                else None
+            ),
         }
 
     def validate(self) -> str | None:

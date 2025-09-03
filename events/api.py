@@ -9,6 +9,7 @@ from events.utils import (
     edit_event,
     get_all_tags,
     get_datetime_from_string,
+    get_days_events,
     get_event_by_id,
     get_event_by_slug,
     get_events_by_time,
@@ -204,6 +205,45 @@ def get_previous_events_api() -> tuple[Response, int]:
 
     if not events:
         return jsonify({"error": "No previous events found"}), 404
+    return jsonify([event.to_dict() for event in events]), 200
+
+
+@events_api_bp.route("/days/", methods=["GET"])
+def get_days() -> tuple[Response, int]:
+    """Get all events from the next <days> days
+    ---
+    parameters:
+      - name: days
+        in: query
+        type: integer
+        required: false
+        default: 7
+        description: The number of days to look ahead for events.
+    responses:
+        200:
+            description: A JSON array containing the events.
+            schema:
+                type: array
+                items:
+                    $ref: '#/definitions/Event'
+        400:
+            description: Bad request, invalid number of days.
+        404:
+            description: No events found.
+    """
+
+    days = request.args.get("days", "7")
+    try:
+        days = int(days)
+        if days < 1:
+            raise ValueError
+    except ValueError:
+        return jsonify({"error": "Invalid number of days"}), 400
+
+    events = get_days_events(days)
+
+    if not events:
+        return jsonify({"error": "No events found"}), 404
     return jsonify([event.to_dict() for event in events]), 200
 
 
