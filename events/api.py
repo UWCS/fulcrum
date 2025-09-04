@@ -7,12 +7,13 @@ from events.utils import (
     create_repeat_event,
     delete_event,
     edit_event,
+    get_all_events,
     get_all_tags,
     get_datetime_from_string,
+    get_days_events,
     get_event_by_id,
     get_event_by_slug,
     get_events_by_time,
-    get_previous_events,
     get_tags_by_string,
     get_upcoming_events,
     get_week_by_date,
@@ -145,6 +146,37 @@ def get_events(
     return jsonify([event.to_dict() for event in events]), 200
 
 
+@events_api_bp.route("/all/", methods=["GET"])
+def get_all_events_api() -> tuple[Response, int]:
+    """Get all events
+    ---
+    security: []
+    parameters:
+      - name: drafts
+        in: query
+        type: boolean
+        required: false
+        default: false
+        description: Whether to include draft events.
+    responses:
+        200:
+            description: A JSON array containing all events.
+            schema:
+                type: array
+                items:
+                    $ref: '#/definitions/Event'
+        404:
+            description: No events found.
+    """
+    include_drafts = request.args.get("drafts", "false").lower() == "true"
+
+    events = get_all_events(include_drafts)
+
+    if not events:
+        return jsonify({"error": "No events found"}), 404
+    return jsonify([event.to_dict() for event in events]), 200
+
+
 @events_api_bp.route("/upcoming/", methods=["GET"])
 def get_upcoming_events_api() -> tuple[Response, int]:
     """Get all upcoming events
@@ -176,34 +208,43 @@ def get_upcoming_events_api() -> tuple[Response, int]:
     return jsonify([event.to_dict() for event in events]), 200
 
 
-@events_api_bp.route("/previous/", methods=["GET"])
-def get_previous_events_api() -> tuple[Response, int]:
-    """Get all previous events
+@events_api_bp.route("/days/", methods=["GET"])
+def get_days() -> tuple[Response, int]:
+    """Get all events from the next <days> days
     ---
     security: []
     parameters:
-      - name: drafts
+      - name: days
         in: query
-        type: boolean
+        type: integer
         required: false
-        default: false
-        description: Whether to include draft events.
+        default: 7
+        description: The number of days to look ahead for events.
     responses:
         200:
-            description: A JSON array containing all previous events.
+            description: A JSON array containing the events.
             schema:
                 type: array
                 items:
                     $ref: '#/definitions/Event'
+        400:
+            description: Bad request, invalid number of days.
         404:
-            description: No previous events found.
+            description: No events found.
     """
-    include_drafts = request.args.get("drafts", "false").lower() == "true"
 
-    events = get_previous_events(include_drafts)
+    days = request.args.get("days", "7")
+    try:
+        days = int(days)
+        if days < 1:
+            raise ValueError
+    except ValueError:
+        return jsonify({"error": "Invalid number of days"}), 400
+
+    events = get_days_events(days)
 
     if not events:
-        return jsonify({"error": "No previous events found"}), 404
+        return jsonify({"error": "No events found"}), 404
     return jsonify([event.to_dict() for event in events]), 200
 
 

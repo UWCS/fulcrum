@@ -444,14 +444,9 @@ def get_upcoming_events(include_drafts: bool = False) -> list[Event]:
     ).all()
 
 
-def get_previous_events(include_drafts: bool = False) -> list[Event]:
-    now = datetime.now(pytz.timezone("Europe/London"))
-    week = get_week_by_date(now)
-
-    if not week:
-        return []
-
-    query = Event.query.filter(func.date(Event.start_time) < week.start_date)  # type: ignore
+def get_all_events(include_drafts: bool = False) -> list[Event]:
+    """Get all events"""
+    query = Event.query
 
     if not include_drafts:
         query = query.filter(Event.draft.is_(False))  # type: ignore
@@ -483,6 +478,20 @@ def get_events_in_week_range(start: Week, end: Week) -> list[Event]:
     return (
         Event.query.filter(func.date(Event.start_time) >= start.start_date)  # type: ignore
         .filter(func.date(Event.start_time) <= end.end_date)  # type: ignore
+        .filter(Event.draft.is_(False))  # type: ignore
+        .order_by(Event.start_time, Event.end_time, Event.name)  # type: ignore
+        .all()
+    )
+
+
+def get_days_events(days: int) -> list[Event]:
+    """Get all events in the next <days> days"""
+    now = datetime.now(pytz.timezone("Europe/London"))
+    end_date = now + timedelta(days=days)
+
+    return (
+        Event.query.filter(func.date(Event.start_time) >= now.date())  # type: ignore
+        .filter(func.date(Event.start_time) <= end_date.date())  # type: ignore
         .filter(Event.draft.is_(False))  # type: ignore
         .order_by(Event.start_time, Event.end_time, Event.name)  # type: ignore
         .all()
@@ -644,3 +653,14 @@ def get_tags_by_string(search: str, limit: int = 10) -> list[Tag]:
     query = Tag.query.filter(Tag.name.ilike(f"%{search}%")).order_by(Tag.name)  # type: ignore
 
     return query.limit(limit).all() if limit != -1 else query.all()
+
+
+def get_years() -> list[int]:
+    """Get all academic years with events"""
+    years = (
+        db.session.query(Week.academic_year)  # type: ignore
+        .distinct()
+        .order_by(Week.academic_year)
+        .all()
+    )
+    return [year[0] for year in years]
