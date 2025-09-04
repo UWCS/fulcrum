@@ -17,7 +17,7 @@
                     <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Jump to Year
                     </button>
-                    <ul class="dropdown-menu p-2" style="max-height: 20vh; overflow-y: auto;">
+                    <ul class="dropdown-menu p-2" style="max-height: 20vh; overflow-y: auto; z-index: 1050;">
                         {% for year in events|reverse %}
                             <li><a class="dropdown-item" href="#{{ year.year }}">{{ year.year }}</a></li>
                         {% endfor %}
@@ -34,15 +34,25 @@
     <div id="events">
         {% for year in events %}
             {% if year_display %}
-                <h1 id="{{ year.year }}"><a href="{{ url_for('events_ui.view_list', year=year.year) }}" class="link-body-emphasis text-decoration-none">{{ year.year }}</a></h1>
+                <h1 id="{{ year.year }}" class="sticky-top bg-body">
+                    <a href="{{ url_for('events_ui.view_list', year=year.year) }}" class="link-body-emphasis text-decoration-none">
+                        {{ year.year }}/{{ (year.year + 1) % 100 }}
+                    </a>
+                </h1>
             {% endif %}
             {% for term in year.terms %}
                 {% if term_display %}
-                    <h2><a href="{{ url_for('events_ui.view_list', year=year.year, term=term.term) }}" class="link-body-emphasis text-decoration-none">Term {{ term.term }}</a></h2>
+                    <h2 class="sticky-top bg-body" style="top: {{ 3 if year_display else 0 }}rem;">
+                        <a href="{{ url_for('events_ui.view_list', year=year.year, term=term.term) }}" class="link-body-emphasis text-decoration-none">
+                            Term {{ term.term }}
+                        </a>
+                    </h2>
                 {% endif %}
                 {% for week in term.weeks %}
                     <h3>
-                        <a href="{{ url_for('events_ui.view_list', year=year.year, term=term.term, week=week.week) }}" class="fw-semibold link-body-emphasis text-decoration-none">Week {{ week.week }}</a>
+                        <a href="{{ url_for('events_ui.view_list', year=year.year, term=term.term, week=week.week) }}" class="fw-semibold link-body-emphasis text-decoration-none">
+                            Week {{ week.week }}
+                        </a>
                         <span class="fs-5 text-muted">(w/c {{ ordinal(week.start_date.day) }} {{ week.start_date.strftime('%b') }})</span>
                     </h3>
                     {% for day in week.days %}
@@ -59,5 +69,7 @@
         {% endfor %}
     </div>
 
-    {{ filterjs() }}
+    {% if not current_week %}
+        {{ filterjs() }}
+    {% endif %}
 {% endmacro %}

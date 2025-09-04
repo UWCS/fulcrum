@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% from "events/macros/list.html" import list with context %}
 
 {% block title %}Previous{% endblock %}
 {% block description %}An archive of the (known) events ran by UWCS{% endblock %}
@@ -9,5 +8,17 @@
 {% block content %}
 <h1>Previous Events</h1>
 <p class="lead">An archive of our (known) events:</p>
-{{ list(events, True, True, True) }}
+{% set years = years|sort(reverse=True) %}
+{% for year in years %}
+    <a href="{{ url_for('events_ui.view_list', year=year) }}" class="text-decoration-none text-emphasis"> 
+        <div class="card mb-3 grow-05 border border-secondary rounded-3">
+            <div class="card-body">
+                <h2 class="card-title">{{ year }}/{{ (year + 1) % 100}}</h2>
+                <p class="card-text">Events from the {{ year }}/{{ (year + 1) % 100}} academic year.</p>
+            </div>
+        </div>
+    </a>
+{% else %}
+    <p class="text-muted">No previous events found.</p>
+{% endfor %}
 {% endblock %}
