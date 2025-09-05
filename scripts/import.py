@@ -104,8 +104,8 @@ def get_date_time(date_str: str, path: Path) -> datetime:
     """Get datetime from string :wah:"""
     try:
         # attempt to parse as ISO-8601 format
-        return datetime.fromisoformat(date_str).astimezone(
-            pytz.timezone("Europe/London")
+        return datetime.fromisoformat(date_str).replace(
+            tzinfo=pytz.timezone("Europe/London")
         )
     except ValueError:
         # if that fails, use custom parsing
@@ -149,9 +149,9 @@ def parse_event(path: Path, repeat: bool) -> dict:
         if "end_time" in event:
             try:
                 # attempt to parse as ISO-8601 format
-                event["end_time"] = datetime.fromisoformat(
-                    event["end_time"]
-                ).astimezone(pytz.timezone("Europe/London"))
+                event["end_time"] = datetime.fromisoformat(event["end_time"]).replace(
+                    tzinfo=pytz.timezone("Europe/London")
+                )
             except ValueError:
                 # if that fails, use custom parsing
                 time, _ = parsedatetime.Calendar().parseDT(

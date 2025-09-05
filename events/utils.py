@@ -18,8 +18,8 @@ from schema import Event, Tag, Week, db
 def get_datetime_from_string(date_str: str) -> datetime | str:
     """Convert a date string in the format 'YYYY-MM-DDTHH:MM' to a datetime object."""
     try:
-        return datetime.strptime(date_str, "%Y-%m-%dT%H:%M").astimezone(
-            pytz.timezone("Europe/London")
+        return datetime.strptime(date_str, "%Y-%m-%dT%H:%M").replace(
+            tzinfo=pytz.timezone("Europe/London")
         )
     except ValueError:
         return "Invalid date format, expected 'YYYY-MM-DDTHH:MM'"
@@ -28,8 +28,8 @@ def get_datetime_from_string(date_str: str) -> datetime | str:
 def get_date_from_string(date_str: str) -> datetime | str:
     """Convert a date string in the format 'YYYY-MM-DD' to a datetime object."""
     try:
-        return datetime.strptime(date_str, "%Y-%m-%d").astimezone(
-            pytz.timezone("Europe/London")
+        return datetime.strptime(date_str, "%Y-%m-%d").replace(
+            tzinfo=pytz.timezone("Europe/London")
         )
     except ValueError:
         return "Invalid date format, expected 'YYYY-MM-DD'"
@@ -50,9 +50,9 @@ def create_event(  # noqa: PLR0913
     """Create an event"""
 
     # convert start_time and normalise end_time
-    start_time = start_time.astimezone(pytz.timezone("Europe/London"))
+    start_time = start_time.replace(tzinfo=pytz.timezone("Europe/London"))
 
-    end_time = end_time.astimezone(pytz.timezone("Europe/London"))
+    end_time = end_time.replace(tzinfo=pytz.timezone("Europe/London"))
 
     if end_time < start_time:
         return "End time cannot be before start time"
@@ -524,14 +524,14 @@ def edit_event(  # noqa: PLR0913
     event.colour = colour if colour is not _KEEP else event.colour
 
     event.start_time = (
-        start_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
+        start_time.replace(tzinfo=pytz.timezone("Europe/London"))  # type: ignore
         if start_time is not _KEEP
-        else event.start_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
+        else event.start_time.replace(tzinfo=pytz.timezone("Europe/London"))  # type: ignore
     )
     event.end_time = (
-        end_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
+        end_time.replace(tzinfo=pytz.timezone("Europe/London"))  # type: ignore
         if end_time is not _KEEP
-        else event.end_time.astimezone(pytz.timezone("Europe/London"))  # type: ignore
+        else event.end_time.replace(tzinfo=pytz.timezone("Europe/London"))  # type: ignore
     )
 
     # update the week associated with the event
