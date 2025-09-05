@@ -13,7 +13,7 @@ from auth.oauth import auth_bp, configure_oauth, is_exec, is_logged_in
 from config import colours
 from events.api import events_api_bp
 from events.ui import events_ui_bp
-from events.utils import get_previous_events, get_years, group_events
+from events.utils import get_upcoming_events, get_years, group_events
 from exec.ui import exec_ui_bp
 from schema import initialise_db
 from search.api import search_api_bp

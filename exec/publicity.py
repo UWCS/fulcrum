@@ -76,7 +76,7 @@ def random_dots() -> list[svg.Element]:
     """generate random dots using poisson disc sampling"""
 
     # params
-    num_dots = 20
+    num_dots = 30
     x = 2028
     y = 436
     spacing = 100
@@ -88,7 +88,7 @@ def random_dots() -> list[svg.Element]:
         points = random.sample(points, num_dots)
 
     dot_colours = [colours["greyer"], colours["blue"], colours["yellow"]]
-    dot_colours = [colour + "80" for colour in dot_colours]  # add transparency
+    dot_colours = [colour + "40" for colour in dot_colours]  # add transparency
     transparent_chance = 0.3
 
     dots = []
@@ -96,7 +96,7 @@ def random_dots() -> list[svg.Element]:
         stroke = random.choice(dot_colours)  # noqa: S311
         fill = stroke if random.random() > transparent_chance else "none"  # noqa: S311
         dots.append(
-            svg.Circle(cx=cx, cy=cy, r=15, stroke=stroke, fill=fill, stroke_width=2)
+            svg.Circle(cx=cx, cy=cy, r=11, stroke=stroke, fill=fill, stroke_width=2)
         )
     return dots
 
@@ -245,9 +245,16 @@ def create_svg(start: Week, end: Week) -> str:
                 }}
             """
         ),
-        svg.Rect(width=2028, height=2028, fill=colours["grey"]),
-        *random_dots(),
-        svg.Ellipse(cx=1024, cy=1914, rx=3002, ry=1566, fill=colours["blue"]),
+        svg.Rect(width=2028, height=2028, fill=colours["grey"]),  # background
+        *random_dots(),  # add dots
+        svg.Ellipse(  # blue background with curve at top
+            cx=1024, cy=1914, rx=3002, ry=1566, fill=colours["blue"]
+        ),
+        # uwcs logo
+        svg.Circle(cx=792, cy=100, r=25, fill=colours["yellow"]),
+        svg.Circle(cx=744, cy=150, r=25, fill=colours["yellow"]),
+        svg.Circle(cx=791, cy=200, r=25, fill=colours["blue"]),
+        svg.Circle(cx=839, cy=250, r=25, fill=colours["blue"]),
     ]
 
     events = get_events(start, end)
