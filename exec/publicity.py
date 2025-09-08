@@ -79,9 +79,9 @@ def random_dots() -> list[svg.Element]:
     num_dots = 30
     x = 2028
     y = 436
+    radius = 13
     spacing = 100
     k = 30  # limit of samples before rejection
-    opacity = 0.4
 
     points = poisson_disc_samples(x, y, spacing, k)
 
@@ -89,6 +89,7 @@ def random_dots() -> list[svg.Element]:
         points = random.sample(points, num_dots)
 
     dot_colours = [colours["greyer"], colours["blue"], colours["yellow"]]
+    opacity = 0.4
 
     dots = []
     for cx, cy in points:
@@ -97,7 +98,7 @@ def random_dots() -> list[svg.Element]:
             svg.Circle(
                 cx=cx,
                 cy=cy,
-                r=13,
+                r=radius,
                 fill=fill,
                 opacity=opacity,
             )
@@ -116,12 +117,15 @@ def get_b64_font(path: str) -> str:
 def convert_path_to_list(path: str) -> list["svg.PathData"]:
     """Converts an SVG path string to a list of svg.PathData objects"""
 
+    # regex to match commands and numbers
     num_regex = re.compile(r"[A-Za-z]|[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?")
 
     def _num(num: str) -> float | int:
+        """convert string to int if possible, else float"""
         f = float(num)
         return int(f) if f.is_integer() else f
 
+    # number of parameters for each command
     param_counts = {
         **dict.fromkeys("Zz", 0),
         **dict.fromkeys("HhVv", 1),
@@ -131,6 +135,7 @@ def convert_path_to_list(path: str) -> list["svg.PathData"]:
         **dict.fromkeys("Aa", 7),
     }
 
+    # map commands to svg.PathData classes
     command_map = {
         "L": svg.LineTo,
         "l": svg.LineToRel,
@@ -150,15 +155,16 @@ def convert_path_to_list(path: str) -> list["svg.PathData"]:
         "z": svg.ClosePath,
     }
 
-    tokens = num_regex.findall(path)
-    i, cmd = 0, None
-    path_data = []
+    tokens = num_regex.findall(path)  # tokenise the path string
+    i, cmd = 0, None  # current command
+    path_data = []  # list of svg.PathData objects
 
     while i < len(tokens):
         tok = tokens[i]
-        if tok.isalpha():
+        if tok.isalpha():  # if token is a letter, its a command
             cmd, i = tok, i + 1
             if cmd in "Zz":
+                # z indicates closing the path
                 path_data.append(svg.ClosePath())
                 continue
 
@@ -172,10 +178,11 @@ def convert_path_to_list(path: str) -> list["svg.PathData"]:
         if i + param_count > len(tokens):
             raise ValueError(f"not enough parameters for command {cmd}")
 
-        params = [_num(tokens[j]) for j in range(i, i + param_count)]
-        i += param_count
+        params = [_num(tokens[j]) for j in range(i, i + param_count)]  # get parameters
+        i += param_count  # iterate current index to account for parameters
 
         if cmd in "Mm":
+            # move commands are followed by implicit line commands
             if cmd == "M":
                 path_data.append(svg.MoveTo(*params))
                 cmd = "L"
@@ -183,10 +190,12 @@ def convert_path_to_list(path: str) -> list["svg.PathData"]:
                 path_data.append(svg.MoveToRel(*params))
                 cmd = "l"
         elif cmd in "Aa":
+            # arc commands need special handling (boolean parameters)
             rx, ry, angle, la, sw, x, y = params
             arc_cls = svg.Arc if cmd == "A" else svg.ArcRel
             path_data.append(arc_cls(rx, ry, angle, bool(int(la)), bool(int(sw)), x, y))
         else:
+            # all other commands
             path_data.append(command_map[cmd](*params))
 
     return path_data
@@ -207,12 +216,313 @@ def get_events(start: Week, end: Week) -> list[dict]:
     return group_events(events)
 
 
+def get_event_groups(  # noqa: PLR0915
+    events: list[int],
+) -> tuple[list[list[int]], list[list[int]]]:
+    """Pack events into groups and return group dimensions and layout"""
+
+    # allowed shapes for groups (cols, rows)
+    # in prefrence order (prefer taller shapes)
+    combinations = {
+        1: [[1, 1]],
+        2: [[2, 1], [1, 2]],
+        3: [[3, 1], [1, 3], [2, 2]],
+        4: [[2, 2], [4, 1], [1, 4]],
+        5: [[3, 2], [2, 3], [4, 2]],
+        6: [[3, 2], [2, 3], [4, 2]],
+    }
+
+    max_cols, max_rows = 4, 3  # max shape dimensions
+
+    best_layout = {
+        # metric: (area, empty cells, width, height)
+        "metric": (float("inf"), float("inf"), float("inf"), float("inf")),
+        "layout": [],
+        "grid": [],
+    }
+
+    def get_metric(grid: list[list[int]]) -> tuple[int, int, int, int]:
+        """calculate layout metric"""
+        # find bounding box of used cells
+        max_y = -1
+        max_x = -1
+        for y in range(max_rows):
+            for x in range(max_cols):
+                if grid[y][x] != -1:
+                    max_y = max(max_y, y)
+                    max_x = max(max_x, x)
+        # if no cells used, return infinity
+        if max_x == -1 or max_y == -1:
+            return (int(1e9), int(1e9), int(1e9), int(1e9))  # close enough to infinity
+        area = (max_x + 1) * (max_y + 1)
+
+        # count empty cells in bounding box
+        empty_cells = 0
+        for y in range(max_y + 1):
+            for x in range(max_x + 1):
+                if grid[y][x] == -1:
+                    empty_cells += 1
+        return (area, empty_cells, max_x + 1, max_y + 1)
+
+    def fits(shape: list[int], grid: list[list[int]], position: list[int]) -> bool:
+        """check if shape fits in grid at position"""
+        cols, rows = shape
+        x, y = position
+        if x + cols > max_cols or y + rows > max_rows:
+            return False
+        for j in range(rows):
+            for i in range(cols):
+                if grid[y + j][x + i] != -1:
+                    return False
+        return True
+
+    def place(
+        i: int, shape: list[int], grid: list[list[int]], position: list[int]
+    ) -> list[list[int]]:
+        """place a shape i in grid at position"""
+        new_grid = [row.copy() for row in grid]
+        cols, rows = shape
+        x, y = position
+        for j in range(y, y + rows):
+            for k in range(x, x + cols):
+                new_grid[j][k] = i
+        return new_grid
+
+    def next_empty(grid: list[list[int]]) -> list[int] | None:
+        """find next empty cell in grid"""
+        for y in range(max_rows):
+            for x in range(max_cols):
+                if grid[y][x] == -1:
+                    return [x, y]
+        return None
+
+    def update_best(grid: list[list[int]], layout: dict[int, list[int]]) -> None:
+        """update best layout if current is better"""
+        metric = get_metric(grid)
+        if metric < best_layout["metric"]:
+            best_layout["metric"] = metric
+            best_layout["layout"] = dict(layout)
+            best_layout["grid"] = [row.copy() for row in grid]
+
+    def backtrack(
+        grid: list[list[int]], layout: dict[int, list[int]], remaining: set[int]
+    ) -> None:
+        """recursive backtracking to find best layout"""
+        area, _, _, _ = get_metric(grid)
+        if area > best_layout["metric"][0]:
+            # if area already worse than best, prune
+            return
+
+        if not remaining:
+            # if no remaining events, update best layout
+            update_best(grid, layout)
+            return
+
+        location = next_empty(grid)
+        if location is None:
+            # if no more locations, this layout is invalid
+            return
+
+        for i in list(remaining):
+            # iterate over remaining events
+
+            num_events = events[i]
+
+            if num_events not in combinations:
+                # if dont have predefined shapes, use single column
+                shape = [min(num_events, max_cols), 1]
+                if fits(shape, grid, location):
+                    new_grid = place(i, shape, grid, location)
+                    layout[i] = shape
+                    backtrack(new_grid, layout, remaining - {i})
+                    layout.pop(i, None)
+            else:
+                # otherwise try all predefined shapes (in preference order)
+                for shape in combinations[num_events]:
+                    if fits(shape, grid, location):
+                        new_grid = place(i, shape, grid, location)
+                        layout[i] = shape
+                        backtrack(new_grid, layout, remaining - {i})
+                        layout.pop(i, None)
+
+    initial_grid = [[-1 for _ in range(max_cols)] for _ in range(max_rows)]
+    backtrack(initial_grid, {}, set(range(len(events))))
+
+    if best_layout["metric"][0] == float("inf"):
+        raise ValueError("Could not automatically generate grid, please do manually")
+
+    layouts = [best_layout["layout"][i] for i in range(len(events))]
+    # trim unused rows from grid
+    trimmed_grid = [row for row in best_layout["grid"] if any(c != -1 for c in row)]
+    return layouts, trimmed_grid
+
+
+def get_event_group(shape: list[int], events: dict) -> svg.G:
+    """Create a group of events for a single day"""
+    day_name = events["day"]
+    day_events = events["events"]
+    cols, rows = shape
+    circle_size = 400
+    spacing_x, spacing_y = 20, 20
+    text_height = 100
+    elements = [
+        svg.Rect(  # background rectangle
+            x=0,
+            y=0,
+            width=circle_size * cols + spacing_x * (cols + 1),
+            height=circle_size * rows + spacing_y * (rows + 1) + 100,
+            fill=colours["greyer"],
+            rx=20,
+            ry=20,
+        ),
+        svg.Text(
+            text=day_name,
+            x=(circle_size * cols + spacing_x * (cols + 1)) / 2,
+            y=text_height / 2 + spacing_y,
+            font_size=70,
+            text_anchor="middle",
+            class_=["title"],
+        ),
+    ]
+
+    for i, event in enumerate(day_events):
+        col = i % cols
+        row = i // cols
+        cx = spacing_x + col * (circle_size + spacing_x) + circle_size / 2
+        cy = spacing_y + row * (circle_size + spacing_y) + circle_size / 2 + text_height
+        event_circle = get_event_circle(event)
+        event_circle.transform = [svg.Translate(cx, cy)]
+        elements.append(event_circle)
+
+    return svg.G(elements=elements)
+
+
+def get_event_circle(event: dict) -> svg.G:
+    """Create a circle for an event"""
+    icon = event.get("icon")
+    name = event["name"]
+    location = event["location"]
+    colour_str = event.get("colour", "blue").lower()
+    colour = colours[colour_str] if colour_str in colours else colours["blue"]
+    start_time = event["start_time"]
+    if start_time.minute == 0:
+        time_str = start_time.strftime("%I%p")
+    else:
+        time_str = start_time.strftime("%I:%M%p")
+
+    if icon and icon in icon_paths:
+        # event circle with icon
+        return svg.G(
+            elements=[
+                svg.Circle(cx=0, cy=0, r=200, fill=colour),
+                svg.Path(d=convert_path_to_list(icon_paths[icon]), fill="white"),
+                svg.Text(
+                    text=name,
+                    x=0,
+                    y=2,
+                    font_size=40,
+                    text_anchor="middle",
+                    class_=["title"],
+                ),
+                svg.Text(
+                    text=location,
+                    x=0,
+                    y=50,
+                    font_size=35,
+                    text_anchor="middle",
+                    class_=["text"],
+                ),
+                svg.Text(
+                    text=time_str,
+                    x=0,
+                    y=90,
+                    font_size=30,
+                    text_anchor="middle",
+                    class_=["text"],
+                ),
+            ]
+        )
+    # event circle without icon
+    return svg.G(elements=[svg.Circle(cx=0, cy=0, r=200, fill=colour)])
+
+
 def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
-    return []
+    """Create the calendar for a single week"""
+    height = 1530
+    elements: list[svg.Element] = [
+        # add week text
+        svg.Text(
+            text=f"Week {week.week}",
+            x=1014,
+            y=498,
+            font_size=110,
+            text_anchor="middle",
+            class_=["title"],
+        ),
+    ]
+
+    # get the events for the week
+    # find the list of weeks in the term
+    term_weeks = events[0]["terms"][week.term - 1]["weeks"]
+    # because terms can start at negative weeks, have gaps, and use different indexing
+    # loop over the weeks to find the correct one
+    week_days = []
+    for w in term_weeks:
+        if w["week"] == week.week:
+            week_days = w["days"]
+            break
+
+    # group events by day and create layout
+    # calculate the number of events each day
+    num_events = [len(day["events"]) for day in week_days]
+    # if odd, add 1 (the social links) to make even so we can make perfect grid
+    if sum(num_events) % 2 != 0:
+        num_events.append(1)
+    # find best way to split events into groups
+    shapes, grid = get_event_groups(num_events)
+
+    for i, day_events in enumerate(week_days):
+        shape = shapes[i]
+        day = get_event_group(shape, day_events)
+        # apply offsets here
+        col = row = 0
+        for y in range(len(grid)):
+            for x in range(len(grid[y])):
+                if grid[y][x] == i:
+                    col, row = x, y
+                    break
+        offset_x = 2028 / len(grid[0])
+        offset_y = height / len(grid)
+        day.transform = [svg.Translate(offset_x * col, 2028 - height + offset_y * row)]
+        elements.append(day)
+
+    return elements
 
 
 def create_multi_week(events: list[dict], start: Week, end: Week) -> list[svg.Element]:
-    return []
+    """Create the calendar for multiple weeks (max 5)"""
+
+    # ensure max 5 weeks
+    # NOTE: does not work as does not account for gaps in weeks
+    max_weeks = 5
+    if end.week - start.week + 1 > max_weeks:
+        raise ValueError("Cannot create calendar for more than 5 weeks")
+
+    elements = [
+        svg.Text(
+            text=f"Term {start.term} Calendar",
+            x=1014,
+            y=498,
+            font_size=110,
+            text_anchor="middle",
+            class_=["title"],
+        )
+    ]
+
+    # find the list of weeks in term
+    term_weeks = events[start.academic_year]["terms"][start.term - 1]["weeks"]
+
+    return elements
 
 
 def create_svg(start: Week, end: Week) -> str:
@@ -292,6 +602,7 @@ def create_svg(start: Week, end: Week) -> str:
                     ],
                 )
             ],
+            # transform and position correctly
             transform=[svg.Scale(0.35), svg.Translate(1887, 198)],
         ),
     ]
