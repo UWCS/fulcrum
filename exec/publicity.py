@@ -114,13 +114,15 @@ def get_b64_font(path: str) -> str:
     return f"data:font/woff2;base64,{encoded}"
 
 
-def convert_path_to_list(path: str) -> list["svg.PathData"]:
+def convert_path_to_list(  # noqa: PLR0912, PLR0915
+    path: str,
+) -> tuple[list[svg.PathData], float, float, float, float]:
     """Converts an SVG path string to a list of svg.PathData objects"""
 
     # regex to match commands and numbers
     num_regex = re.compile(r"[A-Za-z]|[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?")
 
-    def _num(num: str) -> float | int:
+    def num(num: str) -> float | int:
         """convert string to int if possible, else float"""
         f = float(num)
         return int(f) if f.is_integer() else f
@@ -137,6 +139,8 @@ def convert_path_to_list(path: str) -> list["svg.PathData"]:
 
     # map commands to svg.PathData classes
     command_map = {
+        "M": svg.MoveTo,
+        "m": svg.MoveToRel,
         "L": svg.LineTo,
         "l": svg.LineToRel,
         "H": svg.HorizontalLineTo,
@@ -151,6 +155,8 @@ def convert_path_to_list(path: str) -> list["svg.PathData"]:
         "q": svg.QuadraticBezierRel,
         "T": svg.SmoothQuadraticBezier,
         "t": svg.SmoothQuadraticBezierRel,
+        "A": svg.Arc,
+        "a": svg.ArcRel,
         "Z": svg.ClosePath,
         "z": svg.ClosePath,
     }
@@ -158,6 +164,11 @@ def convert_path_to_list(path: str) -> list["svg.PathData"]:
     tokens = num_regex.findall(path)  # tokenise the path string
     i, cmd = 0, None  # current command
     path_data = []  # list of svg.PathData objects
+
+    # track dimensions
+    x = y = 0.0
+    min_x = min_y = float("inf")
+    max_x = max_y = -float("inf")
 
     while i < len(tokens):
         tok = tokens[i]
@@ -178,27 +189,45 @@ def convert_path_to_list(path: str) -> list["svg.PathData"]:
         if i + param_count > len(tokens):
             raise ValueError(f"not enough parameters for command {cmd}")
 
-        params = [_num(tokens[j]) for j in range(i, i + param_count)]  # get parameters
+        params = [num(tokens[j]) for j in range(i, i + param_count)]  # get parameters
         i += param_count  # iterate current index to account for parameters
 
         if cmd in "Mm":
-            # move commands are followed by implicit line commands
             if cmd == "M":
+                x, y = params
                 path_data.append(svg.MoveTo(*params))
                 cmd = "L"
             else:
+                x, y = x + params[0], y + params[1]
                 path_data.append(svg.MoveToRel(*params))
                 cmd = "l"
+        elif cmd in "Hh":
+            x = params[0] if cmd == "H" else x + params[0]
+            # ever wondered why top level functions are good, this is why
+            path_data.append(command_map[cmd](*params))
+        elif cmd in "Vv":
+            y = params[0] if cmd == "V" else y + params[0]
+            path_data.append(command_map[cmd](*params))
+        elif cmd in "Ll":
+            x, y = params if cmd == "L" else (x + params[0], y + params[1])
+            path_data.append(command_map[cmd](*params))
         elif cmd in "Aa":
-            # arc commands need special handling (boolean parameters)
-            rx, ry, angle, la, sw, x, y = params
-            arc_cls = svg.Arc if cmd == "A" else svg.ArcRel
-            path_data.append(arc_cls(rx, ry, angle, bool(int(la)), bool(int(sw)), x, y))
+            rx, ry, angle, la, sw, px, py = params
+            if cmd == "A":
+                x, y = px, py
+                arc = svg.Arc
+            else:
+                x += px
+                y += py
+                arc = svg.ArcRel
+            path_data.append(arc(rx, ry, angle, bool(la), bool(sw), px, py))
         else:
-            # all other commands
             path_data.append(command_map[cmd](*params))
 
-    return path_data
+        min_x, max_x = min(min_x, x), max(max_x, x)
+        min_y, max_y = min(min_y, y), max(max_y, y)
+
+    return path_data, max_x - min_x, max_y - min_y, min_x, min_y
 
 
 def get_events(start: Week, end: Week) -> list[dict]:
@@ -234,6 +263,7 @@ def get_event_groups(  # noqa: PLR0915
 
     max_cols, max_rows = 4, 3  # max shape dimensions
 
+    # track best layout found
     best_layout = {
         # metric: (area, empty cells, width, height)
         "metric": (float("inf"), float("inf"), float("inf"), float("inf")),
@@ -253,7 +283,7 @@ def get_event_groups(  # noqa: PLR0915
                     max_x = max(max_x, x)
         # if no cells used, return infinity
         if max_x == -1 or max_y == -1:
-            return (int(1e9), int(1e9), int(1e9), int(1e9))  # close enough to infinity
+            return (int(1e9), int(1e9), int(1e9), int(1e9))
         area = (max_x + 1) * (max_y + 1)
 
         # count empty cells in bounding box
@@ -399,7 +429,7 @@ def get_event_group(shape: list[int], events: dict) -> svg.G:
 
 def get_event_circle(event: dict) -> svg.G:
     """Create a circle for an event"""
-    icon = event.get("icon")
+    icon = event.get("icon", "").removeprefix("ph-")
     name = event["name"]
     location = event["location"]
     colour_str = event.get("colour", "blue").lower()
@@ -410,16 +440,48 @@ def get_event_circle(event: dict) -> svg.G:
     else:
         time_str = start_time.strftime("%I:%M%p")
 
+    r = 200  # circle radius
+    text_top = 50
+
     if icon and icon in icon_paths:
         # event circle with icon
+
+        # icon scaling
+        icon_path, icon_width, icon_height, icon_min_x, icon_min_y = (
+            convert_path_to_list(icon_paths[icon])
+        )
+        max_dim = max(icon_width, icon_height)
+        norm = 1 / max_dim
+        desired_icon_size = 150
+        scale = desired_icon_size * norm
+
+        # icon positioning
+        # vertical centre between top of circle and top of text
+        circle_top = -r
+        target_y = (circle_top + text_top) / 2
+
+        # get icon centre
+        icon_x = icon_min_x + icon_width / 2
+        icon_y = icon_min_y + icon_height / 2
+
+        translate_x = -(icon_x * scale)
+        translate_y = target_y - (icon_y * scale)
+
         return svg.G(
             elements=[
-                svg.Circle(cx=0, cy=0, r=200, fill=colour),
-                svg.Path(d=convert_path_to_list(icon_paths[icon]), fill="white"),
+                svg.Circle(cx=0, cy=0, r=r, fill=colour),
+                svg.Path(
+                    d=icon_path,
+                    fill="white",
+                    transform=[
+                        svg.Scale(scale),
+                        svg.Translate(translate_x, translate_y),
+                    ],
+                ),
                 svg.Text(
                     text=name,
                     x=0,
-                    y=2,
+                    y=text_top,
                     font_size=40,
                     text_anchor="middle",
                     class_=["title"],
@@ -427,7 +489,7 @@ def get_event_circle(event: dict) -> svg.G:
                 svg.Text(
                     text=location,
                     x=0,
-                    y=50,
+                    y=text_top + 50,
                     font_size=35,
                     text_anchor="middle",
                     class_=["text"],
@@ -435,7 +497,7 @@ def get_event_circle(event: dict) -> svg.G:
                 svg.Text(
                     text=time_str,
                     x=0,
-                    y=90,
+                    y=text_top + 90,
                     font_size=30,
                     text_anchor="middle",
                     class_=["text"],
@@ -480,6 +542,11 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
         num_events.append(1)
     # find best way to split events into groups
     shapes, grid = get_event_groups(num_events)
+
+    # print("Shapes:", shapes)
+    # print("Grid:")
+    # for row in grid:
+    #     print(row)
 
     for i, day_events in enumerate(week_days):
         shape = shapes[i]
@@ -578,25 +645,25 @@ def create_svg(start: Week, end: Week) -> str:
                         svg.Path(
                             d=convert_path_to_list(
                                 "M148.879 92.6014c1.222 1.2505 2.691 2.232 4.313 2.8818 1.623.6498 3.362.9535 5.108.8918 1.678.0612 3.35-.2416 4.9-.8875 1.55-.6459 2.943-1.6197 4.082-2.8546 2.404-2.7703 3.643-6.3661 3.455-10.0316V43.7329h17.241V82.6013c.092 5.2481-1.186 10.4294-3.706 15.0316-2.386 4.2821-5.995 7.7531-10.364 9.9691-4.877 2.411-10.264 3.608-15.702 3.49-5.499.12-10.946-1.077-15.89-3.49-4.42-2.212-8.09-5.679-10.552-9.9691-2.549-4.5913-3.828-9.7802-3.706-15.0316V43.7329h17.241V82.6013c-.097 1.8215.169 3.6443.784 5.3614.614 1.7171 1.565 3.2942 2.796 4.6387Z"  # noqa: E501
-                            ),
+                            )[0],
                             fill="white",
                         ),
                         svg.Path(
                             d=convert_path_to_list(
                                 "M290.01 43.7329h17.712L285.393 109.771H267.681L255.12 64.7709 242.558 109.771H224.72L202.486 43.7329h18.56l13.002 48.3024L247.08 43.7329h16.864l13.19 48.3024L290.01 43.7329Z"  # noqa: E501
-                            ),
+                            )[0],
                             fill="white",
                         ),
                         svg.Path(
                             d=convert_path_to_list(
                                 "M362.46 59.7079c2.913 1.6292 5.466 3.833 7.505 6.4781l9.987-12.0756c-3.431-3.5985-7.569-6.4465-12.154-8.3648-5.185-2.225-10.803-3.2558-16.44-3.0164-5.636.2395-11.147 1.7431-16.126 4.4-5.3 2.8695-9.714 7.1398-12.759 12.3462-3.045 5.2064-4.606 11.1494-4.513 17.1824-.086 6.1487 1.476 12.2081 4.522 17.5474 2.993 5.1817 7.335 9.4528 12.562 12.3588 4.909 2.761 10.405 4.307 16.032 4.509 5.627.202 11.22-.945 16.314-3.346 4.805-2.135 9.147-5.191 12.782-8.9935L370.091 87.8844c-2.272 2.3529-4.954 4.2711-7.914 5.6604-2.639 1.3084-5.535 2.0171-8.479 2.0755-3.211.0285-6.365-.8429-9.107-2.5157-2.672-1.6911-4.841-4.0695-6.281-6.8869-1.549-3.0212-2.356-6.3683-2.356-9.7643 0-3.3959.807-6.743 2.356-9.7642 1.44-2.8174 3.609-5.1959 6.281-6.8869 2.744-1.6634 5.899-2.524 9.107-2.4843 3.075.0445 6.089.8666 8.762 2.3899Z"  # noqa: E501
-                            ),
+                            )[0],
                             fill="white",
                         ),
                         svg.Path(
                             d=convert_path_to_list(
                                 "M431.172 58.5447c3.929 1.2914 7.708 2.9992 11.274 5.0944l6.501-13.7737c-3.799-2.3955-7.925-4.2279-12.248-5.4403-4.591-1.3409-9.349-2.0186-14.132-2.0126-4.755-.1015-9.484.7429-13.912 2.4843-3.696 1.4454-6.901 3.923-9.233 7.1385-2.149 3.1652-3.248 6.9284-3.14 10.7548-.196 3.73.915 7.4113 3.14 10.4089 2.019 2.5413 4.628 4.5493 7.6 5.8491 3.645 1.5343 7.391 2.8161 11.212 3.8366 3.014.8176 5.338 1.5094 7.003 2.1069 1.528.5232 2.938 1.3464 4.145 2.4214.534.4703.96 1.0514 1.248 1.7031.287.6517.429 1.3582.416 2.0705.035.8286-.154 1.6511-.546 2.3814-.393.7304-.974 1.3416-1.683 1.7696-1.846 1.0366-3.948 1.5273-6.061 1.4151-4.186-.1487-8.303-1.1099-12.122-2.8302-4.315-1.7424-8.306-4.1979-11.808-7.2642l-6.689 13.4907c4.174 3.454 8.942 6.118 14.069 7.862 5.249 1.89 10.783 2.868 16.361 2.893 4.609.061 9.188-.738 13.504-2.359 3.741-1.411 7.007-3.853 9.421-7.044 2.375-3.2627 3.601-7.2222 3.486-11.2578.194-3.8272-.913-7.6072-3.14-10.7234-2.018-2.6349-4.663-4.7215-7.694-6.0692-3.687-1.5711-7.475-2.8948-11.337-3.9624-3.078-.9434-5.402-1.7295-6.972-2.327-1.456-.5286-2.799-1.3289-3.957-2.3585-.514-.4494-.924-1.0059-1.2-1.6307-.277-.6247-.414-1.3025-.401-1.9857-.034-.6872.117-1.3708.437-1.9794.321-.6086.799-1.1197 1.384-1.4798 1.543-.854 3.295-1.2571 5.056-1.1635 3.422.137 6.801.8053 10.018 1.9811Z"  # noqa: E501
-                            ),
+                            )[0],
                             fill="white",
                         ),
                     ],
