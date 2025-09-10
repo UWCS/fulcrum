@@ -6,6 +6,7 @@ from collections import deque
 from pathlib import Path
 
 import svg
+from svgpathtools import parse_path
 
 from config import colours, icon_paths
 from events.utils import get_events_in_week_range, group_events
@@ -114,10 +115,13 @@ def get_b64_font(path: str) -> str:
     return f"data:font/woff2;base64,{encoded}"
 
 
-def convert_path_to_list(  # noqa: PLR0912, PLR0915
+def convert_path_to_list(
     path: str,
 ) -> tuple[list[svg.PathData], float, float, float, float]:
-    """Converts an SVG path string to a list of svg.PathData objects"""
+    """
+    Converts an SVG path string to a list of svg.PathData object
+    also returns width, height, min_x, min_y of the path
+    """
 
     # regex to match commands and numbers
     num_regex = re.compile(r"[A-Za-z]|[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?")
@@ -165,11 +169,6 @@ def convert_path_to_list(  # noqa: PLR0912, PLR0915
     i, cmd = 0, None  # current command
     path_data = []  # list of svg.PathData objects
 
-    # track dimensions
-    x = y = 0.0
-    min_x = min_y = float("inf")
-    max_x = max_y = -float("inf")
-
     while i < len(tokens):
         tok = tokens[i]
         if tok.isalpha():  # if token is a letter, its a command
@@ -179,9 +178,11 @@ def convert_path_to_list(  # noqa: PLR0912, PLR0915
                 path_data.append(svg.ClosePath())
                 continue
 
+        # no command
         if cmd is None:
             raise ValueError("invalid path data")
 
+        # get number of parameters for command and check for invalid command
         param_count = param_counts.get(cmd)
         if param_count is None:
             raise ValueError(f"unknown command {cmd}")
@@ -193,41 +194,25 @@ def convert_path_to_list(  # noqa: PLR0912, PLR0915
         i += param_count  # iterate current index to account for parameters
 
         if cmd in "Mm":
-            if cmd == "M":
-                x, y = params
-                path_data.append(svg.MoveTo(*params))
-                cmd = "L"
-            else:
-                x, y = x + params[0], y + params[1]
-                path_data.append(svg.MoveToRel(*params))
-                cmd = "l"
-        elif cmd in "Hh":
-            x = params[0] if cmd == "H" else x + params[0]
-            # ever wondered why top level functions are good, this is why
             path_data.append(command_map[cmd](*params))
-        elif cmd in "Vv":
-            y = params[0] if cmd == "V" else y + params[0]
-            path_data.append(command_map[cmd](*params))
-        elif cmd in "Ll":
-            x, y = params if cmd == "L" else (x + params[0], y + params[1])
-            path_data.append(command_map[cmd](*params))
+            # moveto commands add an implicit lineto for subsequent pairs of coordinates
+            cmd = "L" if cmd == "M" else "l"
         elif cmd in "Aa":
+            # arc commands have boolean parameters
             rx, ry, angle, la, sw, px, py = params
-            if cmd == "A":
-                x, y = px, py
-                arc = svg.Arc
-            else:
-                x += px
-                y += py
-                arc = svg.ArcRel
-            path_data.append(arc(rx, ry, angle, bool(la), bool(sw), px, py))
+            path_data.append(
+                command_map[cmd](rx, ry, angle, bool(la), bool(sw), px, py)
+            )
         else:
             path_data.append(command_map[cmd](*params))
 
-        min_x, max_x = min(min_x, x), max(max_x, x)
-        min_y, max_y = min(min_y, y), max(max_y, y)
+    # find bounding box
+    path = parse_path(path)
+    xmin, xmax, ymin, ymax = path.bbox()
+    width = xmax - xmin
+    height = ymax - ymin
 
-    return path_data, max_x - min_x, max_y - min_y, min_x, min_y
+    return path_data, width, height, xmin, ymin
 
 
 def get_events(start: Week, end: Week) -> list[dict]:
@@ -427,85 +412,85 @@ def get_event_group(shape: list[int], events: dict) -> svg.G:
     return svg.G(elements=elements)
 
 
+def split_text(text: str, max_chars: int) -> list[str]:
+    """split a title into multiple lines if too long"""
+    if len(text) <= max_chars:
+        return [text]
+
+    words = text.split()
+    lines = []
+    current_line = ""
+    for word in words:
+        if len(current_line) + len(word) + 1 <= max_chars:
+            current_line += (" " if current_line else "") + word
+        else:
+            lines.append(current_line)
+            current_line = word
+    if current_line:
+        lines.append(current_line)
+    return lines
+
+
 def get_event_circle(event: dict) -> svg.G:
     """Create a circle for an event"""
-    icon = event.get("icon", "").removeprefix("ph-")
-    name = event["name"]
-    location = event["location"]
-    colour_str = event.get("colour", "blue").lower()
-    colour = colours[colour_str] if colour_str in colours else colours["blue"]
+    icon = event.get("icon", "").lower().removeprefix("ph-")
+    title = split_text(event["name"], 12)
+    location = split_text(event["location"], 15)
+    colour = colours[event.get("colour", "blue").lower()]
     start_time = event["start_time"]
-    if start_time.minute == 0:
-        time_str = start_time.strftime("%I%p")
-    else:
-        time_str = start_time.strftime("%I:%M%p")
+    time_format = "%I%p" if start_time.minute == 0 else "%I:%M%p"
+    time_str = start_time.strftime(time_format).lstrip("0")
 
-    r = 200  # circle radius
-    text_top = 50
+    # sizing params
+    radius = 200
+    text_top = 50 if icon else -20
+    title_size = 50 if len(title) == 1 else 40
+    location_size = 30 if len(location) == 1 else 25
+    time_size = 30
+    font_sizes = (
+        [title_size] * len(title) + [location_size] * len(location) + [time_size]
+    )
+
+    elements: list[svg.Element] = [svg.Circle(cx=0, cy=0, r=radius, fill=colour)]
 
     if icon and icon in icon_paths:
-        # event circle with icon
+        path, width, height, min_x, min_y = convert_path_to_list(icon_paths[icon])
 
-        # icon scaling
-        icon_path, icon_width, icon_height, icon_min_x, icon_min_y = (
-            convert_path_to_list(icon_paths[icon])
+        # scale the icon to be 150x150 max
+        desired_size = 150
+        scale = desired_size / max(width, height)
+
+        # centre the icon vertically in the space above the text
+        target_y = (-radius + text_top) / 2
+
+        elements.append(
+            svg.Path(
+                d=path,
+                fill="white",
+                transform=[
+                    svg.Translate(0, target_y),  # move to centre position
+                    svg.Scale(scale),  # scale to desired size
+                    svg.Translate(-min_x - width / 2, -min_y - height / 2),  # centre
+                ],
+            )
         )
-        max_dim = max(icon_width, icon_height)
-        norm = 1 / max_dim
-        desired_icon_size = 150
-        scale = desired_icon_size * norm
 
-        # icon positioning
-        # vertical centre between top of circle and top of text
-        circle_top = -r
-        target_y = (circle_top + text_top) / 2
-
-        # get icon centre
-        icon_x = icon_min_x + icon_width / 2
-        icon_y = icon_min_y + icon_height / 2
-
-        translate_x = -(icon_x * scale)
-        translate_y = target_y - (icon_y * scale)
-
-        return svg.G(
-            elements=[
-                svg.Circle(cx=0, cy=0, r=r, fill=colour),
-                svg.Path(
-                    d=icon_path,
-                    fill="white",
-                    transform=[
-                        svg.Scale(scale),
-                        svg.Translate(translate_x, translate_y),
-                    ],
-                ),
-                svg.Text(
-                    text=name,
-                    x=0,
-                    y=text_top,
-                    font_size=40,
-                    text_anchor="middle",
-                    class_=["title"],
-                ),
-                svg.Text(
-                    text=location,
-                    x=0,
-                    y=text_top + 50,
-                    font_size=35,
-                    text_anchor="middle",
-                    class_=["text"],
-                ),
-                svg.Text(
-                    text=time_str,
-                    x=0,
-                    y=text_top + 90,
-                    font_size=30,
-                    text_anchor="middle",
-                    class_=["text"],
-                ),
-            ]
+    lines = title + location + [time_str]
+    current_y = text_top
+    for line, size in zip(lines, font_sizes):
+        elements.append(
+            svg.Text(
+                text=line,
+                x=0,
+                y=current_y,
+                font_size=size,
+                text_anchor="middle",
+                class_=["title" if size >= title_size else "text"],
+            )
         )
-    # event circle without icon
-    return svg.G(elements=[svg.Circle(cx=0, cy=0, r=200, fill=colour)])
+        current_y += size
+
+    return svg.G(elements=elements)
 
 
 def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:

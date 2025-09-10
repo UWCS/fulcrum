@@ -18,6 +18,7 @@ markdown = "*"
 icalendar = "*"
 cairosvg = "*"
 "svg.py" = "*"
+svgpathtools = "*"
 
 [dev-packages]
 
