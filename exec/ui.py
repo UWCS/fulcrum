@@ -1,4 +1,3 @@
-import base64
 import contextlib
 
 from flask import Blueprint, Response, flash, render_template, request
@@ -61,12 +60,9 @@ def publicity() -> str:
     if not svg.startswith("<svg"):
         flash("Failed to create SVG", "danger")
 
-    svg_64 = base64.b64encode(svg.encode("utf-8"))
-
     return render_template(
         "exec/publicity.html",
         svg=svg,
-        svg_64=svg_64.decode("utf-8"),
         year=year,
         term=term,
         start_week=start,
@@ -78,14 +74,9 @@ def publicity() -> str:
 def publicity_png() -> str | Response:
     """Convert publicity SVG to PNG"""
 
-    svg_64 = request.form.get("svg")
-    if not svg_64:
-        return "No SVG provided"
-
-    try:
-        svg = base64.b64decode(svg_64)
-    except Exception:
-        return "Invalid base64 SVG"
+    if "svg" not in request.files:
+        return "No SVG file provided"
+    svg = request.files["svg"].read()
 
     try:
         png = svg2png(bytestring=svg)  # type: ignore

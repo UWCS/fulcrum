@@ -112,7 +112,7 @@ def get_b64_font(path: str) -> str:
     with Path(path).open("rb") as f:
         bytes = f.read()
     encoded = base64.b64encode(bytes).decode("utf-8")
-    return f"data:font/woff2;base64,{encoded}"
+    return f"data:font/ttf;base64,{encoded}"
 
 
 def convert_path_to_list(
@@ -581,8 +581,9 @@ def create_svg(start: Week, end: Week) -> str:
     """Create publicity SVG calenndar for events between two weeks (inclusive)"""
 
     # base64 encode fonts to make svg self-contained
-    montserrat_500 = get_b64_font("static/fonts/montserrat-v26-latin-500.woff2")
-    montserrat_600 = get_b64_font("static/fonts/montserrat-v26-latin-600.woff2")
+    # cairosvg only supports ttf and otf fonts
+    montserrat_500 = get_b64_font("static/fonts/montserrat-bold.ttf")
+    montserrat_600 = get_b64_font("static/fonts/montserrat-semibold.ttf")
 
     elements = [
         # define fonts
@@ -590,7 +591,7 @@ def create_svg(start: Week, end: Week) -> str:
             text=f"""
                 @font-face {{
                     font-family: 'montserrat-bold';
-                    src: url({montserrat_600}) format('woff2');
+                    src: url({montserrat_600}) format('truetype');
                 }}
 
                 .title {{
@@ -601,7 +602,7 @@ def create_svg(start: Week, end: Week) -> str:
 
                 @font-face {{
                     font-family: 'montserrat-semibold';
-                    src: url({montserrat_500}) format('woff2');
+                    src: url({montserrat_500}) format('truetype');
                 }}
 
                 .text {{

@@ -16,9 +16,9 @@ flasgger = "*"
 parsedatetime = "*"
 markdown = "*"
 icalendar = "*"
-cairosvg = "*"
 "svg.py" = "*"
 svgpathtools = "*"
+cairosvg = "*"
 
 [dev-packages]
 

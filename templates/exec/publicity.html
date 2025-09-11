@@ -29,11 +29,24 @@
                     {% endwith %}
                 </div>
 
-                <form method="post" action="{{ url_for('exec_ui.publicity_png' )}}" class="mt-3 d-flex gap-2">
-                    <input type="hidden" name="svg" id="svg" value="{{ svg_64 }}">
+                <form method="post" action="{{ url_for('exec_ui.publicity_png' )}}" class="mt-3 d-flex gap-2" enctype="multipart/form-data" id="publicity-form">
+                    <input type="file" name="svg" id="svg" hidden>
                     <button class="btn btn-outline-primary">Copy SVG</button>
                     <input type="submit" class="btn btn-outline-success" value="Save PNG">
                 </form>
+
+                <script>
+                    document.getElementById("publicity-form").addEventListener("submit", function(event) {
+                        const svgRaw = `{{ svg|safe }}`;
+                        const blob = new Blob([svgRaw], { type: "image/svg+xml" });
+                        const fileInput = document.getElementById("svg");
+                        const file = new File([blob], "calendar.svg", { type: "image/svg+xml" });
+
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        fileInput.files = dataTransfer.files;
+                    });
+                </script>
             </div>
 
             <div class="col-md-6 d-flex align-items-center justify-content-center">
