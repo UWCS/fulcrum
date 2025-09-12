@@ -3,7 +3,7 @@ import contextlib
 from flask import Blueprint, Response, flash, render_template, request
 
 from auth.oauth import is_exec_wrapper
-from events.utils import get_week_by_year_term_week
+from events.utils import get_week_by_year_term_week, get_years
 from exec.publicity import create_svg
 
 # TODO: find a better way to convert SVG to PNG
@@ -38,7 +38,7 @@ def publicity() -> str:
     end = request.args.get("end_week")
 
     if year is None or term is None or start is None or end is None:
-        return render_template("exec/publicity.html")
+        return render_template("exec/publicity.html", years=get_years())
 
     start_week = get_week_by_year_term_week(int(year), int(term), int(start))
     end_week = get_week_by_year_term_week(int(year), int(term), int(end))
@@ -53,7 +53,9 @@ def publicity() -> str:
             messgae += "end "
         messgae += "week"
         flash(messgae, "danger")
-        return render_template("exec/publicity.html", year=year, term=term)
+        return render_template(
+            "exec/publicity.html", year=year, term=term, years=get_years()
+        )
 
     svg = create_svg(start_week, end_week)
 
@@ -63,6 +65,7 @@ def publicity() -> str:
     return render_template(
         "exec/publicity.html",
         svg=svg,
+        years=get_years(),
         year=year,
         term=term,
         start_week=start,

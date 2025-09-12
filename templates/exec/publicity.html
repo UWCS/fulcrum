@@ -2,6 +2,11 @@
 
 {% block title %}Exec Publicity{% endblock %}
 
+{% block header %}
+<script src="{{ url_for('static', filename='js/publicity.js') }}"></script>
+<meta name="robots" content="noindex">
+{% endblock %}
+
 {% block content %}
 <div class="publicity flex-column">
     <h1><i class="ph-bold ph-instagram-logo"></i> Exec Publicity</h1>
@@ -22,7 +27,9 @@
                                 {% endfor %}
                             </div>
                         {% elif svg %}
-                            {{ svg|safe }}
+                            <div id="svg-container" class="w-100 h-100 d-flex align-items-center justify-content-center">
+                                {{ svg|safe }}
+                            </div>
                         {% else %}
                             <p class="text-center">Fill in the form to generate an svg</p>
                         {% endif %}
@@ -31,22 +38,9 @@
 
                 <form method="post" action="{{ url_for('exec_ui.publicity_png' )}}" class="mt-3 d-flex gap-2" enctype="multipart/form-data" id="publicity-form">
                     <input type="file" name="svg" id="svg" hidden>
-                    <button class="btn btn-outline-primary">Copy SVG</button>
+                    <button id="copy-svg" class="btn btn-outline-primary">Copy SVG</button>
                     <input type="submit" class="btn btn-outline-success" value="Save PNG">
                 </form>
-
-                <script>
-                    document.getElementById("publicity-form").addEventListener("submit", function(event) {
-                        const svgRaw = `{{ svg|safe }}`;
-                        const blob = new Blob([svgRaw], { type: "image/svg+xml" });
-                        const fileInput = document.getElementById("svg");
-                        const file = new File([blob], "calendar.svg", { type: "image/svg+xml" });
-
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(file);
-                        fileInput.files = dataTransfer.files;
-                    });
-                </script>
             </div>
 
             <div class="col-md-6 d-flex align-items-center justify-content-center">
@@ -56,7 +50,12 @@
                             <label for="year" class="col-form-label">Year</label>
                         </div>
                         <div class="col-md-3">
-                            <input type="number" class="form-control" id="year" name="year" value="{{ year }}" min="1960" pattern="\d{4}" required>
+                            <select class="form-select" id="year" name="year" required>
+                                <option value="" disabled {% if not year %}selected{% endif %}>Select year</option>
+                                {% for y in years %}
+                                    <option value="{{ y }}" {% if year|string == y|string %}selected{% endif %}>{{ y }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="col-md-3 text-center">
                             <label for="term" class="col-form-label">Term</label>
@@ -73,15 +72,15 @@
                             <label for="start-week" class="col-form-label">Start Week</label>
                         </div>
                         <div class="col-md-3">
-                            <input type="number" class="form-control" id="start-week" name="start_week" 
-                                value="{{ start_week }}" pattern="\d{1,2}">
+                            <input type="number" class="form-control" id="start-week" name="start_week" value="{{ start_week }}" pattern="\d{1,2}">
                         </div>
                         <div class="col-md-3 text-center">
                             <label for="end-week" class="col-form-label">End Week</label>
                         </div>
                         <div class="col-md-3">
-                            <input type="number" class="form-control" id="end-week" name="end_week" 
-                                value="{{ end_week }}" pattern="\d{1,2}">
+                            <select class="form-select" id="end-week" name="end_week" data-selected="{{ end_week }}">
+                                <option value="" disabled {% if not end_week %}selected{% endif %}>Select a start week to enable</option>
+                            </select>
                         </div>
                         <div class="col-md-12 text-center">
                             <button type="submit" class="btn btn-primary w-75">Generate</button>
