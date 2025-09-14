@@ -52,7 +52,7 @@
                         <div class="col-md-3">
                             <select class="form-select" id="year" name="year" required>
                                 <option value="" disabled {% if not year %}selected{% endif %}>Select year</option>
-                                {% for y in years %}
+                                {% for y in years|reverse %}
                                     <option value="{{ y }}" {% if year|string == y|string %}selected{% endif %}>{{ y }}</option>
                                 {% endfor %}
                             </select>
