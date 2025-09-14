@@ -1,35 +1,9 @@
 {% extends "base.html" %}
 {% from "events/macros/list.html" import list with context %}
 
-{% block title %}
-    {% if term %}
-        Term {{ term }} 
-    {% endif %}
-    {% if week or week == 0 %}
-        Week {{ week }} 
-    {% endif %}
-    {{ year }}
-{% endblock %}
-{% block description %}
-    Events for 
-    {% if term %}
-        Term {{ term }} 
-    {% endif %}
-    {% if week or week == 0 %}
-        Week {{ week }} 
-    {% endif %}
-    {{ year }}
-{% endblock %}
-{% block keywords %}
-    Events, Talks, Academic
-    {% if term %}
-        , Term {{ term }}
-    {% endif %}
-    {% if week or week == 0 %}
-        , Week {{ week }}
-    {% endif %}
-    , {{ year }}
-{% endblock %}
+{% block title %}{% if term %}Term {{ term }} {% endif %}{% if week or week == 0 %} Week {{ week }}{% endif %} {{ year }}{% endblock %}
+{% block description %}Events for{% if term %} Term {{ term }}{% endif %}{% if week or week == 0 %} Week {{ week }}{% endif %} {{ year }}{% endblock %}
+{% block keywords %}Events, Talks, Academic{% if term %}, Term {{ term }}{% endif %}{% if week or week == 0 %}, Week {{ week }}{% endif %}, {{ year }}{% endblock %}
 
 {% block content %}
 {% if not current_week %}

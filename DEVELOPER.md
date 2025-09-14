@@ -213,3 +213,12 @@ The old code for using the api is still in the relevant locations (`events/utils
 ## Testing
 
 There is no automated testing because I don't know how to do it properly. Maybe someone can do this in the future?
+
+## Ideas for the future
+
+A list of some things that would be cool to add but would require more effort than I have time. See issues for the list of urgent requirements.
+
+- [ ] Users table  
+      Adding a users table would allow for a user's interactions to be tracked. Users will be able to sign on to an event and leave feedback. Exec can then see who is attending an event and be able to contact the attendees of event. Any changes to an event should also be emailed to attendees
+- [ ] Testing  
+      Currently the app has no automated testing. As a result it is likely that changes made may unintentionally affect other aspects of the app. Things that shpuld be tested are: api (all endpoints), utils (calling individual functions), and the ui displas events as expected

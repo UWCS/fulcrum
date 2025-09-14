@@ -2,12 +2,7 @@
 
 {% block title %}Tags{% endblock %}
 {% block description %}All tags for UWCS events{% endblock %}
-{% block keywords %}
-    tags,
-    {% for tag in tags %}
-        {{ tag.name }}
-        {% if not loop.last %}, {% endif %}
-    {% endfor %}
+{% block keywords %}tags,{% for tag in tags %}{{ tag.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% endblock %}
 
 {% block content %}

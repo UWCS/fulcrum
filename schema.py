@@ -149,8 +149,8 @@ class Event(db.Model):
         self.icon = icon
         self.colour = colour if colour else "blue"
         # ensure times are london-time
-        self.start_time = start_time.astimezone(pytz.timezone("Europe/London"))
-        self.end_time = end_time.astimezone(pytz.timezone("Europe/London"))
+        self.start_time = start_time.replace(tzinfo=pytz.timezone("Europe/London"))
+        self.end_time = end_time.replace(tzinfo=pytz.timezone("Europe/London"))
 
     def __repr__(self) -> str:
         return (
