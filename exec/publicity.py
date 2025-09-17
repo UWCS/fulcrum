@@ -43,7 +43,7 @@ CIRCLE_SIZE = 400
 # spacing of days in single week
 # one for each size of grid
 DAY_GRID_WIDTH = [614, 614, 614, 485]
-DAY_GRID_HEIGHT = [700, 700, 700, 553]
+DAY_GRID_HEIGHT = [700, 553]
 
 # max weeks for multi week
 MAX_WEEKS = 5
@@ -485,22 +485,21 @@ def get_event_circle(event: dict) -> svg.G:
     return svg.G(elements=elements)
 
 
-def get_event_group(  # noqa: PLR0913
-    shape: list[int],
-    events: dict,
-    padding_x: float,
-    padding_y: float,
-    gap_x: float,
-    gap_y: float,
-) -> tuple[svg.G, float, float]:
+def get_event_group(
+    shape: list[int], events: dict, width: float, height: float
+) -> svg.G:
     """Create a group of events for a single day"""
     day_name = events["day"]
     day_events = events["events"]
     cols, rows = shape
     corner_r = 20
 
-    width = 2 * padding_x + CIRCLE_SIZE * cols + gap_x * (cols - 1)
-    height = 2 * padding_y + CIRCLE_SIZE * rows + gap_y * (rows - 1) + DAY_TEXT_HEIGHT
+    internal_gap_x = (width - cols * CIRCLE_SIZE) / (cols + 1)
+    available_height = height - DAY_TEXT_HEIGHT
+    internal_gap_y = (available_height - rows * CIRCLE_SIZE - DAY_TEXT_HEIGHT) / (
+        rows + 1
+    )
+
     elements = [
         svg.Rect(  # background rectangle
             x=0,
@@ -514,7 +513,7 @@ def get_event_group(  # noqa: PLR0913
         svg.Text(
             text=day_name,
             x=width / 2,
-            y=DAY_TEXT_HEIGHT / 2 + padding_y,
+            y=DAY_TEXT_HEIGHT / 1.5,
             font_size=DAY_TEXT_SIZE,
             text_anchor="middle",
             class_=["title"],
@@ -524,21 +523,22 @@ def get_event_group(  # noqa: PLR0913
     for i, event in enumerate(day_events):
         col = i % cols
         row = i // cols
-        cx = padding_x + col * (CIRCLE_SIZE + gap_x) + CIRCLE_SIZE / 2
-        cy = padding_y + row * (CIRCLE_SIZE + gap_y) + CIRCLE_SIZE / 2 + DAY_TEXT_HEIGHT
+        cx = (col + 1) * internal_gap_x + col * CIRCLE_SIZE + CIRCLE_SIZE / 2
+        cy = (
+            DAY_TEXT_HEIGHT
+            + (row + 1) * internal_gap_y
+            + row * CIRCLE_SIZE
+            + CIRCLE_SIZE / 2
+        )
         event_circle = get_event_circle(event)
         event_circle.transform = [svg.Translate(cx, cy)]
         elements.append(event_circle)
 
-    return svg.G(elements=elements), width, height
+    return svg.G(elements=elements)
 
 
-def get_socials() -> tuple[svg.G, float, float]:
-    return (
-        svg.G(elements=[svg.Rect(x=0, y=0, width=100, height=200, fill="red")]),
-        100,
-        200,
-    )
+def get_socials() -> svg.G:
+    return svg.G(elements=[svg.Rect(x=0, y=0, width=100, height=200, fill="red")])
 
 
 def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
@@ -583,8 +583,8 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
     num_rows, num_cols = len(grid), len(grid[0])
 
     # size of events
-    grid_top = POST_HEIGHT / 4
-    grid_height = POST_HEIGHT - grid_top
+    grid_top = POST_HEIGHT / 3.5
+    grid_height = POST_HEIGHT - grid_top - POST_HEIGHT / 10
     grid_width = POST_WIDTH
 
     # get cell sizes
@@ -594,10 +594,6 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
     # compute gap between cells
     gap_x = (grid_width - cell_width * num_cols) / (num_cols + 1)
     gap_y = (grid_height - cell_height * num_rows) / (num_rows + 1)
-
-    # padding can encroach on gap
-    padding_x = max(20, gap_x / 4)
-    padding_y = max(20, gap_y / 4)
 
     for i, day in enumerate(week_days):
         # find position of day in grid
@@ -615,32 +611,22 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
         # get shape of group
         col_span, row_span = shapes[i]
 
+        group_width = col_span * cell_width + (col_span - 1) * gap_x
+        group_height = row_span * cell_height + (row_span - 1) * gap_y
+
         # create group for day
-        group, group_width, group_height = (
-            get_event_group(shapes[i], day, padding_x, padding_y, gap_x, gap_y)
+        group = (
+            get_event_group(shapes[i], day, group_width, group_height)
             if day["day"] != "Socials"
             else get_socials()
         )
 
         # find position of group in grid
-        cell_x = 2 * gap_x + anchor_x * (cell_width + gap_x)
+        cell_x = gap_x + anchor_x * (cell_width + gap_x)
         cell_y = grid_top + gap_y + anchor_y * (cell_height + gap_y)
 
-        # find size of spanned cells
-        spanned_width = 2 * padding_x + col_span * CIRCLE_SIZE + (col_span - 1) * gap_x
-        spanned_height = (
-            2 * padding_y
-            + row_span * CIRCLE_SIZE
-            + (row_span - 1) * gap_y
-            + DAY_TEXT_HEIGHT
-        )
-
-        # centre group in spanned cells
-        offset_x = cell_x + (spanned_width - group_width) / 2
-        offset_y = cell_y + (spanned_height - group_height) / 2
-
         # translate group to position
-        group.transform = [svg.Translate(offset_x, offset_y)]
+        group.transform = [svg.Translate(cell_x, cell_y)]
         elements.append(group)
 
     return elements
