@@ -492,12 +492,18 @@ def get_event_group(
     day_name = events["day"]
     day_events = events["events"]
     cols, rows = shape
-    corner_r = 20
+    corner_r = 40
 
     internal_gap_x = (width - cols * CIRCLE_SIZE) / (cols + 1)
     available_height = height - DAY_TEXT_HEIGHT
     internal_gap_y = (available_height - rows * CIRCLE_SIZE - DAY_TEXT_HEIGHT) / (
         rows + 1
+    )
+    total_circle_height = rows * CIRCLE_SIZE + (rows + 1) * internal_gap_y
+    internal_gap_y = (available_height - total_circle_height) / (rows + 1)
+    offset_y = (
+        DAY_TEXT_HEIGHT
+        + (available_height - (rows * CIRCLE_SIZE + (rows - 1) * internal_gap_y)) / 2
     )
 
     elements = [
@@ -524,12 +530,7 @@ def get_event_group(
         col = i % cols
         row = i // cols
         cx = (col + 1) * internal_gap_x + col * CIRCLE_SIZE + CIRCLE_SIZE / 2
-        cy = (
-            DAY_TEXT_HEIGHT
-            + (row + 1) * internal_gap_y
-            + row * CIRCLE_SIZE
-            + CIRCLE_SIZE / 2
-        )
+        cy = offset_y + row * (CIRCLE_SIZE + internal_gap_y) + CIRCLE_SIZE / 2
         event_circle = get_event_circle(event)
         event_circle.transform = [svg.Translate(cx, cy)]
         elements.append(event_circle)
@@ -537,8 +538,12 @@ def get_event_group(
     return svg.G(elements=elements)
 
 
-def get_socials() -> svg.G:
-    return svg.G(elements=[svg.Rect(x=0, y=0, width=100, height=200, fill="red")])
+def get_socials(width: float, height: float) -> svg.G:
+    return svg.G(
+        elements=[
+            svg.Rect(x=0, y=0, width=width, height=height, rx=20, ry=20, fill="red")
+        ]
+    )
 
 
 def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
@@ -618,7 +623,7 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
         group = (
             get_event_group(shapes[i], day, group_width, group_height)
             if day["day"] != "Socials"
-            else get_socials()
+            else get_socials(group_width, group_height)
         )
 
         # find position of group in grid
