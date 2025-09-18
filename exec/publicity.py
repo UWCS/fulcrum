@@ -425,7 +425,9 @@ def split_text(text: str, max_chars: int) -> list[str]:
 
 def get_event_circle(event: dict) -> svg.G:
     """Create a circle for an event"""
-    icon = event.get("icon", "").lower().removeprefix("ph-")
+    icon = event.get("icon", "")
+    if icon is not None:
+        icon = icon.lower().removeprefix("ph-")
     title = split_text(event["name"], 12)
     location = split_text(event["location"], 15)
     colour = colours[event.get("colour", "blue").lower()]
