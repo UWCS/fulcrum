@@ -36,9 +36,10 @@ MAX_GRID_COLS = 4
 MAX_GRID_ROWS = 2
 
 # spacing of days in single week
-DAY_TEXT_HEIGHT = 100
+DAY_TEXT_HEIGHT = 125
 DAY_TEXT_SIZE = 70
 CIRCLE_SIZE = 400
+CELL_PADDING = 0.9
 
 # max weeks for multi week
 MAX_WEEKS = 5
@@ -533,6 +534,8 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
     # find sizing of cells
     cell_width = grid_width / num_cols
     cell_height = grid_height / num_rows
+    padding_x = cell_width * (1 - CELL_PADDING) / 2
+    padding_y = cell_height * (1 - CELL_PADDING) / 2
 
     for i, day_events in enumerate(week_days):
         # extract info from existing arrays
@@ -558,17 +561,40 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
         if day == "Socials":
             # apply socials box if necessary
             socials_group = get_socials(cell_width, cell_height)
-            socials_group.transform = [
-                svg.Translate(base_x, base_y),
-            ]
+            socials_group.transform = [svg.Translate(base_x, base_y)]
             elements.append(socials_group)
             continue
+
+        # add background rectangle and day text
+        elements.extend(
+            [
+                svg.Rect(
+                    x=base_x + padding_x,
+                    y=base_y + padding_y,
+                    width=row_width * cell_width - 2 * padding_x,
+                    height=col_width * cell_height - 2 * padding_y,
+                    rx=40,
+                    ry=40,
+                    fill=colours["greyer"],
+                ),
+                svg.Text(
+                    text=day,
+                    x=base_x + (row_width * cell_width) / 2,
+                    y=base_y + DAY_TEXT_HEIGHT,
+                    font_size=DAY_TEXT_SIZE,
+                    text_anchor="middle",
+                    class_=["title"],
+                ),
+            ]
+        )
 
         for row in range(col_width):
             for col in range(row_width):
                 # work out extra translation required
                 translate_x = base_x + col * cell_width + cell_width / 2
-                translate_y = base_y + row * cell_height + cell_height / 2
+                translate_y = (
+                    base_y + row * cell_height + cell_height / 2 + DAY_TEXT_HEIGHT / 2
+                )
 
                 # create event circle and apply offset
                 event_idx = row * row_width + col
