@@ -598,6 +598,12 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
                     base_y + row * cell_height + cell_height / 2 + DAY_TEXT_HEIGHT / 2
                 )
 
+                # if spanning multiple columns, pull towards centre
+                pull = 0 if col_width == 1 else 0.2
+                translate_y = (1 - pull) * (
+                    base_y + row * cell_height + cell_height / 2 + DAY_TEXT_HEIGHT / 2
+                ) + pull * (base_y + col_width * cell_height / 2 + DAY_TEXT_HEIGHT / 2)
+
                 # create event circle and apply offset
                 event_idx = row * row_width + col
                 event_circle = get_event_circle(day_event_list[event_idx])
