@@ -527,9 +527,11 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
 
     # find size of grid
     num_rows, num_cols = len(grid), len(grid[0])
-    grid_top = POST_HEIGHT / 3.5
-    grid_height = POST_HEIGHT - grid_top - POST_HEIGHT / 10
+
+    # find position and sizing of grid
+    grid_height = POST_HEIGHT / 1.5
     grid_width = POST_WIDTH
+    grid_top = POST_HEIGHT / 4 + (POST_HEIGHT - POST_HEIGHT / 4 - grid_height) / 2
 
     # find sizing of cells
     cell_width = grid_width / num_cols
