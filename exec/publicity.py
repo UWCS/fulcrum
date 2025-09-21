@@ -484,7 +484,60 @@ def get_event_circle(event: dict) -> svg.G:
 
 
 def get_socials(width: float, height: float) -> svg.G:
-    return svg.G(elements=[svg.Rect(x=0, y=0, width=width, height=height, fill="red")])
+    """Create socials box"""
+    desired_icon_width = width / 8
+    icons = ["globe", "discord-logo", "instagram-logo", "linkedin-logo", "warwicksu"]
+    text = ["uwcs.co.uk", "discord.uwcs.uk", "warwickcompsoc", "uwcs", "computing"]
+    elements = [
+        # base rectangle
+        svg.Rect(
+            x=0,
+            y=0,
+            width=width,
+            height=height,
+            fill=colours["greyer"],
+            rx=40,
+            ry=40,
+        ),
+        # join us text
+        svg.Text(
+            text="JOIN US",
+            x=width / 2,
+            y=height / 7,
+            font_size=height / 10,
+            text_anchor="middle",
+            class_=["title"],
+        ),
+    ]
+    for i, (icon, social_text) in enumerate(zip(icons, text), start=2):
+        path, icon_width, icon_height, min_x, min_y = convert_path_to_list(
+            icon_paths[icon]
+        )
+        scale = desired_icon_width / icon_width
+        cx = (min_x + icon_width / 2) * scale
+        cy = (min_y + icon_height / 2) * scale
+        elements.extend(
+            [
+                svg.Path(
+                    d=path,
+                    transform=[
+                        svg.Translate(width / 8 - cx, i * height / 7 - cy),
+                        svg.Scale(scale),
+                    ],
+                    fill="white",
+                ),
+                svg.Text(
+                    text=social_text,
+                    x=width / 8 + desired_icon_width,
+                    y=i * height / 7,
+                    font_size=desired_icon_width / 1.75,
+                    text_anchor="start",
+                    dominant_baseline="middle",
+                    class_=["text"],
+                ),
+            ]
+        )
+    return svg.G(elements=elements)
 
 
 def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
@@ -559,12 +612,16 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
         # calculate initial offset (top left of first cell)
         base_x = base_col * cell_width
         base_y = grid_top + base_row * cell_height
+        centre_y = base_y + col_width * cell_height / 2 + DAY_TEXT_HEIGHT / 2
 
         if day == "Socials":
             # apply socials box if necessary
-            socials_group = get_socials(cell_width, cell_height)
-            socials_group.transform = [svg.Translate(base_x, base_y)]
-            elements.append(socials_group)
+            socials = get_socials(
+                cell_width - 2 * padding_x,
+                cell_height - 2 * padding_y,
+            )
+            socials.transform = [svg.Translate(base_x + padding_x, base_y + padding_y)]
+            elements.append(socials)
             continue
 
         # add background rectangle and day text
@@ -600,9 +657,7 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
 
                 # if spanning multiple columns, pull towards centre
                 pull = 0 if col_width == 1 else 0.2
-                translate_y = (1 - pull) * (
-                    base_y + row * cell_height + cell_height / 2 + DAY_TEXT_HEIGHT / 2
-                ) + pull * (base_y + col_width * cell_height / 2 + DAY_TEXT_HEIGHT / 2)
+                translate_y = (1 - pull) * translate_y + pull * centre_y
 
                 # create event circle and apply offset
                 event_idx = row * row_width + col
