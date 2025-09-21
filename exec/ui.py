@@ -1,23 +1,9 @@
-import contextlib
-
 from flask import Blueprint, Response, flash, render_template, request
+from playwright.sync_api import sync_playwright
 
 from auth.oauth import is_exec_wrapper
 from events.utils import get_week_by_year_term_week, get_years
 from exec.publicity import create_svg
-
-# TODO: find a better way to convert SVG to PNG
-try:
-    from cairosvg import svg2png
-except OSError:
-    import os
-
-    # replace path with the folder where libcairo-2.dll is located
-    path = r"C:\Program Files\UniConvertor-2.0rc5\dlls"
-    os.environ["path"] += ";" + path  # noqa: SIM112
-
-    with contextlib.suppress(OSError):
-        from cairosvg import svg2png
 
 exec_ui_bp = Blueprint("exec_ui", __name__, url_prefix="/exec")
 
@@ -79,16 +65,22 @@ def publicity_png() -> str | Response:
 
     if "svg" not in request.files:
         return "No SVG file provided"
-    svg = request.files["svg"].read()
+    svg = request.files["svg"].read().decode("utf-8")
 
     try:
-        png = svg2png(bytestring=svg)  # type: ignore
-    except NameError:
-        return """
-                <p>Congratulations, you're running windows!</p>
-                <p>This means cairosvg can't find libcairo-2.dll</p>
-                <p>To install, follow instructions at <a href="https://stackoverflow.com/a/60220855">this stackoverflow answer</a></p>
-                <p>then add path to exec/ui.py</p>
-            """  # noqa: E501
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page()
+
+            page.set_content(svg)
+
+            svg_elem = page.query_selector("svg")
+            if svg_elem is None:
+                return "Invalid SVG file"
+
+            png = svg_elem.screenshot()
+            browser.close()
+    except Exception as e:
+        return f"Failed to convert SVG to PNG: {e}"
 
     return Response(png, mimetype="image/png")

@@ -137,14 +137,6 @@ def random_dots() -> list[svg.Element]:
     return dots
 
 
-def get_b64_font(path: str) -> str:
-    """get base64 encoded font from path"""
-    with Path(path).open("rb") as f:
-        bytes = f.read()
-    encoded = base64.b64encode(bytes).decode("utf-8")
-    return f"data:font/ttf;base64,{encoded}"
-
-
 def convert_path_to_list(
     path: str,
 ) -> tuple[list[svg.PathData], float, float, float, float]:
@@ -689,6 +681,14 @@ def create_multi_week(events: list[dict], start: Week, end: Week) -> list[svg.El
     term_weeks = events[start.academic_year]["terms"][start.term - 1]["weeks"]
 
     return elements
+
+
+def get_b64_font(path: str) -> str:
+    """get base64 encoded font from path"""
+    with Path(path).open("rb") as f:
+        bytes = f.read()
+    encoded = base64.b64encode(bytes).decode("utf-8")
+    return f"data:font/ttf;base64,{encoded}"
 
 
 def create_svg(start: Week, end: Week) -> str:
