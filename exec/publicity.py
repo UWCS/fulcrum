@@ -1,4 +1,5 @@
 import base64
+import itertools
 import math
 import random
 import re
@@ -36,7 +37,6 @@ MAX_GRID_COLS = 4
 MAX_GRID_ROWS = 2
 
 # the options for sizes of a grid
-# (width, height)
 GRID_SIZES = [(2, 1), (2, 2), (3, 2), (4, 2)]
 
 # spacing of days in single week
@@ -256,144 +256,86 @@ def get_events(start: Week, end: Week) -> list[dict]:
     return group_events(events)
 
 
-def get_event_groups(  # noqa: PLR0915
-    events: list[int],
+def backtrack(
+    groups: list[tuple[int, list[int]]], grid: list[list[int]]
+) -> list[list[int]] | None:
+    """backtracking algorithm to fit items into grid"""
+
+    # base case, just return grid, we good :)
+    if not groups:
+        return grid
+
+    # get next group of events to place
+    group_id, (width, height) = groups[0]
+    remaining_groups = groups[1:]
+    num_rows, num_cols = len(grid), len(grid[0])
+
+    for row in range(num_rows - height + 1):
+        for col in range(num_cols - width + 1):
+            # check if space is free
+            is_free = all(
+                grid[i][j] == -1
+                for i in range(row, row + height)
+                for j in range(col, col + width)
+            )
+
+            # try again if not free
+            if not is_free:
+                continue
+
+            # place group in grid
+            new_grid = [r.copy() for r in grid]
+            for i in range(row, row + height):
+                for j in range(col, col + width):
+                    new_grid[i][j] = group_id
+
+            # recurse for remaining groups
+            solution = backtrack(remaining_groups, new_grid)
+
+            # if solution found, return it
+            if solution is not None:
+                return solution
+
+    # no solution found
+    return None
+
+
+def get_event_groups(
+    event_groups: list[int],
 ) -> tuple[list[list[int]], list[list[int]]]:
     """Pack events into groups and return group dimensions and layout"""
 
-    # allowed shapes for groups (cols, rows)
-    # in prefrence order (prefer taller shapes)
+    # allowed shapes for groups (width, height)
     combinations = {
         1: [[1, 1]],
         2: [[2, 1], [1, 2]],
-        3: [[3, 1], [1, 3], [2, 2]],
-        4: [[2, 2], [4, 1], [1, 4]],
-        5: [[3, 2], [2, 3], [4, 2]],
-        6: [[3, 2], [2, 3], [4, 2]],
+        3: [[3, 1], [2, 2]],
+        4: [[2, 2], [4, 1]],
+        5: [[3, 2], [4, 2]],
+        6: [[3, 2], [4, 2]],
     }
 
-    # track best layout found
-    best_layout = {
-        # metric: (area, empty cells, width, height)
-        "metric": (float("inf"), float("inf"), float("inf"), float("inf")),
-        "layout": [],
-        "grid": [],
-    }
+    # get possible sizes of grids
+    grid_sizes = GRID_SIZES[int(sum(event_groups) / 2 - 1) :]
 
-    def get_metric(grid: list[list[int]]) -> tuple[int, int, int, int]:
-        """calculate layout metric"""
-        # find bounding box of used cells
-        max_y = -1
-        max_x = -1
-        for y in range(MAX_GRID_ROWS):
-            for x in range(MAX_GRID_COLS):
-                if grid[y][x] != -1:
-                    max_y = max(max_y, y)
-                    max_x = max(max_x, x)
-        # if no cells used, return infinity
-        if max_x == -1 or max_y == -1:
-            return (int(1e9), int(1e9), int(1e9), int(1e9))
-        area = (max_x + 1) * (max_y + 1)
+    # get all combinations of shapes for the event groups
+    shape_options = [combinations[n] for n in event_groups]
+    all_options = list(itertools.product(*shape_options))
 
-        # count empty cells in bounding box
-        empty_cells = 0
-        for y in range(max_y + 1):
-            for x in range(max_x + 1):
-                if grid[y][x] == -1:
-                    empty_cells += 1
-        return (area, empty_cells, max_x + 1, max_y + 1)
+    for num_cols, num_rows in grid_sizes:  # try smallest grids first
+        for shape in all_options:  # try all shape combinations
+            # [idx, (width, height)]
+            items = list(enumerate(shape))
 
-    def fits(shape: list[int], grid: list[list[int]], position: list[int]) -> bool:
-        """check if shape fits in grid at position"""
-        cols, rows = shape
-        x, y = position
-        if x + cols > MAX_GRID_COLS or y + rows > MAX_GRID_ROWS:
-            return False
-        for j in range(rows):
-            for i in range(cols):
-                if grid[y + j][x + i] != -1:
-                    return False
-        return True
+            base_grid = [[-1] * num_cols for _ in range(num_rows)]
 
-    def place(
-        i: int, shape: list[int], grid: list[list[int]], position: list[int]
-    ) -> list[list[int]]:
-        """place a shape i in grid at position"""
-        new_grid = [row.copy() for row in grid]
-        cols, rows = shape
-        x, y = position
-        for j in range(y, y + rows):
-            for k in range(x, x + cols):
-                new_grid[j][k] = i
-        return new_grid
+            # try to fit items into grid
+            layout = backtrack(items, base_grid)
 
-    def next_empty(grid: list[list[int]]) -> list[int] | None:
-        """find next empty cell in grid"""
-        for y in range(MAX_GRID_ROWS):
-            for x in range(MAX_GRID_COLS):
-                if grid[y][x] == -1:
-                    return [x, y]
-        return None
-
-    def update_best(grid: list[list[int]], layout: dict[int, list[int]]) -> None:
-        """update best layout if current is better"""
-        metric = get_metric(grid)
-        if metric < best_layout["metric"]:
-            best_layout["metric"] = metric
-            best_layout["layout"] = dict(layout)
-            best_layout["grid"] = [row.copy() for row in grid]
-
-    def backtrack(
-        grid: list[list[int]], layout: dict[int, list[int]], remaining: set[int]
-    ) -> None:
-        """recursive backtracking to find best layout"""
-        area, _, _, _ = get_metric(grid)
-        if area > best_layout["metric"][0]:
-            # if area already worse than best, prune
-            return
-
-        if not remaining:
-            # if no remaining events, update best layout
-            update_best(grid, layout)
-            return
-
-        location = next_empty(grid)
-        if location is None:
-            # if no more locations, this layout is invalid
-            return
-
-        for i in list(remaining):
-            # iterate over remaining events
-
-            num_events = events[i]
-
-            if num_events not in combinations:
-                # if dont have predefined shapes, use single column
-                shape = [min(num_events, MAX_GRID_COLS), 1]
-                if fits(shape, grid, location):
-                    new_grid = place(i, shape, grid, location)
-                    layout[i] = shape
-                    backtrack(new_grid, layout, remaining - {i})
-                    layout.pop(i, None)
-            else:
-                # otherwise try all predefined shapes (in preference order)
-                for shape in combinations[num_events]:
-                    if fits(shape, grid, location):
-                        new_grid = place(i, shape, grid, location)
-                        layout[i] = shape
-                        backtrack(new_grid, layout, remaining - {i})
-                        layout.pop(i, None)
-
-    initial_grid = [[-1 for _ in range(MAX_GRID_COLS)] for _ in range(MAX_GRID_ROWS)]
-    backtrack(initial_grid, {}, set(range(len(events))))
-
-    if best_layout["metric"][0] == float("inf"):
-        raise ValueError("Could not automatically generate grid, please do manually")
-
-    layouts = [best_layout["layout"][i] for i in range(len(events))]
-    # trim unused rows from grid
-    trimmed_grid = [row for row in best_layout["grid"] if any(c != -1 for c in row)]
-    return layouts, trimmed_grid
+            # if successful, return shape and layout
+            if layout is not None:
+                return list(shape), layout
+    raise ValueError("Could not fit events into grid")
 
 
 def split_text(text: str, max_chars: int) -> list[str]:
