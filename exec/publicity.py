@@ -35,6 +35,10 @@ TITLE_SIZE = 110
 MAX_GRID_COLS = 4
 MAX_GRID_ROWS = 2
 
+# the options for sizes of a grid
+# (width, height)
+GRID_SIZES = [(2, 1), (2, 2), (3, 2), (4, 2)]
+
 # spacing of days in single week
 DAY_TEXT_HEIGHT = 125
 DAY_TEXT_SIZE = 70
@@ -477,9 +481,24 @@ def get_event_circle(event: dict) -> svg.G:
 
 def get_socials(width: float, height: float) -> svg.G:
     """Create socials box"""
-    desired_icon_width = width / 8
-    icons = ["globe", "discord-logo", "instagram-logo", "linkedin-logo", "warwicksu"]
-    text = ["uwcs.co.uk", "discord.uwcs.uk", "warwickcompsoc", "uwcs", "computing"]
+    desired_icon_width = width / 12
+    icons = [
+        "globe",
+        "discord-logo",
+        "instagram-logo",
+        "linkedin-logo",
+        "warwicksu",
+        "linktree-logo",
+    ]
+    text = [
+        "uwcs.co.uk",
+        "discord.uwcs.uk",
+        "warwickcompsoc",
+        "uwcs",
+        "computing",
+        "warwickcompsoc",
+    ]
+    num_rows = len(icons) + 2
     elements = [
         # base rectangle
         svg.Rect(
@@ -495,7 +514,7 @@ def get_socials(width: float, height: float) -> svg.G:
         svg.Text(
             text="JOIN US",
             x=width / 2,
-            y=height / 7,
+            y=height / num_rows,
             font_size=height / 10,
             text_anchor="middle",
             class_=["title"],
@@ -513,7 +532,7 @@ def get_socials(width: float, height: float) -> svg.G:
                 svg.Path(
                     d=path,
                     transform=[
-                        svg.Translate(width / 8 - cx, i * height / 7 - cy),
+                        svg.Translate(width / 8 - cx, i * height / num_rows - cy),
                         svg.Scale(scale),
                     ],
                     fill="white",
@@ -521,7 +540,7 @@ def get_socials(width: float, height: float) -> svg.G:
                 svg.Text(
                     text=social_text,
                     x=width / 8 + desired_icon_width,
-                    y=i * height / 7,
+                    y=i * height / num_rows,
                     font_size=desired_icon_width / 1.75,
                     text_anchor="start",
                     dominant_baseline="middle",
