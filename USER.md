@@ -72,8 +72,18 @@ Follow the steps to edit an event, but once in the edit form scroll to the botto
 
 ## iCal
 
-An ical feed for all events is available at `https://events.uwcs.co.uk/uwcs.ics`. This can be added to any calendar application that supports ical feeds, such as Google Calendar or Outlook. Note that the feed is read-only, and any changes made to events on the site will be reflected in the feed.
+An ical feed for all events is available at `/uwcs.ics`. This can be added to any calendar application that supports ical feeds, such as Google Calendar or Outlook. Note that the feed is read-only, and any changes made to events on the site will be reflected in the feed.
 
 ## Publicity
+
+An exec-only endpoint for creating single week calendars is available at `/exec/publicity/`.
+
+### Single week calendar
+
+Select a `year` and `term` from the dropdowns and then a `week`. You do not need to change `End Week` as this will be prefilled. Then click generate to create an svg of the calender for that week. Note there is a limit of 8 events in a week with a max of 6 events in a single day. If the week exeeds this, publicity will have to be done manually.
+
+If the generated SVG looks good, it can be downloaded direct to PNG via the `Save PNG` button. If frther editing is required, click `Copy SVG` to copy the SVG to your clipboard and paste it into a vector graphics editor such as Figma.
+
+### Multi week calendar
 
 soonTM
