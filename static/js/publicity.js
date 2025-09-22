@@ -1,17 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // submit form with svg content as file
-    const form = document.getElementById("publicity-form");
-    form.addEventListener("submit", function (event) {
-        const svgContent = document.getElementById("svg-container").innerHTML;
-        const blob = new Blob([svgContent], { type: "image/svg+xml" });
-        const fileInput = document.getElementById("svg");
-        const file = new File([blob], "publicity.svg", { type: "image/svg+xml" });
-
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        fileInput.files = dataTransfer.files;
-    });
-
     // enforce week range (set options for endweek based on startweek)
     const startWeekInput = document.getElementById("start-week");
     const endWeekInput = document.getElementById("end-week");
@@ -36,7 +23,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // copy svg button
     const copyButton = document.getElementById("copy-svg");
     copyButton.addEventListener("click", function (event) {
-        event.preventDefault(); // stop form submission
         const svgContent = document.getElementById("svg-container").innerHTML;
         // copy to clipboard
         navigator.clipboard.writeText(svgContent).then(() => {
@@ -52,5 +38,53 @@ document.addEventListener("DOMContentLoaded", () => {
                 copyButton.innerHTML = "Copy SVG";
             }, 2000);
         });
+    });
+
+    // download png button
+    const savePngButton = document.getElementById("save-png");
+    savePngButton.addEventListener("click", function (event) {
+        // get svg element
+        const svgElement = document.getElementById("svg-container").querySelector("svg");
+        if (!svgElement) {
+            alert("No SVG found to convert to PNG.");
+            return;
+        }
+
+        // serialise svg to string
+        const svgData = new XMLSerializer().serializeToString(svgElement);
+        const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(svgBlob);
+
+        // create image element to load svg
+        const img = new Image();
+        img.onload = function () {
+            // create canvas to draw image
+            const canvas = document.createElement("canvas");
+            canvas.width = 2028;
+            canvas.height = 2028;
+
+            // draw image to canvas
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // convert canvas to blob
+            canvas.toBlob(function (blob) {
+                // download as png
+                // create link element to trigger download
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "publicity.png";
+                document.body.appendChild(link);
+
+                // clicl link to trigger download
+                link.click();
+
+                // remove link element
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            }, "image/png");
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
     });
 });

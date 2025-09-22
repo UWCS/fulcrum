@@ -1,5 +1,4 @@
-from flask import Blueprint, Response, flash, render_template, request
-from playwright.sync_api import sync_playwright
+from flask import Blueprint, flash, render_template, request
 
 from auth.oauth import is_exec_wrapper
 from events.utils import get_week_by_year_term_week, get_years
@@ -60,30 +59,3 @@ def publicity() -> str:
         start_week=start,
         end_week=end,
     )
-
-
-@exec_ui_bp.route("/publicity/png/", methods=["POST"])
-def publicity_png() -> str | Response:
-    """Convert publicity SVG to PNG"""
-
-    if "svg" not in request.files:
-        return "No SVG file provided"
-    svg = request.files["svg"].read().decode("utf-8")
-
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
-            page = browser.new_page()
-
-            page.set_content(svg)
-
-            svg_elem = page.query_selector("svg")
-            if svg_elem is None:
-                return "Invalid SVG file"
-
-            png = svg_elem.screenshot()
-            browser.close()
-    except Exception as e:
-        return f"Failed to convert SVG to PNG: {e}"
-
-    return Response(png, mimetype="image/png")
