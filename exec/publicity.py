@@ -43,7 +43,10 @@ GRID_SIZES = [(2, 1), (2, 2), (3, 2), (4, 2)]
 DAY_TEXT_HEIGHT = 125
 DAY_TEXT_SIZE = 70
 CIRCLE_SIZE = 400
+
+# cell sizing
 CELL_PADDING = 0.9
+CELL_RADIUS = 40
 
 # max weeks for multi week
 MAX_WEEKS = 5
@@ -319,7 +322,10 @@ def get_event_groups(
     grid_sizes = GRID_SIZES[int(sum(event_groups) / 2 - 1) :]
 
     # get all combinations of shapes for the event groups
-    shape_options = [combinations[n] for n in event_groups]
+    try:
+        shape_options = [combinations[n] for n in event_groups]
+    except KeyError:
+        raise ValueError("Cannot fit more than 6 events in a day") from None
     all_options = list(itertools.product(*shape_options))
 
     for num_cols, num_rows in grid_sizes:  # try smallest grids first
@@ -364,7 +370,9 @@ def get_event_circle(event: dict) -> svg.G:
         icon = icon.lower().removeprefix("ph-")
     title = split_text(event["name"], 12)
     location = split_text(event["location"], 15)
-    colour = colours[event.get("colour", "blue").lower()]
+    colour = event.get("colour", colours["blue"])
+    if not colour.startswith("#"):
+        colour = colours.get(colour, colours["blue"])
     start_time = event["start_time"]
     time_format = "%I%p" if start_time.minute == 0 else "%I:%M%p"
     time_str = start_time.strftime(time_format).lstrip("0")
@@ -449,8 +457,8 @@ def get_socials(width: float, height: float) -> svg.G:
             width=width,
             height=height,
             fill=colours["greyer"],
-            rx=40,
-            ry=40,
+            rx=CELL_RADIUS,
+            ry=CELL_RADIUS,
         ),
         # join us text
         svg.Text(
@@ -474,16 +482,16 @@ def get_socials(width: float, height: float) -> svg.G:
                 svg.Path(
                     d=path,
                     transform=[
-                        svg.Translate(width / 8 - cx, i * height / num_rows - cy),
+                        svg.Translate(width / 5 - cx, i * height / num_rows - cy),
                         svg.Scale(scale),
                     ],
                     fill="white",
                 ),
                 svg.Text(
                     text=social_text,
-                    x=width / 8 + desired_icon_width,
+                    x=width / 5 + desired_icon_width,
                     y=i * height / num_rows,
-                    font_size=desired_icon_width / 1.75,
+                    font_size=desired_icon_width / 1.5,
                     text_anchor="start",
                     dominant_baseline="middle",
                     class_=["text"],
@@ -493,7 +501,9 @@ def get_socials(width: float, height: float) -> svg.G:
     return svg.G(elements=elements)
 
 
-def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
+def create_single_week(  # noqa: PLR0912, PLR0915
+    events: list[dict], week: Week
+) -> list[svg.Element]:
     """Create the calendar for a single week"""
 
     elements: list[svg.Element] = [
@@ -510,7 +520,7 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
 
     # get the events for the week
     # find the list of weeks in the term
-    term_weeks = events[0]["terms"][week.term - 1]["weeks"]
+    term_weeks = events[0]["terms"][0]["weeks"]
     # because terms can start at negative weeks, have gaps, and use different indexing
     # loop over the weeks to find the correct one
     week_days = []
@@ -539,9 +549,25 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
     grid_width = POST_WIDTH
     grid_top = POST_HEIGHT / 4 + (POST_HEIGHT - POST_HEIGHT / 4 - grid_height) / 2
 
+    # sizing factors
+    pull_factor = 0.2
+    two_col_shrink_x = 0.7
+    two_col_shrink_y = 0.5
+
     # find sizing of cells
-    cell_width = grid_width / num_cols
+    if num_cols == 2:  # noqa: PLR2004
+        # if only two columns, shrink grid to make it look better
+        grid_width *= two_col_shrink_x
+        grid_left = (POST_WIDTH - grid_width) / 2
+        if num_rows == 1:
+            # if only one row, shrink vertically too
+            orig_grid_height = grid_height
+            grid_height *= two_col_shrink_y
+            grid_top += (orig_grid_height - grid_height) / 2
+    else:
+        grid_left = 0
     cell_height = grid_height / num_rows
+    cell_width = grid_width / num_cols
     padding_x = cell_width * (1 - CELL_PADDING) / 2
     padding_y = cell_height * (1 - CELL_PADDING) / 2
 
@@ -563,9 +589,10 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
                 break
 
         # calculate initial offset (top left of first cell)
-        base_x = base_col * cell_width
+        base_x = grid_left + base_col * cell_width
         base_y = grid_top + base_row * cell_height
         centre_y = base_y + col_width * cell_height / 2 + DAY_TEXT_HEIGHT / 2
+        centre_x = base_x + row_width * cell_width / 2
 
         if day == "Socials":
             # apply socials box if necessary
@@ -585,8 +612,8 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
                     y=base_y + padding_y,
                     width=row_width * cell_width - 2 * padding_x,
                     height=col_width * cell_height - 2 * padding_y,
-                    rx=40,
-                    ry=40,
+                    rx=CELL_RADIUS,
+                    ry=CELL_RADIUS,
                     fill=colours["greyer"],
                 ),
                 svg.Text(
@@ -609,8 +636,14 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
                 )
 
                 # if spanning multiple columns, pull towards centre
-                pull = 0 if col_width == 1 else 0.2
+                pull = 0 if col_width == 1 else pull_factor
                 translate_y = (1 - pull) * translate_y + pull * centre_y
+                pull = (
+                    0
+                    if row_width == 1 or num_cols != 3  # noqa: PLR2004
+                    else pull_factor
+                )
+                translate_x = (1 - pull) * translate_x + pull * centre_x
 
                 # create event circle and apply offset
                 event_idx = row * row_width + col
@@ -623,6 +656,8 @@ def create_single_week(events: list[dict], week: Week) -> list[svg.Element]:
 
 def create_multi_week(events: list[dict], start: Week, end: Week) -> list[svg.Element]:
     """Create the calendar for multiple weeks (max 5)"""
+
+    raise ValueError("Not implemented yet come back soonTM")
 
     if end.week - start.week + 1 > MAX_WEEKS:
         raise ValueError("Cannot create calendar for more than 5 weeks")
@@ -639,7 +674,7 @@ def create_multi_week(events: list[dict], start: Week, end: Week) -> list[svg.El
     ]
 
     # find the list of weeks in term
-    term_weeks = events[start.academic_year]["terms"][start.term - 1]["weeks"]
+    term_weeks = events[start.academic_year]["terms"][0]["weeks"]
 
     return elements
 
