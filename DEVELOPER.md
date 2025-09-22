@@ -30,7 +30,6 @@ If you're a user pls see the [user documentation](USER.md) instead.
 1. Clone the repo: `git clone https://github.com/uwcs/fulcrum`
 2. Install pipenv if you don't have it already: `pip install pipenv`
 3. Install dependencies: `pipenv install`
-4. Install playwright browsers: `pipenv run playwright install`
 5. Create a `.env` file in the root directory and add the following environment variables:
    ```env
     SECRET_KEY="secret" # for session management, can be anything
@@ -80,6 +79,9 @@ The only exception to this is the use of SCSS and bootstrap for styling. More in
   `- api.py                     # wrapper for utils.py which exposes event management functionality to the api
   `- ui.py                      # wrapper for utils.py which exposes event management functionality to the website
   `- utils.py                   # functions for creating, modifying, deleting events; also handles week management
+`- exec/
+  `- publicity.py               # code for generating svg calendars for event publicity
+  `- ui.py                      # exec dashboard endpoints
 `- sass/
   `- bootstrap/                 # bootstrap scss files
   `- custom/                    # custom scss files
@@ -117,10 +119,12 @@ The only exception to this is the use of SCSS and bootstrap for styling. More in
     `- list.html                # a list of events
     `- tag.html                 # events associated with a tag
     `- tags.html                # all tags
+  `- exec/
+    `- dashboard.html           # exec dashboard
+    `- publicity.html           # publicity generation page
   `- 403.html                   # 403 error
   `- 404.html                   # 404 error
   `- base.html                  # base template  
-  `- exec.html                  # exec dashboard
   `- previous.html              # events archive
   `- search.html                # search results
   `- upcoming.html              # upcoming events

@@ -11,7 +11,7 @@ exec_ui_bp = Blueprint("exec_ui", __name__, url_prefix="/exec")
 @is_exec_wrapper
 def exec_panel() -> str:
     """Exec link panel"""
-    return render_template("exec/exec.html")
+    return render_template("exec/dashboard.html")
 
 
 @exec_ui_bp.route("/publicity/")
