@@ -6,9 +6,6 @@ WORKDIR /app
 COPY . .
 RUN pipenv install --system
 
-# install playwright browsers
-RUN pipenv run playwright install
-
 # compile SCSS files
 RUN python ./scripts/build_scss.py
 
