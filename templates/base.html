@@ -148,7 +148,7 @@
                         {% if is_exec %}
                             <li class="nav-item dropdown">
                                 <div class="btn-group">
-                                    <a class="nav-link pe-0" href="{{ url_for('exec_panel') }}">
+                                    <a class="nav-link pe-0" href="{{ url_for('exec_ui.exec_panel') }}">
                                         Exec Tools
                                     </a>
                                     <a class="nav-link dropdown-toggle dropdown-toggle-split" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -157,7 +157,7 @@
                                     <ul class="dropdown-menu">
                                         <!-- stuff should be added to ./exec.html aswell -->
                                         <li><a class="dropdown-item" href="{{ url_for('events_ui.create') }}">Create Event</a></li>
-                                        <li><a class="dropdown-item" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Create Publicity</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('exec_ui.publicity') }}">Create Publicity</a></li>
                                         <li><a class="dropdown-item" href="{{ url_for('auth_ui.get_api_keys_ui') }}">Manage API Keys</a></li>
                                     </ul>
                                 </div>

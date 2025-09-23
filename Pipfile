@@ -16,6 +16,8 @@ flasgger = "*"
 parsedatetime = "*"
 markdown = "*"
 icalendar = "*"
+"svg.py" = "*"
+svgpathtools = "*"
 
 [dev-packages]
 

@@ -29,18 +29,19 @@ If you're a user pls see the [user documentation](USER.md) instead.
 
 1. Clone the repo: `git clone https://github.com/uwcs/fulcrum`
 2. Install pipenv if you don't have it already: `pip install pipenv`
-3. Create a `.env` file in the root directory and add the following environment variables:
+3. Install dependencies: `pipenv install`
+5. Create a `.env` file in the root directory and add the following environment variables:
    ```env
     SECRET_KEY="secret" # for session management, can be anything
     KEYCLOAK_CLIENT_SECRET="secret" # can be found at https://auth.uwcs.co.uk/admin/master/console/#/uwcs/clients/311b91f8-55ba-4847-8c0f-8d9d8ae00c23/credentials
     API_KEY="key" # can be anything, used for testing the apiS
     ```
-5. Build the css file: `pipenv run python ./scripts/build_scss.py`
-6. (Optional) Add stuff to db
+6. Build the css file: `pipenv run python ./scripts/build_scss.py`
+7. (Optional) Add stuff to db
     - Initialise the database: `pipenv run python -m scripts.reset_db`
     - Seeded data can be added by running `pipenv run python -m scripts.reset_db seed`
     - Original data from stardust can be imported by running `pipenv run python -m scripts.import` (this is not officially supported)
-7. Run the app: `pipenv run flask --app fulcrum run --debug`
+8. Run the app: `pipenv run flask --app fulcrum run --debug`
 
 For production, use a gunicorn server:
 
@@ -61,12 +62,6 @@ The app uses UWCS's keycloak server for authentication. This is set to enable bo
 
 If you are not exec, you can bypass auth by setting the environment variable `DEV` to `1`.
 
-### libcairo-2.dll
-
-This project uses `cairosvg` to convert SVGs to PNGs. On Windows, this requires `libcairo-2.dll` to be in your PATH. Follow the instructions [from this stack overflow answers](https://stackoverflow.com/a/60220855) to get this set up. Once installed edit the path in `/exec/ui.py`.
-
-On Linux and MacOS it is already installed.
-
 ## Stack
 
 Note the site uses the same stack (Flask, SQLAlchemy) as [CS139](https://warwick.ac.uk/fac/sci/dcs/teaching/modules/cs139/), to enable easy maintenance and development by most DCS students. Notably this means that there is no frontend framework (e.g. React, Vue) and the site is rendered server-side. Should this change in the future, the API is set up to partially support this (although it will probably need some tweaking). If some js is complex, I would reccomend using a pre-existing library (see bootstrap and tags) as this will make maintenance easier.
@@ -84,6 +79,9 @@ The only exception to this is the use of SCSS and bootstrap for styling. More in
   `- api.py                     # wrapper for utils.py which exposes event management functionality to the api
   `- ui.py                      # wrapper for utils.py which exposes event management functionality to the website
   `- utils.py                   # functions for creating, modifying, deleting events; also handles week management
+`- exec/
+  `- publicity.py               # code for generating svg calendars for event publicity
+  `- ui.py                      # exec dashboard endpoints
 `- sass/
   `- bootstrap/                 # bootstrap scss files
   `- custom/                    # custom scss files
@@ -121,10 +119,12 @@ The only exception to this is the use of SCSS and bootstrap for styling. More in
     `- list.html                # a list of events
     `- tag.html                 # events associated with a tag
     `- tags.html                # all tags
+  `- exec/
+    `- dashboard.html           # exec dashboard
+    `- publicity.html           # publicity generation page
   `- 403.html                   # 403 error
   `- 404.html                   # 404 error
   `- base.html                  # base template  
-  `- exec.html                  # exec dashboard
   `- previous.html              # events archive
   `- search.html                # search results
   `- upcoming.html              # upcoming events

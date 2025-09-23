@@ -129,6 +129,11 @@ def create_event(  # noqa: PLR0913
     return event
 
 
+def get_week_by_year_term_week(year: int, term: int, week: int) -> Week | None:
+    """Get a week by its year, term, and week number"""
+    return Week.query.filter_by(academic_year=year, term=term, week=week).first()
+
+
 def get_week_by_date(date: datetime) -> Week | None:  # noqa: PLR0911, PLR0912
     """Get the week from a given date"""
 
@@ -462,6 +467,17 @@ def get_week_events() -> list[Event]:
     return (
         Event.query.filter(func.date(Event.start_time) >= week.start_date)  # type: ignore
         .filter(func.date(Event.start_time) <= week.end_date)  # type: ignore
+        .filter(Event.draft.is_(False))  # type: ignore
+        .order_by(Event.start_time, Event.end_time, Event.name)  # type: ignore
+        .all()
+    )
+
+
+def get_events_in_week_range(start: Week, end: Week) -> list[Event]:
+    """Get events between two weeks (inclusive)"""
+    return (
+        Event.query.filter(func.date(Event.start_time) >= start.start_date)  # type: ignore
+        .filter(func.date(Event.start_time) <= end.end_date)  # type: ignore
         .filter(Event.draft.is_(False))  # type: ignore
         .order_by(Event.start_time, Event.end_time, Event.name)  # type: ignore
         .all()

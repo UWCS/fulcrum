@@ -9,11 +9,12 @@ from werkzeug.routing import IntegerConverter
 from werkzeug.wrappers import Response
 
 from auth.api import auth_api_bp, auth_ui_bp
-from auth.oauth import auth_bp, configure_oauth, is_exec, is_exec_wrapper, is_logged_in
+from auth.oauth import auth_bp, configure_oauth, is_exec, is_logged_in
 from config import colours
 from events.api import events_api_bp
 from events.ui import events_ui_bp
 from events.utils import get_upcoming_events, get_years, group_events
+from exec.ui import exec_ui_bp
 from schema import initialise_db
 from search.api import search_api_bp
 from search.ui import search_ui_bp
@@ -58,6 +59,9 @@ app.register_blueprint(events_ui_bp, url_prefix="/")
 # add search ui routes
 app.register_blueprint(search_ui_bp, url_prefix="/search")
 
+# add exec ui routes
+app.register_blueprint(exec_ui_bp, url_prefix="/exec")
+
 
 # context processor to inject global variables into templates
 @app.context_processor
@@ -93,13 +97,6 @@ def previous() -> str:
 def redirect_to_docs() -> Response:
     """Redirect to the Swagger documentation"""
     return redirect("/apidocs/")
-
-
-@app.route("/exec/")
-@is_exec_wrapper
-def exec_panel() -> str:
-    """Exec link panel"""
-    return render_template("exec.html")
 
 
 @app.errorhandler(404)

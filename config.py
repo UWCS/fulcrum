@@ -1,3 +1,4 @@
+import json
 import re
 from datetime import datetime
 from pathlib import Path
@@ -45,6 +46,21 @@ phosphor_icons = sorted(
 )
 
 icons = sorted(custom_icons + phosphor_icons)
+
+# icon paths for phosphor icons (used when creating SVGs)
+phosphor_icon_paths = json.loads(Path("icons.json").read_text())
+
+custom_icon_paths = {
+    icon: re.search(
+        r"<path d=\"([^\"]+)\"", Path(f"static/icons/{icon}.svg").read_text()
+    ).group(  # type: ignore
+        1
+    )
+    for icon in custom_icons
+}
+
+icon_paths = {**phosphor_icon_paths, **custom_icon_paths}
+
 
 # the new campus map API requires auth so commenting this out for now
 # logic remains for future use
