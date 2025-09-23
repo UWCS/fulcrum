@@ -520,7 +520,10 @@ def create_single_week(  # noqa: PLR0912, PLR0915
 
     # get the events for the week
     # find the list of weeks in the term
-    term_weeks = events[0]["terms"][0]["weeks"]
+    try:
+        term_weeks = events[0]["terms"][0]["weeks"]
+    except (IndexError, KeyError):
+        raise ValueError("No events found for this week") from None
     # because terms can start at negative weeks, have gaps, and use different indexing
     # loop over the weeks to find the correct one
     week_days = []
