@@ -87,4 +87,48 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         img.src = url;
     });
+
+    const copyPng = document.getElementById("copy-png");
+    copyPng.addEventListener("click", function (event) {
+        // get svg element
+        const svgElement = document.getElementById("svg-container").querySelector("svg");
+        if (!svgElement) {
+            alert("No SVG found to convert to PNG.");
+            return;
+        }
+        // serialise svg to string
+        const svgData = new XMLSerializer().serializeToString(svgElement);
+        const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(svgBlob);
+        // create image element to load svg
+        const img = new Image();
+        img.onload = function () {
+            // create canvas to draw image
+            const canvas = document.createElement("canvas");
+            canvas.width = 2028;
+            canvas.height = 2028;
+            // draw image to canvas
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            // convert canvas to blob
+            canvas.toBlob(function (blob) {
+                // copy to clipboard
+                const item = new ClipboardItem({ "image/png": blob });
+                navigator.clipboard.write([item]).then(() => {
+                    // show success state
+                    copyPng.classList.remove("btn-outline-secondary");
+                    copyPng.classList.add("btn-success");
+                    copyPng.innerHTML = "<i class='ph-bold ph-check'></i> Copied";
+                    // revert after 2 seconds
+                    setTimeout(() => {
+                        copyPng.classList.remove("btn-success");
+                        copyPng.classList.add("btn-outline-secondary");
+                        copyPng.innerHTML = "Copy PNG";
+                    }, 2000);
+                });
+                URL.revokeObjectURL(url);
+            }, "image/png");
+        };
+        img.src = url;
+    });
 });
