@@ -358,7 +358,15 @@ def prepare_event(event: Event) -> dict:
     # convert markdown to html
     event_dict["description"] = markdown(
         escape(event_dict["description"]),
-        extensions=[DelExtension(), TargetExtension()],
+        extensions=[
+            DelExtension(),
+            TargetExtension(),
+            "extra",
+            "nl2br",
+            "smarty",
+            "codehilite",
+            "sane_lists",
+        ],
     )
 
     return event_dict
