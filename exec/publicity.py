@@ -325,7 +325,9 @@ def get_event_groups(
     try:
         shape_options = [combinations[n] for n in event_groups]
     except KeyError:
-        raise ValueError("Cannot fit more than 6 events in a day") from None
+        raise ValueError(
+            f"Cannot fit more than {MAX_GRID_COLS * MAX_GRID_ROWS} events in a day"
+        ) from None
     all_options = list(itertools.product(*shape_options))
 
     for num_cols, num_rows in grid_sizes:  # try smallest grids first
