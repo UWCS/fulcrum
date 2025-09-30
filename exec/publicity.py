@@ -34,10 +34,10 @@ TITLE_SIZE = 110
 
 # max grid size for single week
 MAX_GRID_COLS = 4
-MAX_GRID_ROWS = 2
+MAX_GRID_ROWS = 3
 
 # the options for sizes of a grid
-GRID_SIZES = [(2, 1), (2, 2), (3, 2), (4, 2)]
+GRID_SIZES = [(2, 1), (2, 2), (3, 2), (4, 2), (4, 3), (4, 3)]
 
 # spacing of days in single week
 DAY_TEXT_HEIGHT = 125
@@ -312,10 +312,10 @@ def get_event_groups(
     combinations = {
         1: [[1, 1]],
         2: [[2, 1], [1, 2]],
-        3: [[3, 1], [2, 2]],
+        3: [[3, 1], [2, 2], [1, 3]],
         4: [[2, 2], [4, 1]],
-        5: [[3, 2], [4, 2]],
-        6: [[3, 2], [4, 2]],
+        5: [[3, 2], [2, 3], [4, 2]],
+        6: [[3, 2], [2, 3], [4, 2]],
     }
 
     # get possible sizes of grids
@@ -548,7 +548,9 @@ def create_single_week(  # noqa: PLR0912, PLR0915
     num_rows, num_cols = len(grid), len(grid[0])
 
     # find position and sizing of grid
-    grid_height = POST_HEIGHT / 1.5
+    grid_height = (
+        (POST_HEIGHT / 1.5) if num_rows < 3 else (POST_HEIGHT / 1.35)  # noqa: PLR2004
+    )
     grid_width = POST_WIDTH
     grid_top = POST_HEIGHT / 4 + (POST_HEIGHT - POST_HEIGHT / 4 - grid_height) / 2
 
@@ -595,7 +597,6 @@ def create_single_week(  # noqa: PLR0912, PLR0915
         base_x = grid_left + base_col * cell_width
         base_y = grid_top + base_row * cell_height
         centre_y = base_y + col_width * cell_height / 2 + DAY_TEXT_HEIGHT / 2
-        centre_x = base_x + row_width * cell_width / 2
 
         if day == "Socials":
             # apply socials box if necessary
@@ -630,28 +631,30 @@ def create_single_week(  # noqa: PLR0912, PLR0915
             ]
         )
 
-        for row in range(col_width):
-            for col in range(row_width):
+        for col in range(col_width):
+            for row in range(row_width):
+                event_scale = 0.7 if num_rows == 3 else 1.0  # noqa: PLR2004
+
                 # work out extra translation required
-                translate_x = base_x + col * cell_width + cell_width / 2
+                translate_x = base_x + row * cell_width + cell_width / 2
                 translate_y = (
-                    base_y + row * cell_height + cell_height / 2 + DAY_TEXT_HEIGHT / 2
+                    base_y + col * cell_height + cell_height / 2 + DAY_TEXT_HEIGHT / 2
                 )
 
                 # if spanning multiple columns, pull towards centre
-                pull = 0 if col_width == 1 else pull_factor
-                translate_y = (1 - pull) * translate_y + pull * centre_y
-                pull = (
-                    0
-                    if row_width == 1 or num_cols != 3  # noqa: PLR2004
-                    else pull_factor
-                )
-                translate_x = (1 - pull) * translate_x + pull * centre_x
+                pull_y = 0 if col_width == 1 else pull_factor
+                translate_y = (1 - pull_y) * translate_y + pull_y * centre_y
 
-                # create event circle and apply offset
-                event_idx = row * row_width + col
+                translate_x /= event_scale
+                translate_y /= event_scale
+
+                # create event circle and apply offset + scaling around its center
+                event_idx = col * row_width + row
                 event_circle = get_event_circle(day_event_list[event_idx])
-                event_circle.transform = [svg.Translate(translate_x, translate_y)]
+                event_circle.transform = [
+                    svg.Scale(event_scale),
+                    svg.Translate(translate_x, translate_y),
+                ]
                 elements.append(event_circle)
 
     return elements
