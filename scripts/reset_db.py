@@ -2,7 +2,7 @@ import os
 import sys
 from datetime import date, datetime, timedelta
 
-import pytz
+from pytz import timezone
 from werkzeug.security import generate_password_hash
 
 from fulcrum import app
@@ -19,7 +19,7 @@ def reset_database(seed: bool) -> None:
         if seed:
             # create dummy event
             start_time = datetime(
-                2025, 9, 30, 12, 0, 0, tzinfo=pytz.timezone("Europe/London")
+                2025, 9, 30, 12, 0, 0, tzinfo=timezone("Europe/London")
             )
             dummy_event = Event(
                 name="Test Event",

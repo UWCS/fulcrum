@@ -1,13 +1,15 @@
 import re
 from datetime import date, datetime, timedelta
 
-import pytz
 from flask import Flask, url_for
 from flask_sqlalchemy import SQLAlchemy
+from pytz import timezone
 from sqlalchemy import and_, func
-from sqlalchemy.orm import foreign
+from sqlalchemy.orm import foreign, reconstructor
 
 from config import colours, custom_icons, icons
+
+LONDON = timezone("Europe/London")
 
 db = SQLAlchemy()
 
@@ -148,9 +150,42 @@ class Event(db.Model):
         self.location_url = location_url
         self.icon = icon
         self.colour = colour if colour else "blue"
-        # ensure times are london-time
-        self.start_time = start_time.replace(tzinfo=pytz.timezone("Europe/London"))
-        self.end_time = end_time.replace(tzinfo=pytz.timezone("Europe/London"))
+        self.start_time = start_time
+        self.end_time = end_time
+        self._localise_times()
+
+    @reconstructor
+    def reinit(self) -> None:
+        """
+        Localise start and end times on db load
+        Previously only happened in __init__ ie only new instantiations
+        Removes need to remember to manually localise everywhere
+        """
+
+        self._localise_times()
+
+    def _localise_times(self) -> None:
+        """
+        Helper to localise start and end times of events
+
+        Only localise if not already tz-aware - allows external localisation
+
+        For tz-aware DB, harden to strictly enforce 'Europe/London' e.g.
+        ```
+        self.end_time.tzinfo.zone == LONDON.zone
+        ```
+        None is fine rn and cleaner
+        Use localize instead of .replace to avoid LMT offset issue
+
+        Should not need to localise start_time or end_time outside this
+        """
+
+        self.start_time = LONDON.localize(self.start_time) \
+                                            if self.start_time.tzinfo is None \
+                                            else self.start_time
+        self.end_time = LONDON.localize(self.end_time) \
+                                            if self.end_time.tzinfo is None \
+                                            else self.end_time
 
     def __repr__(self) -> str:
         return (
@@ -257,7 +292,7 @@ class APIKey(db.Model):
     def __init__(self, key_hash: str, owner: str) -> None:
         self.key_hash = key_hash
         self.owner = owner
-        self.created_at = datetime.now(pytz.timezone("Europe/London"))
+        self.created_at = datetime.now(LONDON)
         self.active = True
 
     def __repr__(self) -> str:

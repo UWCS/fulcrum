@@ -3,34 +3,38 @@ from datetime import datetime, timedelta
 from typing import Match
 from xml.etree import ElementTree as ET
 
-import pytz
 from markdown import Markdown, markdown
 from markdown.extensions import Extension
 from markdown.inlinepatterns import InlineProcessor
 from markdown.treeprocessors import Treeprocessor
 from markupsafe import escape
+from pytz import timezone
 from sqlalchemy import func
 
 from config import colours, old_dates, phosphor_icons, warwick_weeks  # , room_mapping
 from schema import Event, Tag, Week, db
 
+LONDON = timezone("Europe/London")
 
 def get_datetime_from_string(date_str: str) -> datetime | str:
-    """Convert a date string in the format 'YYYY-MM-DDTHH:MM' to a datetime object."""
+    """
+    Convert datetime str in the format 'YYYY-MM-DDTHH:MM'
+    to a Europe/London tz-aware datetime object
+    """
+
     try:
-        return datetime.strptime(date_str, "%Y-%m-%dT%H:%M").replace(
-            tzinfo=pytz.timezone("Europe/London")
-        )
+        return LONDON.localize(datetime.strptime(date_str, "%Y-%m-%dT%H:%M"))  # noqa: DTZ007
     except ValueError:
         return "Invalid date format, expected 'YYYY-MM-DDTHH:MM'"
 
 
 def get_date_from_string(date_str: str) -> datetime | str:
-    """Convert a date string in the format 'YYYY-MM-DD' to a datetime object."""
+    """
+    Convert datetime str in the format 'YYYY-MM-DD' to a Europe/London tz-aware datetime
+    """
+
     try:
-        return datetime.strptime(date_str, "%Y-%m-%d").replace(
-            tzinfo=pytz.timezone("Europe/London")
-        )
+        return LONDON.localize(datetime.strptime(date_str, "%Y-%m-%d"))  # noqa: DTZ007
     except ValueError:
         return "Invalid date format, expected 'YYYY-MM-DD'"
 
@@ -48,11 +52,6 @@ def create_event(  # noqa: PLR0913
     tags: list[str],
 ) -> Event | str:
     """Create an event"""
-
-    # convert start_time and normalise end_time
-    start_time = start_time.replace(tzinfo=pytz.timezone("Europe/London"))
-
-    end_time = end_time.replace(tzinfo=pytz.timezone("Europe/London"))
 
     if end_time < start_time:
         return "End time cannot be before start time"
@@ -220,6 +219,7 @@ def get_week_by_date(date: datetime) -> Week | None:  # noqa: PLR0911, PLR0912
 def create_week_from_date(date: datetime) -> Week | None:
     """Create a week from a given date"""
 
+    # date.date() should already be localised by this point
     week = Week.query.filter(
         (date.date() >= Week.start_date) & (date.date() <= Week.end_date)  # type: ignore
     ).first()
@@ -260,7 +260,7 @@ def create_repeat_event(  # noqa: PLR0913
             location_url,
             icon,
             colour,
-            start_time,
+            start_time,  # localised in create_event
             end_time,
             tags,
         )
@@ -304,12 +304,10 @@ def get_event_by_id(event_id: int) -> Event | None:
 
 def get_event_by_slug(year: int, term: int, week: int, slug: str) -> Event | None:
     """Get an event by slug"""
-    return (
-        Event.query.filter(
+    return Event.query.filter(
             Event.week.has(academic_year=year, term=term, week=week),
             Event.slug == slug,  # type: ignore
-        )
-    ).first()
+        ).first()
 
 
 # shamelessly stolen from docs (https://python-markdown.github.io/extensions/api/#example_3)
@@ -367,8 +365,9 @@ def prepare_event(event: Event) -> dict:
 def group_events(events: list[Event]) -> list[dict]:
     """Group events by term, week, and day"""
 
-    # initalise dictionary
+    # initialise dictionary
     # this is not too nested i have no clue what youre talking about
+    # R: human equivalent of when copilot goes loopy
     grouped_events = defaultdict(
         lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
     )
@@ -423,12 +422,13 @@ def get_events_by_time(
         query = query.filter(Event.draft.is_(False))  # type: ignore
 
     # order by start_time, end_time, and name
-    return query.order_by(Event.start_time, Event.end_time, Event.name).all()  # type: ignore
-
+    return query.order_by(
+            Event.start_time, Event.end_time, Event.name  # type: ignore
+        ).all()
 
 def get_upcoming_events(include_drafts: bool = False) -> list[Event]:
     """Get all events in this week, and future weeks"""
-    now = datetime.now(pytz.timezone("Europe/London"))
+    now = datetime.now(LONDON)
     week = get_week_by_date(now)
 
     if not week:
@@ -440,8 +440,8 @@ def get_upcoming_events(include_drafts: bool = False) -> list[Event]:
         query = query.filter(Event.draft.is_(False))  # type: ignore
 
     return query.order_by(
-        Event.start_time, Event.end_time, Event.name  # type: ignore
-    ).all()
+                Event.start_time, Event.end_time, Event.name  # type: ignore
+            ).all()
 
 
 def get_all_events(include_drafts: bool = False) -> list[Event]:
@@ -458,7 +458,7 @@ def get_all_events(include_drafts: bool = False) -> list[Event]:
 
 def get_week_events() -> list[Event]:
     """Get all events in the current week"""
-    now = datetime.now(pytz.timezone("Europe/London"))
+    now = datetime.now(LONDON)
     week = get_week_by_date(now)
 
     if not week:
@@ -486,7 +486,7 @@ def get_events_in_week_range(start: Week, end: Week) -> list[Event]:
 
 def get_days_events(days: int) -> list[Event]:
     """Get all events in the next <days> days"""
-    now = datetime.now(pytz.timezone("Europe/London"))
+    now = datetime.now(LONDON)
     end_date = now + timedelta(days=days)
 
     return (
@@ -533,6 +533,7 @@ def edit_event(  # noqa: PLR0913
     event.location_url = (
         location_url if location_url is not _KEEP else event.location_url
     )
+
     if icon is not _KEEP:
         event.icon = icon.lower() if icon is not None else event.icon  # type: ignore
         if icon in phosphor_icons:
@@ -540,14 +541,14 @@ def edit_event(  # noqa: PLR0913
     event.colour = colour if colour is not _KEEP else event.colour
 
     event.start_time = (
-        start_time.replace(tzinfo=pytz.timezone("Europe/London"))  # type: ignore
+        start_time  # type: ignore
         if start_time is not _KEEP
-        else event.start_time.replace(tzinfo=pytz.timezone("Europe/London"))  # type: ignore
+        else event.start_time  # type: ignore
     )
     event.end_time = (
-        end_time.replace(tzinfo=pytz.timezone("Europe/London"))  # type: ignore
+        end_time  # type: ignore
         if end_time is not _KEEP
-        else event.end_time.replace(tzinfo=pytz.timezone("Europe/London"))  # type: ignore
+        else event.end_time  # type: ignore
     )
 
     # update the week associated with the event
