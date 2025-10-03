@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 
-import pytz
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask import Response as FlaskResponse
 from icalendar import Calendar, Event
+from pytz import timezone
 from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.wrappers import Response
 
@@ -367,7 +367,7 @@ def get_ical() -> Response:
             "dtend",
             event.end_time if event.end_time else event.start_time + timedelta(hours=1),
         )
-        ical_event.add("dtstamp", datetime.now(tz=pytz.timezone("Europe/London")))
+        ical_event.add("dtstamp", datetime.now(timezone("Europe/London")))
         ical_event.add(
             "url",
             url_for(

@@ -3,8 +3,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-import pytz
 import requests
+from pytz import timezone
 
 # custom colours
 colours = {
@@ -86,7 +86,7 @@ categories = ["gaming", "academic", "social", "inclusivity", "tech"]
 # +5 years for future proofing
 # note, this requires the app to be restarted every 5 years
 # (however given the current state of UWCS uptime, this is guaranteed to happen)
-_now = datetime.now(tz=pytz.timezone("Europe/London"))
+_now = datetime.now(tz=timezone("Europe/London"))
 _academic_year = _now.year if _now.month <= 9 else _now.year + 1  # noqa: PLR2004
 try:
     warwick_weeks = [

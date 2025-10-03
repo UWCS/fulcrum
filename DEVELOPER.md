@@ -1,18 +1,21 @@
+<!-- omit from toc -->
 # Developer documentation for fulcrum
 
 This documentation is intended for developers working on fulcrum. This explains how to set up fulcrum locally, why some design decisions were made, and anything else you should need. If you need any help, message in #tech-team on the UWCS discord.
 
 If you're a user pls see the [user documentation](USER.md) instead.
 
+<!-- omit from toc -->
 ## Table of Contents
 
 - [Running](#running)
   - [SSL Note](#ssl-note)
-  - [libcairo-2.dll](#libcairo-2dll)
+  - [Timezones Note](#timezones-note)
 - [Stack](#stack)
 - [File Structure](#file-structure)
 - [Database schema](#database-schema)
 - [API](#api)
+  - [Creating and managing API keys](#creating-and-managing-api-keys)
 - [Styling](#styling)
 - [Icons](#icons)
   - [Updating phosphor icons](#updating-phosphor-icons)
@@ -22,6 +25,7 @@ If you're a user pls see the [user documentation](USER.md) instead.
   - [Warwick Weeks](#warwick-weeks)
   - [Warwick Map API](#warwick-map-api)
 - [Testing](#testing)
+- [Ideas for the future](#ideas-for-the-future)
 
 ## Running
 
@@ -61,6 +65,12 @@ docker run -p 5000:5000 fulcrum
 The app uses UWCS's keycloak server for authentication. This is set to enable both http and https as redirect URIs ONLY WHEN RUNNING LOCALLY (127.0.0.1). The app is configured such that if `app.debug` is true, http is used, otherwise https is used. As a result when running locally out of debug mode, https must be used. This can be done by running `pipenv run flask --app fulcrum run --cert=adhoc`.
 
 If you are not exec, you can bypass auth by setting the environment variable `DEV` to `1`.
+
+### Timezones Note
+
+The database currently stores and interprets all datetimes as naive Europe/London dts. An ORM reconstructor is used in the `Event` model to make localising of read dts consistent with what (mostly) previously occurred with a newly constructed `Event`. The API now returns full ISO-8601 dt strings for external usage.
+
+Using `replace` on `tzinfo` with pytz causes inconsistent behaviour, notably causing weird offsets of 1 minute, hence the use of `localize` instead. This is due to LMT shenanigans (see Raven's braindump about this if you're interested: https://discord.com/channels/189453139584221185/292281159495450625/1421431330440216696)
 
 ## Stack
 

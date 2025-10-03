@@ -6,9 +6,9 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import parsedatetime
-import pytz
 import requests
 import tomllib
+from pytz import timezone
 
 from config import warwick_weeks
 
@@ -20,6 +20,7 @@ tags = {}
 error_files = []
 error_file = "scripts/errors.txt"
 
+LONDON = timezone("Europe/London")
 
 def get_date_from_week(year: str, term: str, week: str) -> date | None:
     """Get date from week"""
@@ -41,9 +42,9 @@ def get_date_from_week(year: str, term: str, week: str) -> date | None:
         # extract core info
         name = w["name"]
         start = (
-            datetime.strptime(w["start"], "%Y-%m-%d")
-            .replace(tzinfo=pytz.timezone("Europe/London"))
-            .date()
+            LONDON.localize(
+                datetime.strptime(w["start"], "%Y-%m-%d")  # noqa: DTZ007
+            ).date()
         )
 
         if "Term" in name:
@@ -104,14 +105,12 @@ def get_date_time(date_str: str, path: Path) -> datetime:
     """Get datetime from string :wah:"""
     try:
         # attempt to parse as ISO-8601 format
-        return datetime.fromisoformat(date_str).replace(
-            tzinfo=pytz.timezone("Europe/London")
-        )
+        return LONDON.localize(datetime.fromisoformat(date_str))
     except ValueError:
         # if that fails, use custom parsing
         base_date = get_date_from_week(path.parts[2], path.parts[3], path.parts[4])
         time, _ = parsedatetime.Calendar().parseDT(
-            date_str, base_date, pytz.timezone("Europe/London")
+            date_str, base_date, LONDON
         )
         # if time is a week ahead of the base date (on mon), subtract a week from time
         # yes i know this is a hack, cope
@@ -149,15 +148,15 @@ def parse_event(path: Path, repeat: bool) -> dict:
         if "end_time" in event:
             try:
                 # attempt to parse as ISO-8601 format
-                event["end_time"] = datetime.fromisoformat(event["end_time"]).replace(
-                    tzinfo=pytz.timezone("Europe/London")
+                event["end_time"] = LONDON.localize(
+                    datetime.fromisoformat(event["end_time"])
                 )
             except ValueError:
                 # if that fails, use custom parsing
                 time, _ = parsedatetime.Calendar().parseDT(
                     event["end_time"],
                     event["start_time"],
-                    pytz.timezone("Europe/London"),
+                    LONDON,
                 )
                 event["end_time"] = time
 
@@ -269,7 +268,7 @@ def import_events() -> None:
                 # date parsing
                 event_date = get_date_from_week(file.parts[2], file.parts[3], week)
                 time, _ = parsedatetime.Calendar().parseDT(
-                    event["date"], event_date, pytz.timezone("Europe/London")
+                    event["date"], event_date, LONDON
                 )
                 # same hack to subtract a week if necessary
                 if time.date() >= event_date + timedelta(weeks=1):  # type: ignore
@@ -280,7 +279,7 @@ def import_events() -> None:
                     time, _ = parsedatetime.Calendar().parseDT(
                         event["end_time"],
                         event_copy["start_time"],
-                        pytz.timezone("Europe/London"),
+                        LONDON,
                     )
                     event_copy["end_time"] = time
                 else:
