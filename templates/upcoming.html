@@ -21,7 +21,7 @@
     {% endwith %}
     <h1>Hello World!</h1>
     <p class="lead">We run some events! Here are the upcoming ones:</p>
-    <p>We also host an <i class="ph-bold ph-calendar-dots"></i> <a href="{{ url_for('events_ui.get_ical') }}">iCal feed</a> of all our events</p>
+    <p>We also host an <i class="ph-bold ph-calendar-dots"></i> <a href="{{ url_for('events_ui.get_ics') }}">iCal feed</a> of all our events</p>
 {% endif %}
 {{ list(events, True, True, False) }}
 {% endblock %}

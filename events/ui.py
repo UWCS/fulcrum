@@ -2,7 +2,8 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask import Response as FlaskResponse
-from icalendar import Calendar, Event
+from icalendar import Calendar
+from icalendar import Event as ICalEvent
 from pytz import timezone
 from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.wrappers import Response
@@ -26,6 +27,7 @@ from events.utils import (
     prepare_event,
     validate_colour,
 )
+from schema import Event
 
 events_ui_bp = Blueprint("events_ui", __name__)
 
@@ -347,16 +349,14 @@ def view_tag(tag: str) -> str:
     return render_template("events/tag.html", events=events, tag=tag_obj)
 
 
-@events_ui_bp.route("/uwcs.ics")
-def get_ical() -> Response:
-    events = get_upcoming_events()
-
+def get_calendar(events: list[Event]) -> Calendar:
+    """Get an iCal calendar from a list of events"""
     calendar = Calendar()
     calendar.add("prodid", "-//UWCS Fulcrum//EN")
     calendar.add("version", "2.0")
 
     for event in events:
-        ical_event = Event()
+        ical_event = ICalEvent()
         ical_event.add("summary", event.name)
         # descriptions can be long (and markdown formatted) so do not include
         # ical_event.add("description", event.description)
@@ -381,11 +381,36 @@ def get_ical() -> Response:
         )
         calendar.add_component(ical_event)
 
+    return calendar
+
+
+@events_ui_bp.route("/uwcs.ics")
+def get_ics() -> Response:
+    events = get_upcoming_events()
+
+    calendar = get_calendar(events)
+
     return FlaskResponse(
         calendar.to_ical(),
         mimetype="text/calendar",
         headers={
             "Content-Disposition": 'attachment; filename="uwcs.ics"',
+            "Cache-Control": "no-cache",
+        },
+    )
+
+
+@events_ui_bp.route("exec.ics")
+def exec_ics() -> Response:
+    events = get_upcoming_events(include_drafts=True)
+
+    calendar = get_calendar(events)
+
+    return FlaskResponse(
+        calendar.to_ical(),
+        mimetype="text/calendar",
+        headers={
+            "Content-Disposition": 'attachment; filename="exec.ics"',
             "Cache-Control": "no-cache",
         },
     )
