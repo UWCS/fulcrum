@@ -665,8 +665,6 @@ def create_single_week(  # noqa: PLR0912, PLR0915
 def create_multi_week(events: list[dict], start: Week, end: Week) -> list[svg.Element]:
     """Create the calendar for multiple weeks (max 5)"""
 
-    raise ValueError("Not implemented yet come back soonTM")
-
     if end.week - start.week + 1 > MAX_WEEKS:
         raise ValueError("Cannot create calendar for more than 5 weeks")
 
@@ -682,7 +680,7 @@ def create_multi_week(events: list[dict], start: Week, end: Week) -> list[svg.El
     ]
 
     # find the list of weeks in term
-    term_weeks = events[start.academic_year]["terms"][0]["weeks"]
+    term_weeks = events[0]["terms"][0]["weeks"]
 
     return elements
 
