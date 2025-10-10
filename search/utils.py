@@ -28,9 +28,7 @@ def _search_pipeline(query: str) -> Iterator[tuple[str, Event | Tag | str]]:
     events = (
         db.session.query(Event)
         .filter(Event.name.ilike(f"%{query}%"), Event.draft.is_(False))  # type: ignore
-        .order_by(
-            func.abs(Event.start_time - func.now())
-        )  # prefer events closer to now
+        .order_by(func.abs(Event.start_time - func.now()))  # prefer events closer to now
         .all()
     )
     for event in events:

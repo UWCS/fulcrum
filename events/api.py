@@ -24,9 +24,7 @@ from schema import Event, Tag
 events_api_bp = Blueprint("events_api", __name__, url_prefix="/api/events")
 
 
-@events_api_bp.route(
-    "/<int:year>/<int:term>/<sint:week>/<string:slug>/", methods=["GET"]
-)
+@events_api_bp.route("/<int:year>/<int:term>/<sint:week>/<string:slug>/", methods=["GET"])
 def get_event(year: int, term: int, week: int, slug: str) -> tuple[Response, int]:
     """Get a specific event by year, term, week, and slug.
     ---
@@ -98,9 +96,7 @@ def get_event_by_id_api(event_id: int) -> tuple[Response, int]:
 @events_api_bp.route("/<int:year>/<int:term>/<sint:week>/", methods=["GET"])
 @events_api_bp.route("/<int:year>/<int:term>/", methods=["GET"])
 @events_api_bp.route("/<int:year>/", methods=["GET"])
-def get_events(
-    year: int, term: int | None = None, week: int | None = None
-) -> tuple[Response, int]:
+def get_events(year: int, term: int | None = None, week: int | None = None) -> tuple[Response, int]:
     """Get all events for a specific year, term, and week.
     ---
     parameters:
@@ -318,7 +314,7 @@ def create_event_api() -> tuple[Response, int]:  # noqa: PLR0911
             description: Bad request, missing or invalid data.
         403:
             description: Forbidden.
-    """  # noqa: E501
+    """
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
@@ -443,7 +439,7 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
             description: Bad request, missing or invalid data.
         403:
             description: Forbidden.
-    """  # noqa: E501
+    """
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data provided"}), 400
@@ -694,9 +690,7 @@ def get_tags() -> tuple[Response, int]:
             description: No tags found.
     """
     query_string = request.args.get("query", "").lower()
-    tags = (
-        get_tags_by_string(query_string, limit=-1) if query_string else get_all_tags()
-    )
+    tags = get_tags_by_string(query_string, limit=-1) if query_string else get_all_tags()
     if not tags:
         return jsonify({"error": "No tags found"}), 404
     return jsonify([tag.to_dict() for tag in tags]), 200

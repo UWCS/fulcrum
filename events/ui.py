@@ -39,18 +39,14 @@ def get_event_from_form(form_data: ImmutableMultiDict) -> dict:
         "description": form_data["description"],
         "draft": "draft" in form_data,
         "location": form_data["location"],
-        "location_url": (
-            form_data["location_url"] if form_data["location_url"] != "" else None
-        ),
+        "location_url": (form_data["location_url"] if form_data["location_url"] != "" else None),
         "icon": form_data["icon"] if form_data["icon"] != "" else None,
-        "text_colour": (
-            form_data["text_colour"] if form_data["text_colour"] != "" else None
-        ),
-        "color_colour": (
-            form_data["color_colour"] if form_data["color_colour"] != "" else None
-        ),
+        "text_colour": (form_data["text_colour"] if form_data["text_colour"] != "" else None),
+        "color_colour": (form_data["color_colour"] if form_data["color_colour"] != "" else None),
         "times": zip(
-            form_data.getlist("start_time[]"), form_data.getlist("end_time[]")
+            form_data.getlist("start_time[]"),
+            form_data.getlist("end_time[]"),
+            strict=True,
         ),
         "duration": (form_data["duration"] if form_data["duration"] != "" else None),
         "tags": [tag for tag in form_data.getlist("tags[]") if tag],
@@ -61,14 +57,10 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
     """Parse event from form data"""
     # parse colour
     text_colour = (
-        form_data["text_colour"].strip().lower()
-        if form_data["text_colour"] != ""
-        else None
+        form_data["text_colour"].strip().lower() if form_data["text_colour"] != "" else None
     )
     color_colour = (
-        form_data["color_colour"].strip().lower()
-        if form_data["color_colour"] != ""
-        else None
+        form_data["color_colour"].strip().lower() if form_data["color_colour"] != "" else None
     )
 
     if (error := validate_colour(text_colour, color_colour)) is not None:
@@ -78,9 +70,7 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
     colour = text_colour if text_colour else color_colour
 
     # parse start and end times
-    start_times = [
-        get_datetime_from_string(t) for t in form_data.getlist("start_time[]")
-    ]
+    start_times = [get_datetime_from_string(t) for t in form_data.getlist("start_time[]")]
     for start_time in start_times:
         if isinstance(start_time, str):
             return start_time
@@ -99,9 +89,7 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
         "description": form_data["description"],
         "draft": "draft" in form_data,
         "location": form_data["location"],
-        "location_url": (
-            form_data["location_url"] if form_data["location_url"] != "" else None
-        ),
+        "location_url": (form_data["location_url"] if form_data["location_url"] != "" else None),
         "icon": form_data["icon"] if form_data["icon"] != "" else None,
         "colour": colour,
         "tags": tags,
@@ -153,10 +141,7 @@ def create() -> str | Response:
         )
 
     # attempt to create the event
-    if "start_time" in data:
-        event = create_event(**data)
-    else:
-        event = create_repeat_event(**data)
+    event = create_event(**data) if "start_time" in data else create_repeat_event(**data)
 
     # if failed, return the form with an error
     if isinstance(event, str):
@@ -258,9 +243,7 @@ def edit(year: int, term: int, week: int, slug: str) -> str | Response:
     )
 
 
-@events_ui_bp.route(
-    "/<int:year>/<int:term>/<sint:week>/<string:slug>/delete/", methods=["POST"]
-)
+@events_ui_bp.route("/<int:year>/<int:term>/<sint:week>/<string:slug>/delete/", methods=["POST"])
 @is_exec_wrapper
 def delete(year: int, term: int, week: int, slug: str) -> Response:
     """Delete an event by its year, term, week, and, slug"""
@@ -307,9 +290,7 @@ def view_list(year: int, term: int | None = None, week: int | None = None) -> st
 
     events = group_events(events)
 
-    return render_template(
-        "events/list.html", events=events, year=year, term=term, week=week
-    )
+    return render_template("events/list.html", events=events, year=year, term=term, week=week)
 
 
 @events_ui_bp.route("/stardust/front/")

@@ -38,17 +38,13 @@ def publicity() -> str:
             messgae += "end "
         messgae += "week"
         flash(messgae, "danger")
-        return render_template(
-            "exec/publicity.html", year=year, term=term, years=get_years()
-        )
+        return render_template("exec/publicity.html", year=year, term=term, years=get_years())
 
     try:
         svg = create_svg(start_week, end_week)
     except ValueError as e:
         flash(f"Error creating publicity SVG: {e}", "danger")
-        return render_template(
-            "exec/publicity.html", year=year, term=term, years=get_years()
-        )
+        return render_template("exec/publicity.html", year=year, term=term, years=get_years())
 
     return render_template(
         "exec/publicity.html",

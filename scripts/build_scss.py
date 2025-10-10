@@ -6,9 +6,7 @@ scss_path = "sass/main.scss"
 css_path = "static/css/main.css"
 
 print("compiling scss")
-css = sass.compile(
-    filename=scss_path, include_paths=["sass"], output_style="compressed"
-)
+css = sass.compile(filename=scss_path, include_paths=["sass"], output_style="compressed")
 
 print("writing css")
 path = Path(css_path)

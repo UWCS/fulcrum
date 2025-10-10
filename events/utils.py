@@ -16,6 +16,7 @@ from schema import Event, Tag, Week, db
 
 LONDON = timezone("Europe/London")
 
+
 def get_datetime_from_string(date_str: str) -> datetime | str:
     """
     Convert datetime str in the format 'YYYY-MM-DDTHH:MM'
@@ -250,7 +251,7 @@ def create_repeat_event(  # noqa: PLR0913
 ) -> list[Event] | str:
     """Create multiple events at once"""
     events = []  # the created events
-    for start_time, end_time in zip(start_times, end_times):
+    for start_time, end_time in zip(start_times, end_times, strict=True):
         # iterate through start_times and create events
         event = create_event(
             name,
@@ -305,9 +306,9 @@ def get_event_by_id(event_id: int) -> Event | None:
 def get_event_by_slug(year: int, term: int, week: int, slug: str) -> Event | None:
     """Get an event by slug"""
     return Event.query.filter(
-            Event.week.has(academic_year=year, term=term, week=week),
-            Event.slug == slug,  # type: ignore
-        ).first()
+        Event.week.has(academic_year=year, term=term, week=week),
+        Event.slug == slug,  # type: ignore
+    ).first()
 
 
 # shamelessly stolen from docs (https://python-markdown.github.io/extensions/api/#example_3)
@@ -405,9 +406,7 @@ def group_events(events: list[Event]) -> list[dict]:
                             "events": [prepare_event(event) for event in day_events],
                         }
                     )
-                week_list.append(
-                    {"week": week, "days": day_list, "start_date": start_date}
-                )
+                week_list.append({"week": week, "days": day_list, "start_date": start_date})
             term_list.append({"term": term, "weeks": week_list})
         year_list.append({"year": year, "terms": term_list})
     return year_list
@@ -430,9 +429,8 @@ def get_events_by_time(
         query = query.filter(Event.draft.is_(False))  # type: ignore
 
     # order by start_time, end_time, and name
-    return query.order_by(
-            Event.start_time, Event.end_time, Event.name  # type: ignore
-        ).all()
+    return query.order_by(Event.start_time, Event.end_time, Event.name).all()  # type: ignore
+
 
 def get_upcoming_events(include_drafts: bool = False) -> list[Event]:
     """Get all events in this week, and future weeks"""
@@ -447,9 +445,7 @@ def get_upcoming_events(include_drafts: bool = False) -> list[Event]:
     if not include_drafts:
         query = query.filter(Event.draft.is_(False))  # type: ignore
 
-    return query.order_by(
-                Event.start_time, Event.end_time, Event.name  # type: ignore
-            ).all()
+    return query.order_by(Event.start_time, Event.end_time, Event.name).all()  # type: ignore
 
 
 def get_all_events(include_drafts: bool = False) -> list[Event]:
@@ -459,9 +455,7 @@ def get_all_events(include_drafts: bool = False) -> list[Event]:
     if not include_drafts:
         query = query.filter(Event.draft.is_(False))  # type: ignore
 
-    return query.order_by(
-        Event.start_time, Event.end_time, Event.name  # type: ignore
-    ).all()
+    return query.order_by(Event.start_time, Event.end_time, Event.name).all()  # type: ignore
 
 
 def get_week_events() -> list[Event]:
@@ -538,9 +532,7 @@ def edit_event(  # noqa: PLR0913
     event.description = description if description is not _KEEP else event.description
     event.draft = draft if draft is not _KEEP else event.draft
     event.location = location if location is not _KEEP else event.location
-    event.location_url = (
-        location_url if location_url is not _KEEP else event.location_url
-    )
+    event.location_url = location_url if location_url is not _KEEP else event.location_url
 
     if icon is not _KEEP:
         event.icon = icon.lower() if icon is not None else event.icon  # type: ignore

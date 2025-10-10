@@ -18,9 +18,7 @@ def reset_database(seed: bool) -> None:
         # seed data
         if seed:
             # create dummy event
-            start_time = datetime(
-                2025, 9, 30, 12, 0, 0, tzinfo=timezone("Europe/London")
-            )
+            start_time = datetime(2025, 9, 30, 12, 0, 0, tzinfo=timezone("Europe/London"))
             dummy_event = Event(
                 name="Test Event",
                 description="This is a test description for the test event",
@@ -58,9 +56,7 @@ def reset_database(seed: bool) -> None:
             db.session.commit()
 
         # create dummy API key
-        api_key = APIKey(
-            generate_password_hash(str(os.getenv("API_KEY"))), "import-script"
-        )
+        api_key = APIKey(generate_password_hash(str(os.getenv("API_KEY"))), "import-script")
         db.session.add(api_key)
         db.session.commit()
 
