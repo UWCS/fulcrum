@@ -44,9 +44,7 @@ def get_event_from_form(form_data: ImmutableMultiDict) -> dict:
         "text_colour": (form_data["text_colour"] if form_data["text_colour"] != "" else None),
         "color_colour": (form_data["color_colour"] if form_data["color_colour"] != "" else None),
         "times": zip(
-            form_data.getlist("start_time[]"),
-            form_data.getlist("end_time[]"),
-            strict=True,
+            form_data.getlist("start_time[]"), form_data.getlist("end_time[]"), strict=True
         ),
         "duration": (form_data["duration"] if form_data["duration"] != "" else None),
         "tags": [tag for tag in form_data.getlist("tags[]") if tag],
@@ -271,10 +269,7 @@ def view(year: int, term: int, week: int, slug: str) -> str:
 
     event = prepare_event(event)
 
-    return render_template(
-        "events/event.html",
-        event=event,
-    )
+    return render_template("events/event.html", event=event)
 
 
 @events_ui_bp.route("/<int:year>/")
@@ -345,8 +340,7 @@ def get_calendar(events: list[Event]) -> Calendar:
         ical_event.add("uid", f"{event.id}@uwcs-fulcrum")
         ical_event.add("dtstart", event.start_time)
         ical_event.add(
-            "dtend",
-            event.end_time if event.end_time else event.start_time + timedelta(hours=1),
+            "dtend", event.end_time if event.end_time else event.start_time + timedelta(hours=1)
         )
         ical_event.add("dtstamp", datetime.now(timezone("Europe/London")))
         ical_event.add(

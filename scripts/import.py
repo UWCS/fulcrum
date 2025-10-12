@@ -143,9 +143,7 @@ def parse_event(path: Path, repeat: bool) -> dict:
             except ValueError:
                 # if that fails, use custom parsing
                 time, _ = parsedatetime.Calendar().parseDT(
-                    event["end_time"],
-                    event["start_time"],
-                    LONDON,
+                    event["end_time"], event["start_time"], LONDON
                 )
                 event["end_time"] = time
 
@@ -196,10 +194,7 @@ def add_event(file: Path, event: dict) -> None:  # noqa: PLR0912
         event_json["colour"] = event["colour"]
 
     response = requests.post(
-        base_url + "create/",
-        json=event_json,
-        headers={"Authorization": api_key},
-        timeout=50,
+        base_url + "create/", json=event_json, headers={"Authorization": api_key}, timeout=50
     )
 
     if response.status_code == 201:  # noqa: PLR2004
@@ -207,10 +202,7 @@ def add_event(file: Path, event: dict) -> None:  # noqa: PLR0912
     else:
         # try again just in case
         response = requests.post(
-            base_url + "create/",
-            json=event_json,
-            headers={"Authorization": api_key},
-            timeout=50,
+            base_url + "create/", json=event_json, headers={"Authorization": api_key}, timeout=50
         )
         if response.status_code == 201:  # noqa: PLR2004
             print(f"Successfully imported {file} on retry")
@@ -264,9 +256,7 @@ def import_events() -> None:
                 event_copy["start_time"] = time
                 if "end_time" in event_copy:
                     time, _ = parsedatetime.Calendar().parseDT(
-                        event["end_time"],
-                        event_copy["start_time"],
-                        LONDON,
+                        event["end_time"], event_copy["start_time"], LONDON
                     )
                     event_copy["end_time"] = time
                 else:

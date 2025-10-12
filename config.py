@@ -39,8 +39,7 @@ custom_icons = [
 phosphor_icons = sorted(
     set(
         re.findall(
-            r"\.ph-bold\.ph-([a-z0-9-]+):before",
-            Path("static/icons/phosphor-bold.css").read_text(),
+            r"\.ph-bold\.ph-([a-z0-9-]+):before", Path("static/icons/phosphor-bold.css").read_text()
         )
     )
 )
@@ -51,11 +50,7 @@ icons = sorted(custom_icons + phosphor_icons)
 phosphor_icon_paths = json.loads(Path("icons.json").read_text())
 
 custom_icon_paths = {
-    icon: re.search(
-        r"<path d=\"([^\"]+)\"", Path(f"static/icons/{icon}.svg").read_text()
-    ).group(  # type: ignore
-        1
-    )
+    icon: re.search(r"<path d=\"([^\"]+)\"", Path(f"static/icons/{icon}.svg").read_text()).group(1)  # type: ignore
     for icon in custom_icons
 }
 

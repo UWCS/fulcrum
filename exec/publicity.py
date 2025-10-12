@@ -142,15 +142,7 @@ def random_dots() -> list[svg.Element]:
     dots = []
     for cx, cy in points:
         fill = random.choice(dot_colours)  # noqa: S311
-        dots.append(
-            svg.Circle(
-                cx=cx,
-                cy=cy,
-                r=radius,
-                fill=fill,
-                opacity=opacity,
-            )
-        )
+        dots.append(svg.Circle(cx=cx, cy=cy, r=radius, fill=fill, opacity=opacity))
     return dots
 
 
@@ -336,8 +328,7 @@ def get_event_groups(
 
     for num_cols, num_rows in grid_sizes:  # try smallest grids first
         for shape in all_options:  # try all shape combinations
-            # [idx, (width, height)]
-            items = list(enumerate(shape))
+            items = list(enumerate(shape))  # [idx, (width, height)]
 
             base_grid = [[-1] * num_cols for _ in range(num_rows)]
 
@@ -600,10 +591,7 @@ def create_single_week(  # noqa: PLR0912, PLR0915
 
         if day == "Socials":
             # apply socials box if necessary
-            socials = get_socials(
-                cell_width - 2 * padding_x,
-                cell_height - 2 * padding_y,
-            )
+            socials = get_socials(cell_width - 2 * padding_x, cell_height - 2 * padding_y)
             socials.transform = [svg.Translate(base_x + padding_x, base_y + padding_y)]
             elements.append(socials)
             continue
@@ -779,9 +767,8 @@ def create_svg(start: Week, end: Week) -> str:
         # background
         svg.Rect(width=POST_WIDTH, height=POST_HEIGHT, fill=colours["grey"]),
         *random_dots(),  # add dots
-        svg.Ellipse(  # blue background with curve at top
-            cx=POST_WIDTH / 2, cy=BLUE_Y, rx=BLUE_RX, ry=BLUE_RY, fill=colours["blue"]
-        ),
+        # blue background with curved top
+        svg.Ellipse(cx=POST_WIDTH / 2, cy=BLUE_Y, rx=BLUE_RX, ry=BLUE_RY, fill=colours["blue"]),
         # uwcs logo
         svg.G(
             elements=[
@@ -821,10 +808,7 @@ def create_svg(start: Week, end: Week) -> str:
                 )
             ],
             # transform and position correctly
-            transform=[
-                svg.Scale(LOGO_SCALE),
-                svg.Translate(LOGO_TRANSLATE_X, LOGO_TRANSLATE_Y),
-            ],
+            transform=[svg.Scale(LOGO_SCALE), svg.Translate(LOGO_TRANSLATE_X, LOGO_TRANSLATE_Y)],
         ),
     ]
 
