@@ -281,9 +281,7 @@ def create_api_key_ui() -> Response:
     return redirect(url_for("auth_ui.get_api_keys_ui"))
 
 
-def handle_api_key_action(
-    action: Callable[[int], APIKey | None], verb: str
-) -> Response:
+def handle_api_key_action(action: Callable[[int], APIKey | None], verb: str) -> Response:
     key_id = request.form.get("id")
     if not key_id:
         flash("API key ID is required", "error")

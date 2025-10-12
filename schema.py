@@ -44,9 +44,7 @@ class Week(db.Model):
     end_date = db.Column(db.Date, nullable=False)
 
     # enforce no duplicate weeks
-    __table_args__ = (
-        db.UniqueConstraint("academic_year", "term", "week", name="unique_week"),
-    )
+    __table_args__ = (db.UniqueConstraint("academic_year", "term", "week", name="unique_week"),)
 
     # events in a week
     events = db.relationship(
@@ -59,9 +57,7 @@ class Week(db.Model):
         lazy="dynamic",
     )
 
-    def __init__(
-        self, academic_year: int, term: int, week: int, start_date: date
-    ) -> None:
+    def __init__(self, academic_year: int, term: int, week: int, start_date: date) -> None:
         self.academic_year = academic_year
         self.term = term
         self.week = week
@@ -126,9 +122,7 @@ class Event(db.Model):
     )
 
     # tags relationship
-    tags = db.relationship(
-        "Tag", secondary="event_tags", backref=db.backref("events", lazy=True)
-    )
+    tags = db.relationship("Tag", secondary="event_tags", backref=db.backref("events", lazy=True))
 
     def __init__(  # noqa: PLR0913
         self,
@@ -180,18 +174,15 @@ class Event(db.Model):
         Should not need to localise start_time or end_time outside this
         """
 
-        self.start_time = LONDON.localize(self.start_time) \
-                                            if self.start_time.tzinfo is None \
-                                            else self.start_time
-        self.end_time = LONDON.localize(self.end_time) \
-                                            if self.end_time.tzinfo is None \
-                                            else self.end_time
+        self.start_time = (
+            LONDON.localize(self.start_time) if self.start_time.tzinfo is None else self.start_time
+        )
+        self.end_time = (
+            LONDON.localize(self.end_time) if self.end_time.tzinfo is None else self.end_time
+        )
 
     def __repr__(self) -> str:
-        return (
-            f"<Event {self.name} (ID: {self.id}) "
-            f"at {self.location} on {self.start_time}>"
-        )
+        return f"<Event {self.name} (ID: {self.id}) " f"at {self.location} on {self.start_time}>"
 
     def to_dict(self) -> dict:
         return {
@@ -235,9 +226,7 @@ class Event(db.Model):
 
         # check if colour is valid
         colour_regex = re.compile(r"^#[0-9a-fA-F]{6}$")
-        if self.colour and (
-            not colour_regex.match(self.colour) and self.colour not in colours
-        ):
+        if self.colour and (not colour_regex.match(self.colour) and self.colour not in colours):
             return "Colour must be a valid hex code or one of: " + ", ".join(colours)
 
         # check if icon is valid

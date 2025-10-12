@@ -93,7 +93,7 @@ def logout() -> Response:
         session.clear()
         return redirect(
             "https://auth.uwcs.co.uk/realms/uwcs/protocol/openid-connect/logout"
-            + f"?post_logout_redirect_uri={url_for('index', _external=True, _scheme=scheme)}"  # noqa: E501
+            + f"?post_logout_redirect_uri={url_for('index', _external=True, _scheme=scheme)}"
             + f"&id_token_hint={id_token}"
         )
     # if no id token, just clear session and redirect to index

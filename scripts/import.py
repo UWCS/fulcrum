@@ -22,6 +22,7 @@ error_file = "scripts/errors.txt"
 
 LONDON = timezone("Europe/London")
 
+
 def get_date_from_week(year: str, term: str, week: str) -> date | None:
     """Get date from week"""
 
@@ -41,11 +42,7 @@ def get_date_from_week(year: str, term: str, week: str) -> date | None:
     for w in weeks:
         # extract core info
         name = w["name"]
-        start = (
-            LONDON.localize(
-                datetime.strptime(w["start"], "%Y-%m-%d")  # noqa: DTZ007
-            ).date()
-        )
+        start = LONDON.localize(datetime.strptime(w["start"], "%Y-%m-%d")).date()  # noqa: DTZ007
 
         if "Term" in name:
             # extract week and term if standard week
@@ -81,18 +78,14 @@ def get_date_from_week(year: str, term: str, week: str) -> date | None:
             # fill in the weeks between
             weeks_between = (next_start - start_date).days // 7
             for j in range(1, weeks_between):
-                inferred_timeline[(term_num, week_num + j)] = start_date + timedelta(
-                    weeks=j
-                )
+                inferred_timeline[(term_num, week_num + j)] = start_date + timedelta(weeks=j)
 
     if (parsed_term, parsed_week) in inferred_timeline:
         return inferred_timeline[(parsed_term, parsed_week)]
 
     known_weeks = [week for (term, week) in inferred_timeline if term == parsed_term]
 
-    closest_week = max(
-        [week for week in known_weeks if week < parsed_week], default=None
-    )
+    closest_week = max([week for week in known_weeks if week < parsed_week], default=None)
     if closest_week is not None:
         base_date = inferred_timeline[(parsed_term, closest_week)]
         delta = parsed_week - closest_week
@@ -109,9 +102,7 @@ def get_date_time(date_str: str, path: Path) -> datetime:
     except ValueError:
         # if that fails, use custom parsing
         base_date = get_date_from_week(path.parts[2], path.parts[3], path.parts[4])
-        time, _ = parsedatetime.Calendar().parseDT(
-            date_str, base_date, LONDON
-        )
+        time, _ = parsedatetime.Calendar().parseDT(date_str, base_date, LONDON)
         # if time is a week ahead of the base date (on mon), subtract a week from time
         # yes i know this is a hack, cope
         if time.date() >= base_date + timedelta(weeks=1):  # type: ignore
@@ -148,9 +139,7 @@ def parse_event(path: Path, repeat: bool) -> dict:
         if "end_time" in event:
             try:
                 # attempt to parse as ISO-8601 format
-                event["end_time"] = LONDON.localize(
-                    datetime.fromisoformat(event["end_time"])
-                )
+                event["end_time"] = LONDON.localize(datetime.fromisoformat(event["end_time"]))
             except ValueError:
                 # if that fails, use custom parsing
                 time, _ = parsedatetime.Calendar().parseDT(
@@ -267,9 +256,7 @@ def import_events() -> None:
                 event_copy = event.copy()
                 # date parsing
                 event_date = get_date_from_week(file.parts[2], file.parts[3], week)
-                time, _ = parsedatetime.Calendar().parseDT(
-                    event["date"], event_date, LONDON
-                )
+                time, _ = parsedatetime.Calendar().parseDT(event["date"], event_date, LONDON)
                 # same hack to subtract a week if necessary
                 if time.date() >= event_date + timedelta(weeks=1):  # type: ignore
                     print(f"Time is adjusted for {file} in {week}")
@@ -283,9 +270,7 @@ def import_events() -> None:
                     )
                     event_copy["end_time"] = time
                 else:
-                    event_copy["end_time"] = event_copy["start_time"] + timedelta(
-                        hours=1
-                    )
+                    event_copy["end_time"] = event_copy["start_time"] + timedelta(hours=1)
                 add_event(file, event_copy)
         else:
             add_event(file, event)

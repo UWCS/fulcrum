@@ -97,9 +97,7 @@ def poisson_disc_samples(
             if not (0 <= new_point[0] < width and 0 <= new_point[1] < height):
                 continue
 
-            grid_x, grid_y = int(new_point[0] // cell_size), int(
-                new_point[1] // cell_size
-            )
+            grid_x, grid_y = int(new_point[0] // cell_size), int(new_point[1] // cell_size)
             too_close = False
 
             for i in range(max(0, grid_x - 2), min(grid_width, grid_x + 3)):
@@ -241,9 +239,7 @@ def convert_path_to_list(
         elif cmd in "Aa":
             # arc commands have boolean parameters
             rx, ry, angle, la, sw, px, py = params
-            path_data.append(
-                command_map[cmd](rx, ry, angle, bool(la), bool(sw), px, py)
-            )
+            path_data.append(command_map[cmd](rx, ry, angle, bool(la), bool(sw), px, py))
         else:
             path_data.append(command_map[cmd](*params))
 
@@ -271,9 +267,7 @@ def get_events(start: Week, end: Week) -> list[dict]:
     return group_events(events)
 
 
-def backtrack(
-    groups: list[tuple[int, list[int]]], grid: list[list[int]]
-) -> list[list[int]] | None:
+def backtrack(groups: list[tuple[int, list[int]]], grid: list[list[int]]) -> list[list[int]] | None:
     """backtracking algorithm to fit items into grid"""
 
     # base case, just return grid, we good :)
@@ -289,9 +283,7 @@ def backtrack(
         for col in range(num_cols - width + 1):
             # check if space is free
             is_free = all(
-                grid[i][j] == -1
-                for i in range(row, row + height)
-                for j in range(col, col + width)
+                grid[i][j] == -1 for i in range(row, row + height) for j in range(col, col + width)
             )
 
             # try again if not free
@@ -397,9 +389,7 @@ def get_event_circle(event: dict) -> svg.G:
     title_size = CIRCLE_SIZE / 8 if len(title) == 1 else CIRCLE_SIZE / 10
     location_size = CIRCLE_SIZE / 13 if len(location) == 1 else CIRCLE_SIZE / 16
     time_size = location_size
-    font_sizes = (
-        [title_size] * len(title) + [location_size] * len(location) + [time_size]
-    )
+    font_sizes = [title_size] * len(title) + [location_size] * len(location) + [time_size]
 
     elements: list[svg.Element] = [svg.Circle(cx=0, cy=0, r=radius, fill=colour)]
 
@@ -485,9 +475,7 @@ def get_socials(width: float, height: float) -> svg.G:
         ),
     ]
     for i, (icon, social_text) in enumerate(zip(icons, text, strict=True), start=2):
-        path, icon_width, icon_height, min_x, min_y = convert_path_to_list(
-            icon_paths[icon]
-        )
+        path, icon_width, icon_height, min_x, min_y = convert_path_to_list(icon_paths[icon])
         scale = desired_icon_width / icon_width
         cx = (min_x + icon_width / 2) * scale
         cy = (min_y + icon_height / 2) * scale
@@ -562,9 +550,7 @@ def create_single_week(  # noqa: PLR0912, PLR0915
     num_rows, num_cols = len(grid), len(grid[0])
 
     # find position and sizing of grid
-    grid_height = (
-        (POST_HEIGHT / 1.5) if num_rows < 3 else (POST_HEIGHT / 1.35)  # noqa: PLR2004
-    )
+    grid_height = (POST_HEIGHT / 1.5) if num_rows < 3 else (POST_HEIGHT / 1.35)  # noqa: PLR2004
     grid_width = POST_WIDTH
     grid_top = POST_HEIGHT / 4 + (POST_HEIGHT - POST_HEIGHT / 4 - grid_height) / 2
 
@@ -651,9 +637,7 @@ def create_single_week(  # noqa: PLR0912, PLR0915
 
                 # work out extra translation required
                 translate_x = base_x + row * cell_width + cell_width / 2
-                translate_y = (
-                    base_y + col * cell_height + cell_height / 2 + DAY_TEXT_HEIGHT / 2
-                )
+                translate_y = base_y + col * cell_height + cell_height / 2 + DAY_TEXT_HEIGHT / 2
 
                 # if spanning multiple columns, pull towards centre
                 pull_y = 0 if col_width == 1 else pull_factor
@@ -699,9 +683,7 @@ def create_multi_week(events: list[dict], start: Week, end: Week) -> list[svg.El
     term_left = POST_WIDTH * TERM_PADDING_X
 
     week_height = (
-        term_height
-        - TERM_DAY_TEXT_HEIGHT
-        - (NUM_WEEKS + 1) * (TERM_WEEK_PADDING * term_height)
+        term_height - TERM_DAY_TEXT_HEIGHT - (NUM_WEEKS + 1) * (TERM_WEEK_PADDING * term_height)
     ) / NUM_WEEKS
     week_width = term_width
 
@@ -852,8 +834,4 @@ def create_svg(start: Week, end: Week) -> str:
     else:
         elements.extend(create_multi_week(events, start, end))
 
-    return str(
-        svg.SVG(
-            elements=elements, viewBox=svg.ViewBoxSpec(0, 0, POST_WIDTH, POST_HEIGHT)
-        )
-    )
+    return str(svg.SVG(elements=elements, viewBox=svg.ViewBoxSpec(0, 0, POST_WIDTH, POST_HEIGHT)))

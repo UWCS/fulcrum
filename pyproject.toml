@@ -1,2 +1,8 @@
-[lint]
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
 select = ["F", "E", "W", "I", "N", "ANN", "B", "C4", "ICN", "Q", "RET", "SIM", "TC", "ARG", "PTH", "PL", "PERF", "FURB", "RUF", "DTZ", "S"]
