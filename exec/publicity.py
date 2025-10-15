@@ -611,7 +611,9 @@ def create_single_week(  # noqa: PLR0912, PLR0915
                 svg.Text(
                     text=day,
                     x=base_x + (row_width * cell_width) / 2,
-                    y=base_y + DAY_TEXT_HEIGHT,
+                    y=base_y
+                    + DAY_TEXT_HEIGHT
+                    - (cell_height / 20 if num_rows == 3 else 0),  # noqa: PLR2004
                     font_size=DAY_TEXT_SIZE,
                     text_anchor="middle",
                     class_=["title"],
@@ -621,11 +623,15 @@ def create_single_week(  # noqa: PLR0912, PLR0915
 
         for col in range(col_width):
             for row in range(row_width):
-                event_scale = 0.7 if num_rows == 3 else 1.0  # noqa: PLR2004
+                event_scale = 0.85 if num_rows == 3 else 1.0  # noqa: PLR2004
 
                 # work out extra translation required
                 translate_x = base_x + row * cell_width + cell_width / 2
                 translate_y = base_y + col * cell_height + cell_height / 2 + DAY_TEXT_HEIGHT / 2
+
+                # when 3 rows, events are too low
+                if num_rows == 3:  # noqa: PLR2004
+                    translate_y -= cell_height / 20
 
                 # if spanning multiple columns, pull towards centre
                 pull_y = 0 if col_width == 1 else pull_factor
