@@ -679,28 +679,35 @@ def create_day_circle(events: list[dict], day_size: float) -> svg.G:
 
     # create offset tuples to position events (x, y, scale)
     offset = day_size / 3
-    scales = [1.0, 0.65, 0.6, 0.6]
+    extra_offset = offset + day_size / 24
+    scales = [1.0, 0.65, 0.55, 0.55]
     offsets = [
         [],
         [(0, 0, scales[0])],
         [(-offset, -offset, scales[1]), (offset, offset, scales[1])],
-        [(-offset, -offset, scales[2]), (offset, -offset, scales[2]), (0, offset, scales[2])],
         [
-            (-offset, -offset, scales[3]),
-            (offset, -offset, scales[3]),
-            (-offset, offset, scales[3]),
-            (offset, offset, scales[3]),
+            (-extra_offset, -extra_offset, scales[2]),
+            (extra_offset, -extra_offset, scales[2]),
+            (0, extra_offset, scales[2]),
+        ],
+        [
+            (-extra_offset, -extra_offset, scales[3]),
+            (extra_offset, -extra_offset, scales[3]),
+            (-extra_offset, extra_offset, scales[3]),
+            (extra_offset, extra_offset, scales[3]),
         ],
     ]
 
     # add the event circles
+    event_circles = []
     for (x, y, scale), event in zip(offsets[len(events)], events, strict=True):
         event_circle = get_event_circle(event, False)
         event_circle.transform = [
-            svg.Scale(0.6 * scale),
+            svg.Scale(0.6 * scale),  # overall scale to fit in day circle
             svg.Translate(x / scale, y / scale),
         ]
-        elements.append(event_circle)
+        event_circles.append(event_circle)
+    elements.extend(reversed(event_circles))  # reverse to have first event on top
 
     return svg.G(elements=elements)
 
