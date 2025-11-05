@@ -107,8 +107,8 @@ def create_event(  # noqa: PLR0913
     if get_event_by_slug(week.academic_year, week.term, week.week, event.slug):
         db.session.rollback()
         return (
-            f"An event with the name '{event.slug}' already exists in "
-            f"{week.academic_year} t{week.term} w{week.week}"
+            f"An event with the name '{event.slug}' already "
+            f"exists in {week.academic_year} t{week.term} w{week.week}"
         )
 
     # add the event to db to allow tags
@@ -401,10 +401,7 @@ def group_events(events: list[Event]) -> list[dict]:
                 start_date = next(iter(days.values()))[0].week.start_date
                 for day, day_events in days.items():
                     day_list.append(
-                        {
-                            "day": day,
-                            "events": [prepare_event(event) for event in day_events],
-                        }
+                        {"day": day, "events": [prepare_event(event) for event in day_events]}
                     )
                 week_list.append({"week": week, "days": day_list, "start_date": start_date})
             term_list.append({"term": term, "weeks": week_list})

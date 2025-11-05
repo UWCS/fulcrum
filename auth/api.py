@@ -2,16 +2,7 @@ import secrets
 from functools import wraps
 from typing import Callable
 
-from flask import (
-    Blueprint,
-    abort,
-    flash,
-    jsonify,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
+from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.wrappers import Response
 

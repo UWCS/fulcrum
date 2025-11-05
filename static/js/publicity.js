@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
             endWeekInput.innerHTML = `
                 <option value="" disabled>Select a start week to enable</option>
                 <option value="${startWeek}" ${endWeekSelected == startWeek ? "selected" : ""}>${startWeek}</option>
-                <option value="${startWeek + 5}" ${endWeekSelected == startWeek + 5 ? "selected" : ""}>${startWeek + 5}</option>
+                <option value="${startWeek + 4}" ${endWeekSelected == startWeek + 4 ? "selected" : ""}>${startWeek + 4}</option>
             `;
         } else {
             endWeekInput.innerHTML = `<option value="" disabled selected>Select a start week to enable</option>`;

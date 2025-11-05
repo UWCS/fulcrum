@@ -70,11 +70,11 @@ An event can be edited by going to its permalink and clicking the edit button in
 
 Follow the steps to edit an event, but once in the edit form scroll to the bottom and click the delete button. Confirm your chouse and the event will be deleted. THIS CANNOT BE UNDONE.
 
-## iCal
+## [iCal](https://events.uwcs.co.uk/uwcs.ics)
 
 An ical feed for all events is available at `/uwcs.ics`. This can be added to any calendar application that supports ical feeds, such as Google Calendar or Outlook. Note that the feed is read-only, and any changes made to events on the site will be reflected in the feed.
 
-## Publicity
+## [Publicity](https://events.uwcs.co.uk/exec/publicity/)
 
 An exec-only endpoint for creating single week calendars is available at `/exec/publicity/`.
 
@@ -86,4 +86,4 @@ If the generated SVG looks good, it can be downloaded direct to PNG via the `Sav
 
 ### Multi week calendar
 
-soonTM
+Same as single week calendar, but select a different `End Week`. Note if more than 4 events are in a single day, only the first 4 will be shown.

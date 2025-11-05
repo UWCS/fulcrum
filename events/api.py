@@ -319,13 +319,7 @@ def create_event_api() -> tuple[Response, int]:  # noqa: PLR0911
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
-    required_fields = [
-        "name",
-        "description",
-        "location",
-        "start_time",
-        "end_time",
-    ]
+    required_fields = ["name", "description", "location", "start_time", "end_time"]
 
     for field in required_fields:
         if field not in data:
@@ -444,13 +438,7 @@ def create_repeat_event_api() -> tuple[Response, int]:  # noqa: PLR0911
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
-    required_fields = [
-        "name",
-        "description",
-        "location",
-        "start_times",
-        "end_times",
-    ]
+    required_fields = ["name", "description", "location", "start_times", "end_times"]
 
     for field in required_fields:
         if field not in data:

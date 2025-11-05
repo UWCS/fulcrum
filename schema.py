@@ -254,10 +254,7 @@ class Tag(db.Model):
         return f"<Tag {self.name} (ID: {self.id})>"
 
     def to_dict(self) -> dict:
-        return {
-            "id": self.id,
-            "name": self.name,
-        }
+        return {"id": self.id, "name": self.name}
 
 
 event_tags = db.Table(
