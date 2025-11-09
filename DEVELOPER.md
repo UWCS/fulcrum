@@ -29,6 +29,7 @@ If you're a user pls see the [user documentation](USER.md) instead.
 
 ## Running
 
+This project is written using Python 3.12, which can be installed from [python.orf](https://www.python.org/downloads/).  
 (note on some systems you may need to use `python -m pipenv` instead of `pipenv`)
 
 1. Clone the repo: `git clone https://github.com/uwcs/fulcrum`
@@ -41,13 +42,13 @@ If you're a user pls see the [user documentation](USER.md) instead.
     API_KEY="key" # can be anything, used for testing the apiS
     ```
 6. Build the css file: `pipenv run python ./scripts/build_scss.py`
-7. (Optional) Add stuff to db
+7. (Optional) Add stuff to the database:
     - Initialise the database: `pipenv run python -m scripts.reset_db`
     - Seeded data can be added by running `pipenv run python -m scripts.reset_db seed`
     - Original data from stardust can be imported by running `pipenv run python -m scripts.import` (this is not officially supported)
 8. Run the app: `pipenv run flask --app fulcrum run --debug`
 
-For production, use a gunicorn server:
+For production deployments, use a gunicorn server:
 
 ```bash
 pipenv run gunicorn fulcrum:app -b 0.0.0.0:5000
@@ -74,7 +75,7 @@ Using `replace` on `tzinfo` with pytz causes inconsistent behaviour, notably cau
 
 ## Stack
 
-Note the site uses the same stack (Flask, SQLAlchemy) as [CS139](https://warwick.ac.uk/fac/sci/dcs/teaching/modules/cs139/), to enable easy maintenance and development by most DCS students. Notably this means that there is no frontend framework (e.g. React, Vue) and the site is rendered server-side. Should this change in the future, the API is set up to partially support this (although it will probably need some tweaking). If some js is complex, I would reccomend using a pre-existing library (see bootstrap and tags) as this will make maintenance easier.
+Note the site uses the same stack (Flask, SQLAlchemy) as [CS139](https://warwick.ac.uk/fac/sci/dcs/teaching/modules/cs139/), to enable easy maintenance and development by most DCS students. Notably this means that there is no frontend framework (e.g. React, Vue) and the site is rendered server-side using Flask's templating engine jinja. Should this change in the future, the API is set up to partially support this (although it will probably need some tweaking). Whilst no framework is used, regular vanilla js can be made if appropriate (see `/static/js/`). If some js is complex, I would reccomend using a pre-existing library (see bootstrap and tags) as this will make maintenance easier.
 
 The only exception to this is the use of SCSS and bootstrap for styling. More info can be found in [Styling](#styling).
 
@@ -167,23 +168,23 @@ Week and events is a one to many (a week can have many events, but an event can 
 
 ## API
 
-Fulcrum exposes an API at `/api/` that allows for event management for external applications. This exposes the same functionality as the website's UI, just in program-oriented format.
+Fulcrum exposes an API at [`/api/`](https://events.uwcs.co.uk/api/) that allows for event management for external applications. This exposes the same functionality as the website's UI, just in program-oriented format.
 
-The API is documented at `/apidocs/` using [flasgger](https://github.com/flasgger/flasgger) and is automatically generated from docstrings in the code.
+The API is documented at [`/apidocs/`](https://events.uwcs.co.uk/apidocs/) using [flasgger](https://github.com/flasgger/flasgger) and is automatically generated from docstrings in the code.
 
 The endpoints that allow for the creation, modification, and deletion of events require authentication. This can either be done by:
 - Loggining in via the website, which will set a session cookie (requires the user to be exec or sysadmin)
-- Using the `Authorization` header with an API key. These can be generated and managed by execs at `/auth/keys/`
+- Using the `Authorization` header with an API key. These can be generated and managed by execs at [`/auth/keys/`](https://events.uwcs.co.uk/auth/keys/)
 
 ### Creating and managing API keys
 
-API keys can be created and managed at `/auth/keys/`. This page requires the user to be logged in and to be exec or sysadmin.
+API keys can be created and managed at [`/auth/keys/`](https://events.uwcs.co.uk/auth/keys/). This page requires the user to be logged in and to be exec or sysadmin.
 
-An API key needs an owener (a string to identify who the key belongs to). Once created, the key will be shown once (so make sure to copy it down). The key can then be disabled or deleted at any time.
+An API key needs an owener (a string to identify who the key belongs to or what it is used for). Once created, for security reasons, the key will be shown once in the popup and NEVER again (so make sure to copy it down). The key can then be disabled or deleted at any time.
 
 ## Styling
 
-[Bootstrap](https://getbootstrap.com/) is used for basic styling and responsiveness, it is reccomended to use this where possible to ensure consistency when styling. To update bootstrap, download the latest version SASS files from their website and replace the `sass/bootstrap/` directory. Furthermore, the newest version of bootstrap's js file should be added to `static/js/` and linked in `templates/base.html`.
+[Bootstrap](https://getbootstrap.com/) is used for basic styling and responsiveness, it is reccomended to use this when adding styling where possible to ensure consistency. To update bootstrap, download the latest version SASS files from their website and replace the `sass/bootstrap/` directory. Furthermore, the newest version of bootstrap's js file should be added to `static/js/` and linked in `templates/base.html`.
 
 If wanting to add custom styles, this site uses [SCSS](https://sass-lang.com/). This is an extention of CSS that allows for certain extra functionality, such as variables, selection, and other strcutures; however REGULAR CSS IS ALSO SUPPORTED. Custom styles should be added to the `sass/custom/` directory, and then imported into `sass/custom/_custom.scss`. It then needs to be compiled using `pipenv run python ./scripts/build_scss.py`, which will output to `static/css/main.css`. This is already linked in the base template, so no further action is needed.
 
@@ -193,7 +194,7 @@ Icons are provided by [phosphor icons](https://phosphoricons.com/).
 
 ### Updating phosphor icons
 
-These are continually updated and so the icons will need to be updated preiodically.
+Phospoht continually update their icons and so the icons will need to be updated in fulcrum preiodically.
 1. Download the latest version of phosphor icons from their website (https://phosphoricons.com/)
 2. Extract the zip file and copy the entire folder to `scripts` directory
 3. Run `pipenv run python ./scripts/extract-phosphor.py`. This will extract the necessary font files to `static/fonts/` and the paths to each icon to `icons.json`.

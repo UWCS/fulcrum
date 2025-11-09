@@ -1,13 +1,13 @@
 # fulcrum
 An events website for UWCS
 
-A version is available at https://events.uwcs.co.uk
+Available at https://events.uwcs.co.uk
 
 Key features include:
 - [X] Event creation and management
 - [X] Integration with UWCS auth
 - [X] iCal generation
-- [ ] Automated publicity
+- [X] Automated publicity
 - [X] Initial email generation
 - [X] API
 - [X] Search
