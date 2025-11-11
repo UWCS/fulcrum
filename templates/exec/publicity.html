@@ -30,6 +30,10 @@
                             <div id="svg-container" class="w-100 h-100 d-flex align-items-center justify-content-center">
                                 {{ svg|safe }}
                             </div>
+                            <!-- hidden svg for figma -->
+                            <div id="svg-figma" class="d-none">
+                                {{ svg_figma|safe }}
+                            </div>
                         {% else %}
                             <p class="text-center">Fill in the form to generate an svg</p>
                         {% endif %}
@@ -37,6 +41,7 @@
                 </div>
 
                 <div class="mt-3 d-flex gap-2" id="publicity-form">
+                    <button id="copy-figma" class="btn btn-outline-info">Copy Figma</button>
                     <button id="copy-svg" class="btn btn-outline-primary">Copy SVG</button>
                     <button id="copy-png" class="btn btn-outline-secondary">Copy PNG</button>
                     <button id="save-png" class="btn btn-outline-success">Save PNG</button>

@@ -41,10 +41,12 @@ def publicity() -> str:
         return render_template("exec/publicity.html", year=year, term=term, years=get_years())
 
     try:
-        svg = create_svg(start_week, end_week)
+        svg = create_svg(start_week, end_week, for_figma=False)
     except ValueError as e:
         flash(f"Error creating publicity SVG: {e}", "danger")
         return render_template("exec/publicity.html", year=year, term=term, years=get_years())
+
+    svg_figma = create_svg(start_week, end_week, for_figma=True)
 
     return render_template(
         "exec/publicity.html",
@@ -54,4 +56,5 @@ def publicity() -> str:
         term=term,
         start_week=start,
         end_week=end,
+        svg_figma=svg_figma,
     )

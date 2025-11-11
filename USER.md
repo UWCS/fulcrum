@@ -82,7 +82,7 @@ An exec-only endpoint for creating single week calendars is available at `/exec/
 
 Select a `year` and `term` from the dropdowns and then a `week`. You do not need to change `End Week` as this will be prefilled. Then click generate to create an svg of the calender for that week. Note there is a limit of 8 events in a week with a max of 6 events in a single day. If the week exeeds this, publicity will have to be done manually.
 
-If the generated SVG looks good, it can be downloaded direct to PNG via the `Save PNG` button. If frther editing is required, click `Copy SVG` to copy the SVG to your clipboard and paste it into a vector graphics editor such as Figma.
+If the generated SVG looks good, it can be used directly via the PNG buttons. If further editing is required, you have 2 options. Most simply, you can copy the SVG code directly using the `Copy SVG` button and paste it into your vector graphics editor of choice (such as Inkscape or Adobe Illustrator). Alternatively, you can use the `Copy Figma` button to copy a Figma compatible version of the SVG which can be pasted directly into Figma.
 
 ### Multi week calendar
 

@@ -20,6 +20,25 @@ document.addEventListener("DOMContentLoaded", () => {
         startWeekInput.dispatchEvent(new Event("input"));
     }
 
+    // copy figma button
+    const copyFigmaButton = document.getElementById("copy-figma");
+    copyFigmaButton.addEventListener("click", function (event) {
+        const svgContent = document.getElementById("svg-figma").innerHTML;
+        // copy to clipboard
+        navigator.clipboard.writeText(svgContent).then(() => {
+            // show success state
+            copyFigmaButton.classList.remove("btn-outline-info");
+            copyFigmaButton.classList.add("btn-success");
+            copyFigmaButton.innerHTML = "<i class='ph-bold ph-check'></i> Copied";
+            // revert after 2 seconds
+            setTimeout(() => {
+                copyFigmaButton.classList.remove("btn-success");
+                copyFigmaButton.classList.add("btn-outline-info");
+                copyFigmaButton.innerHTML = "Copy Figma";
+            }, 2000);
+        });
+    });
+
     // copy svg button
     const copyButton = document.getElementById("copy-svg");
     copyButton.addEventListener("click", function (event) {

@@ -363,7 +363,7 @@ def split_text(text: str, max_chars: int) -> list[str]:
     return lines
 
 
-def get_event_circle(event: dict, display_location: bool) -> svg.G:
+def get_event_circle(event: dict, display_location: bool, for_figma: bool) -> svg.G:
     """Create a circle for an event"""
     icon = event.get("icon", "")
     if icon is not None:
@@ -425,7 +425,7 @@ def get_event_circle(event: dict, display_location: bool) -> svg.G:
 
     lines = title + location + [time_str]
     current_y = text_top
-    for line, size in zip(lines, font_sizes, strict=True):
+    for i, (line, size) in enumerate(zip(lines, font_sizes, strict=True)):
         elements.append(
             svg.Text(
                 text=line,
@@ -433,7 +433,7 @@ def get_event_circle(event: dict, display_location: bool) -> svg.G:
                 y=current_y,
                 font_size=size,
                 text_anchor="middle",
-                class_=["title" if size >= title_size else "text"],
+                class_=["title" if i < len(title) or for_figma else "text"],
             )
         )
         current_y += size
@@ -659,7 +659,7 @@ def create_single_week(  # noqa: PLR0912, PLR0915
 
                 # create event circle and apply offset + scaling around its center
                 event_idx = col * row_width + row
-                event_circle = get_event_circle(day_event_list[event_idx], True)
+                event_circle = get_event_circle(day_event_list[event_idx], True, False)
                 event_circle.transform = [
                     svg.Scale(event_scale),
                     svg.Translate(translate_x, translate_y),
@@ -669,7 +669,7 @@ def create_single_week(  # noqa: PLR0912, PLR0915
     return elements
 
 
-def create_day_circle(events: list[dict], day_size: float) -> svg.G:
+def create_day_circle(events: list[dict], day_size: float, for_figma: bool) -> svg.G:
     """create a circle for a day in multi week view"""
     # add the base background circle
     elements: list[svg.Element] = [svg.Circle(cx=0, cy=0, r=(day_size * 0.95) / 2, fill="#363A3E")]
@@ -701,7 +701,7 @@ def create_day_circle(events: list[dict], day_size: float) -> svg.G:
     # add the event circles
     event_circles = []
     for (x, y, scale), event in zip(offsets[len(events)], events, strict=True):
-        event_circle = get_event_circle(event, False)
+        event_circle = get_event_circle(event, False, for_figma)
         event_circle.transform = [
             svg.Scale(0.6 * scale),  # overall scale to fit in day circle
             svg.Translate(x / scale, y / scale),
@@ -712,7 +712,9 @@ def create_day_circle(events: list[dict], day_size: float) -> svg.G:
     return svg.G(elements=elements)
 
 
-def create_multi_week(events: list[dict], start: Week, end: Week) -> list[svg.Element]:
+def create_multi_week(
+    events: list[dict], start: Week, end: Week, for_figma: bool
+) -> list[svg.Element]:
     """Create the calendar 5 weeks"""
 
     if end.week - start.week + 1 != NUM_WEEKS:
@@ -778,7 +780,11 @@ def create_multi_week(events: list[dict], start: Week, end: Week) -> list[svg.El
                 svg.Text(
                     text=str(week["week"]),  # str to stop week 0 not being rendered
                     x=term_left + (WEEK_NUM_WIDTH * term_width) / 2,
-                    y=text_base + i * (week_height + TERM_WEEK_PADDING * term_height),
+                    y=(
+                        text_base
+                        + i * (week_height + TERM_WEEK_PADDING * term_height)
+                        + (week_height / 7.5 if for_figma else 0)
+                    ),
                     font_size=WEEK_NUM_SIZE,
                     text_anchor="middle",
                     dominant_baseline="middle",
@@ -793,7 +799,7 @@ def create_multi_week(events: list[dict], start: Week, end: Week) -> list[svg.El
 
         # add events in each day
         for j, day in enumerate(all_days):
-            day_circle = create_day_circle(day["events"], day_size)
+            day_circle = create_day_circle(day["events"], day_size, for_figma)
             day_circle.transform = [
                 svg.Translate(
                     day_names_base + j * day_size,
@@ -813,18 +819,32 @@ def get_b64_font(path: str) -> str:
     return f"data:font/ttf;base64,{encoded}"
 
 
-def create_svg(start: Week, end: Week) -> str:
+def create_svg(start: Week, end: Week, for_figma: bool) -> str:
     """Create publicity SVG calendar for events between two weeks (inclusive)"""
 
     # base64 encode fonts to make svg self-contained
     # cairosvg only supports ttf and otf fonts
-    montserrat_500 = get_b64_font("static/fonts/montserrat-bold.ttf")
-    montserrat_600 = get_b64_font("static/fonts/montserrat-semibold.ttf")
+    montserrat_500 = get_b64_font("static/fonts/montserrat-bold.ttf") if not for_figma else None
+    montserrat_600 = get_b64_font("static/fonts/montserrat-semibold.ttf") if not for_figma else None
 
     elements = [
         # define fonts
         svg.Style(
-            text=f"""
+            text=(
+                """
+                .title {
+                    font-family: 'Montserrat';
+                    font-weight: bold;
+                    fill: white;
+                }
+                .text {
+                    font-family: 'Montserrat';
+                    font-weight: semibold;
+                    fill: white;
+                }
+                """
+                if for_figma
+                else f"""
                 @font-face {{
                     font-family: 'montserrat-bold';
                     src: url({montserrat_600}) format('truetype');
@@ -847,6 +867,7 @@ def create_svg(start: Week, end: Week) -> str:
                     fill: white;
                 }}
             """
+            )
         ),
         # background
         svg.Rect(width=POST_WIDTH, height=POST_HEIGHT, fill=colours["grey"]),
@@ -917,6 +938,6 @@ def create_svg(start: Week, end: Week) -> str:
     if start == end:
         elements.extend(create_single_week(events, start))
     else:
-        elements.extend(create_multi_week(events, start, end))
+        elements.extend(create_multi_week(events, start, end, for_figma))
 
     return str(svg.SVG(elements=elements, viewBox=svg.ViewBoxSpec(0, 0, POST_WIDTH, POST_HEIGHT)))
