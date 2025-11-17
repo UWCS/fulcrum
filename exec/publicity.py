@@ -640,15 +640,17 @@ def create_single_week(  # noqa: PLR0912, PLR0915
 
         for col in range(col_width):
             for row in range(row_width):
-                event_scale = 0.85 if num_rows == 3 else 1.0  # noqa: PLR2004
+                event_scale = 0.85 if num_rows == 3 else 1.1  # noqa: PLR2004
 
                 # work out extra translation required
                 translate_x = base_x + row * cell_width + cell_width / 2
                 translate_y = base_y + col * cell_height + cell_height / 2 + DAY_TEXT_HEIGHT / 2
 
-                # when 3 rows, events are too low
+                # events are slightly too low
                 if num_rows == 3:  # noqa: PLR2004
                     translate_y -= cell_height / 20
+                else:
+                    translate_y -= cell_height / 30
 
                 # if spanning multiple columns, pull towards centre
                 pull_y = 0 if col_width == 1 else pull_factor
