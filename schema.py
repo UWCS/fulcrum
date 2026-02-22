@@ -143,7 +143,7 @@ class Event(db.Model):
         self.location = location
         self.location_url = location_url
         self.icon = icon
-        self.colour = colour if colour else "blue"
+        self.colour = colour or "blue"
         self.start_time = start_time
         self.end_time = end_time
         self._localise_times()
