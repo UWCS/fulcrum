@@ -4,7 +4,7 @@ If you are a developer or want to use the API, see [DEVELOPER.md](DEVELOPER.md) 
 
 ## Viewing events
 
-An event's permalink can be found by `/<academic_year>/<term>/<week>/<slug>/`. A slug is a URL friendly version of the event name, with spaces replaced by hyphens and all characters lowercased. For example, an event called "My Event" in week 1 of term 1 of the 2023-2024 academic year would have the permalink `/2023/1/1/my-event/`.
+An event's permalink can be found by `/<academic_year>/<term>/<week>/<slug>/`. A slug is a URL friendly version of the event name, formatted using urllib.parse's quote_plus. For example, an event called "My Event/Occurence" in week 1 of term 1 of the 2023-2024 academic year would have the permalink `/2023/1/1/my+event%2Foccurence/`.
 
 ## Authentication
 
