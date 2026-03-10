@@ -128,7 +128,7 @@ def parse_event(path: Path, repeat: bool) -> dict:
     event.update(event.pop("taxonomies", {}))
 
     # add description
-    event["description"] = parts[2].strip() if parts[2].strip() else event["title"]
+    event["description"] = parts[2].strip() or event["title"]
 
     if not repeat:
         # parse start time

@@ -65,7 +65,7 @@ def parse_form_data(form_data: ImmutableMultiDict) -> dict | str:
         return error
 
     # prefer text_colour if both are provided (in case these colours change)
-    colour = text_colour if text_colour else color_colour
+    colour = text_colour or color_colour
 
     # parse start and end times
     start_times = [get_datetime_from_string(t) for t in form_data.getlist("start_time[]")]
@@ -340,7 +340,7 @@ def get_calendar(events: list[Event]) -> Calendar:
         ical_event.add("uid", f"{event.id}@uwcs-fulcrum")
         ical_event.add("dtstart", event.start_time)
         ical_event.add(
-            "dtend", event.end_time if event.end_time else event.start_time + timedelta(hours=1)
+            "dtend", event.end_time or event.start_time + timedelta(hours=1)
         )
         ical_event.add("dtstamp", datetime.now(timezone("Europe/London")))
         ical_event.add(

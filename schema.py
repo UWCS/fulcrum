@@ -1,12 +1,12 @@
 import re
 from datetime import date, datetime, timedelta
+from urllib.parse import quote_plus
 
 from flask import Flask, url_for
 from flask_sqlalchemy import SQLAlchemy
 from pytz import timezone
 from sqlalchemy import and_, func
 from sqlalchemy.orm import foreign, reconstructor
-from urllib.parse import quote_plus
 
 from config import colours, custom_icons, icons
 
@@ -144,7 +144,7 @@ class Event(db.Model):
         self.location = location
         self.location_url = location_url
         self.icon = icon
-        self.colour = colour if colour else "blue"
+        self.colour = colour or "blue"
         self.start_time = start_time
         self.end_time = end_time
         self._localise_times()
