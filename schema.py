@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from pytz import timezone
 from sqlalchemy import and_, func
 from sqlalchemy.orm import foreign, reconstructor
+from urllib.parse import quote_plus
 
 from config import colours, custom_icons, icons
 
@@ -137,7 +138,7 @@ class Event(db.Model):
         end_time: datetime,
     ) -> None:
         self.name = name
-        self.slug = name.lower().replace(" ", "-")
+        self.slug = quote_plus(name.lower())
         self.description = description
         self.draft = draft
         self.location = location
