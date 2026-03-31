@@ -745,8 +745,19 @@ def create_multi_week(
     ) / NUM_WEEKS
     week_width = term_width
 
+    # merge weekends into one day
+    for week in events[0]["terms"][0]["weeks"]:
+        days = week["days"]
+        weekend_events = []
+        for day in days:
+            if day["day"] in ["Saturday", "Sunday"]:
+                weekend_events.extend(day["events"])
+        # remove saturday and sunday, add weekend
+        week["days"] = [day for day in days if day["day"] not in ["Saturday", "Sunday"]]
+        week["days"].append({"day": "Weekend", "events": weekend_events})
+
     # add week days
-    day_names = ["MON", "TUE", "WED", "THU", "FRI", "SAT"]
+    day_names = ["MON", "TUE", "WED", "THU", "FRI", "WEEKEND"]
     day_size = week_height * TERM_DAY_SIZE
     day_names_base = term_left + WEEK_NUM_WIDTH * term_width + day_size / 2
     for i, day in enumerate(day_names):
@@ -762,7 +773,7 @@ def create_multi_week(
         )
 
     # add week events
-    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Weekend"]
     week_base = term_top + TERM_DAY_TEXT_HEIGHT + TERM_WEEK_PADDING * term_height
     text_base = week_base + week_height / 2
     for i, week in enumerate(events[0]["terms"][0]["weeks"]):
