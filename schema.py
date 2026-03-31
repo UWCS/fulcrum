@@ -1,5 +1,6 @@
 import re
 from datetime import date, datetime, timedelta
+from urllib.parse import quote_plus
 
 from flask import Flask, url_for
 from flask_sqlalchemy import SQLAlchemy
@@ -137,7 +138,7 @@ class Event(db.Model):
         end_time: datetime,
     ) -> None:
         self.name = name
-        self.slug = name.lower().replace(" ", "-")
+        self.slug = quote_plus(name.lower())
         self.description = description
         self.draft = draft
         self.location = location

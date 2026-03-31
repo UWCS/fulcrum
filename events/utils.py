@@ -1,6 +1,7 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Match
+from urllib.parse import quote_plus
 from xml.etree import ElementTree as ET
 
 from markdown import Markdown, markdown
@@ -525,7 +526,7 @@ def edit_event(  # noqa: PLR0913
 
     # update the event attributes if provided
     event.name = name if name is not _KEEP else event.name
-    event.slug = name.lower().replace(" ", "-") if name is not _KEEP else event.slug  # type: ignore
+    event.slug = quote_plus(name.lower()) if name is not _KEEP else event.slug  # type: ignore
     event.description = description if description is not _KEEP else event.description
     event.draft = draft if draft is not _KEEP else event.draft
     event.location = location if location is not _KEEP else event.location
