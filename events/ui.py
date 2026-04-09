@@ -370,7 +370,7 @@ def get_ics() -> Response:
         mimetype="text/calendar",
         headers={
             "Content-Disposition": 'attachment; filename="uwcs.ics"',
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
         },
     )
 
@@ -386,6 +386,6 @@ def exec_ics() -> Response:
         mimetype="text/calendar",
         headers={
             "Content-Disposition": 'attachment; filename="exec.ics"',
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
         },
     )
