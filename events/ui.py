@@ -339,9 +339,7 @@ def get_calendar(events: list[Event]) -> Calendar:
         ical_event.add("location", event.location)
         ical_event.add("uid", f"{event.id}@uwcs-fulcrum")
         ical_event.add("dtstart", event.start_time)
-        ical_event.add(
-            "dtend", event.end_time or event.start_time + timedelta(hours=1)
-        )
+        ical_event.add("dtend", event.end_time or event.start_time + timedelta(hours=1))
         ical_event.add("dtstamp", datetime.now(timezone("Europe/London")))
         ical_event.add(
             "url",
