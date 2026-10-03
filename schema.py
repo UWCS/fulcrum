@@ -125,7 +125,7 @@ class Event(db.Model):
     # tags relationship
     tags = db.relationship("Tag", secondary="event_tags", backref=db.backref("events", lazy=True))
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         name: str,
         description: str,

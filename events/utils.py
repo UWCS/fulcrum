@@ -41,7 +41,7 @@ def get_date_from_string(date_str: str) -> datetime | str:
         return "Invalid date format, expected 'YYYY-MM-DD'"
 
 
-def create_event(  # noqa: PLR0913
+def create_event(  # noqa: PLR0913, PLR0917
     name: str,
     description: str,
     draft: bool,
@@ -238,7 +238,7 @@ def create_week_from_date(date: datetime) -> Week | None:
     return week
 
 
-def create_repeat_event(  # noqa: PLR0913
+def create_repeat_event(  # noqa: PLR0913, PLR0917
     name: str,
     description: str,
     draft: bool,
@@ -501,7 +501,7 @@ def get_days_events(days: int) -> list[Event]:
 _KEEP = object()  # placeholder to leave the field unchanged
 
 
-def edit_event(  # noqa: PLR0913
+def edit_event(  # noqa: PLR0913, PLR0917
     id: int,
     name: str | object = _KEEP,
     description: str | object = _KEEP,
