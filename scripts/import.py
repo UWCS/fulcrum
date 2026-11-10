@@ -2,12 +2,12 @@
 
 import os
 import sys
+import tomllib
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import parsedatetime
 import requests
-import tomllib
 from pytz import timezone
 
 from config import warwick_weeks
