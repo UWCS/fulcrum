@@ -376,6 +376,7 @@ def get_ics() -> Response:
 
 
 @events_ui_bp.route("exec.ics")
+@is_exec_wrapper
 def exec_ics() -> Response:
     events = get_upcoming_events(include_drafts=True)
 
