@@ -1,6 +1,9 @@
+# ignore uv venv
+.venv/
+__pycache__/
 # ignore auto-generated css files (compile using sass pls)
 static/css/main.css
-# ignore env
+# ignore env file
 .env
 # ignore database
 volume/
