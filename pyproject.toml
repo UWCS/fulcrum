@@ -1,5 +1,37 @@
+[project]
+name = "fulcrum"
+version = "0.0.1"
+requires-python = ">=3.12"
+dependencies = [
+    "flask",
+    "gunicorn",
+    "libsass",
+    "flask-oauthlib",
+    "authlib",
+    "dotenv",
+    "flask-sqlalchemy",
+    "pytz",
+    "flasgger",
+    "parsedatetime",
+    "markdown",
+    "icalendar",
+    "svg.py",
+    "svgpathtools",
+]
+
+[dependency-groups]
+dev = []
+
 [tool.black]
 line-length = 100
+
+[tool.uv]
+package = false
+default-groups = "all"
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
 
 [tool.ruff]
 line-length = 100
