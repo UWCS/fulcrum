@@ -2,7 +2,7 @@ from flask import Blueprint, flash, render_template, request
 
 from auth.oauth import is_exec_wrapper
 from events.utils import get_week_by_year_term_week, get_years
-from exec.publicity import create_svg
+from exec.calendar.calendar import create_svg
 
 exec_ui_bp = Blueprint("exec_ui", __name__, url_prefix="/exec")
 
